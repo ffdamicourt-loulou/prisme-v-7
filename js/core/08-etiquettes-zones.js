@@ -103,9 +103,11 @@
     var enSelection = !!(etat.selections && etat.selections.length) || !!etat.selection;
     if (ANCRAGE_vue !== vue.nomMap) { ANCRAGE_vue = vue.nomMap; ANCRAGE_map = {}; } // v0.98
     // v0.97 : DÉCALAGE D ANCRE manuel (degrés). Le centroïde pondéré d
-    // Auvergne-Rhône-Alpes tombe à lat 44,89, tiré vers le sud par le
-    // massif ; le nom est remonté de +0,5° (≈ vers le centre de sa bbox).
-    var DECAL_NOMS = { 'Auvergne-Rhône-Alpes': [0, 0.5] };
+    // v7.4 : LE DÉCALAGE +0,5° D'Auvergne-Rhône-Alpes EST SUPPRIMÉ — il
+    // plaçait le nom trop au nord. La correction d'ancre CORRECTIONS_CP du
+    // noyau (02-geo-ancres.js) pose désormais l'étiquette au centroïde
+    // d'aire, au centre vertical du territoire, sans décalage.
+    var DECAL_NOMS = { };
     var sigles = siglesVue(t, pxLon, pxLat);
     ETQ_PX = [pxLon, pxLat];
     // v0.96 : plus de boîtes de villes (affichage des villes supprimé v0.91,
@@ -367,10 +369,16 @@
                        hwDeg: demi[0] / pxLon, hhDeg: demi[1] / pxLat,
                        entier: lignes === 2 || texte === complet });
       ETQ_BOITES.push(boiteEtiquette(cp[0], cp[1], texte, F, pxLon, pxLat));
+      // v7.4 : zone SÉLECTIONNÉE en vues admin (niveaux 1/2/3) : son texte
+      // reste BLANC sur la teinte assombrie de la sélection.
+      var labelTexte = textePays(continent);
+      if (vue.type !== 'monde' && etat.selectionZone
+          && id.replace(/^c-/, '') === String(etat.selectionZone).replace(/^c-/, ''))
+        labelTexte = '#ffffff';
       var label = { show: true, position: 'inside', /* v0.85 : 'inside' = centrage
                  REEL sur le point (text-anchor:middle) */
                  formatter: formatterEtiquette(texte), fontSize: F, // v0.92 : multi-lignes
-                 color: textePays(continent), fontWeight: STYLES.etiquette.fontWeight };
+                 color: labelTexte, fontWeight: STYLES.etiquette.fontWeight };
       if (lignes === 2) label.lineHeight = Math.round(F * 1.15);
       return {
         name: nom,

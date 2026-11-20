@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20c -->
+<!-- rebuild-pages 2026-11-20d -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -44,3 +44,14 @@ Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
 un ancien noyau servi par le cache HTTP mêlé aux nouveaux fragments — cause de
 comportements incohérents (menu doublé, descente directe au niveau 2 au clic monde).
 Harnais navigation : 4 contrôles de régression ajoutés (22/22).
+
+## v7.4 — navigateur + ancres (2026-11-20d)
+- **Survol et sélection aux niveaux 1/2/3** : les textes des zones restent
+  BLANCS sur la peinture assombrie (repaint chirurgical + "noms-zones").
+- **Changement de pays rétabli** : le clic sur un pays extérieur visible
+  (« x-ES »…) depuis une vue pays ouvre le nouveau pays AU MÊME NIVEAU
+  (règle v0.31 du noyau, perdue dans le passage en greffon).
+- **Étiquette Auvergne-Rhône-Alpes** : décalage +0,5° supprimé, ancre posée au
+  centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
+  des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
+- Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.

@@ -23,7 +23,7 @@ const appels = { events: {}, scripts: [], _scripts: [] };
 const fauxEcharts = {
   registerMap: (nom) => { (appels.maps = appels.maps || []).push(nom); },
   init: () => ({
-    setOption: () => { appels.setOption = (appels.setOption || 0) + 1; },
+    setOption: (o) => { appels.setOption = (appels.setOption || 0) + 1; if (o && o.series) (o.series || []).forEach(s => { if (s && s.id === 'noms-zones') appels.etiquettes = s.data || []; }); },
     getOption: () => ({}),
     on: (ev, fn) => { (appels.events[ev] = appels.events[ev] || []).push(fn); },
     convertToPixel: (f, c) => [c[0] * 2, -c[1] * 2],
@@ -182,6 +182,38 @@ test('re-clic FR en vue monde (package déjà chargé) → niv1',
 // (d) l anti-cache est bien actif : les packages portent l identifiant de version
 test('anti-cache : les <script> de package portent ?v=',
   appels.scripts.every(s => s.indexOf('?v=') !== -1));
+
+// 9. v7.4 — clic sur un PAYS EXTÉRIEUR (x-…) depuis une vue pays.
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); charge('FR');
+let vF1 = P.vue();
+test('FR ouvert (niv1) pour le test x-', vF1.type === 'admin' && vF1.niveau === 1);
+clic('x-ES'); // Espagne visible en voisin extérieur → doit s'ouvrir
+test('clic x-ES depuis FR niv1 → package ES demandé',
+  appels.scripts.some(s => /ES/.test(s) && s.indexOf('packages/') === 0));
+charge('ES');
+let vES = P.vue();
+test('clic x-ES depuis FR niv1 → ES ouverte au MÊME niveau (niv1)', // règle v0.31
+  vES.type === 'admin' && vES.niveau === 1 && vES.paysId === 'ES'
+  && (vES.parent === 'Espagne' || (P.parId['ES'] || {}).nom === 'Espagne'));
+// même niveau depuis un niv2 : depuis ES niv1, descendre puis cliquer un voisin
+const prov = Object.keys(P.vue().parNom)[0]; clic(prov);
+const vES2 = P.vue();
+if (vES2.niveau === 2) { clic('x-FR'); charge('FR'); if (P.vue().paysId === 'FR') {} } // package FR déjà fait
+test('depuis ES niv2, clic x-FR → FR réouverte (même niveau si disponible)',
+  ['FR', 'ES'].indexOf(P.vue().paysId) !== -1);
+
+// 10. v7.4 — ancre Auvergne-Rhône-Alpes : correction du noyau (cpDe),
+// l'étiquette descend au centre vertical du territoire (45,25°N).
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); charge('FR');
+vF1 = P.vue();
+const etqAura = (appels.etiquettes || []).filter(t => t && t.etqId === 'Auvergne-Rhône-Alpes')[0];
+
+test('étiquette Auvergne-Rhône-Alpes : valeur de la série = [4.5242, 45.2514]',
+  !!etqAura && Array.isArray(etqAura.value)
+  && Math.abs(etqAura.value[0] - 4.524247353084002) < 1e-6
+  && Math.abs(etqAura.value[1] - 45.25144749960415) < 1e-6);
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

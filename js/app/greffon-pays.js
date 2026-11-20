@@ -137,7 +137,17 @@
         return;
       }
       if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
-      if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
+      // v7.4 : clic sur un PAYS EXTÉRIEUR (« x-ES »…) depuis une vue pays —
+      // règle v0.31 du noyau RÉTABLIE : le nouveau pays s'ouvre au MÊME
+      // NIVEAU. Sans cela, une fois un pays ouvert, il était impossible
+      // d'en sélectionner un autre en cliquant sur un voisin visible.
+      if (e.name && e.name.slice(0, 2) === 'x-') {
+        var idX = e.name.slice(2);
+        var fx = (conf() && conf().manifest && conf().manifest.pays) ? conf().manifest.pays[idX] : null;
+        if (fx && fx.alias && A.parId[fx.alias]) idX = fx.alias;
+        if (A.parId[idX] && A.ouvrir) A.ouvrir(idX, V.niveau || 1, null);
+        return;
+      }
       if (!A.descendreSous(e.name)) {
         // pas d'enfants au niveau suivant : proposer le niveau déjà connu
         var demande = false;

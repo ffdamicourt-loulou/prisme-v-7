@@ -328,7 +328,21 @@
   // l'ancre (coûteuse : grille de pôle d'inaccessibilité) n'est calculée
   // qu'UNE fois par géométrie, quel que soit l'identifiant.
   var cacheCpGeo = typeof WeakMap === 'function' ? new WeakMap() : null;
+  // v7.4 : CORRECTIONS D'ANCRE D'ÉTIQUETTE — quand une position précalculée
+  // du package (__cp) est manifestement mal posée, la valeur du noyau PRIME.
+  // Référence : Auvergne-Rhône-Alpes (FR niv1), __cp à 45,51°N trop au nord
+  // de son territoire (44,12–46,80°N) : l'étiquette flottait au-dessus du
+  // centre ; le centroïde d'aire (règle v0.82) la ramène au centre vertical.
+  var CORRECTIONS_CP = {
+    'Auvergne-Rhône-Alpes': [4.524247353084002, 45.25144749960415],
+  };
   function cpDe(id, geometry) {
+    // v7.4 : correction du noyau AVANT toute autre source (packages compris).
+    if (CORRECTIONS_CP[id]) {
+      if (cacheCpGeo && geometry) cacheCpGeo.set(geometry, CORRECTIONS_CP[id]);
+      cacheCp[id] = CORRECTIONS_CP[id];
+      return CORRECTIONS_CP[id];
+    }
     // v0.90 : POSITIONS PRÉCALCULÉES DANS LES DONNÉES (packages) — le champ
     // __cp vient de gen-positions.cjs ; repli : calcul ci-dessous (identique).
     if (geometry && geometry.__cp) {

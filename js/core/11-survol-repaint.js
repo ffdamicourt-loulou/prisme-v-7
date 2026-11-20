@@ -44,13 +44,30 @@
     // thème : le texte de la zone survolée passe en texteSurvol, textes sinon
     try {
       if (ETQ_SORTIE && ETQ_SORTIE.length) {
+        // v7.4 : aux NIVEAUX 1/2/3 (vues admin), les états SURVOLÉ et
+        // SÉLECTIONNÉ conservent les textes en BLANC : la peinture de ces
+        // états est la teinte assombrie du continent, le blanc y est
+        // toujours lisible (en vue monde, texteSurvol du thème).
+        var adminN123 = vue && vue.type !== 'monde';
+        var selNu = function (n) { return String(n || '').replace(/^c-/, ''); };
         var ndN = ETQ_SORTIE.map(function (it) {
           if (!it || !it.label) return it;
           var iu = nu(String(it.etqId != null ? it.etqId : it.name));
-          if (iu !== a && iu !== n2) return it;
+          if (iu !== a && iu !== n2) {
+            // v7.4 : zone SÉLECTIONNÉE (hors survol) : blanc en vues admin
+            if (adminN123 && etat.selectionZone && iu === selNu(etat.selectionZone)) {
+              var cS = {}; for (var kS in it) cS[kS] = it[kS];
+              cS.label = {}; for (var kLS in it.label) cS.label[kLS] = it.label[kLS];
+              cS.label.color = '#ffffff';
+              return cS;
+            }
+            return it;
+          }
           var c2 = {}; for (var kk in it) c2[kk] = it[kk];
           c2.label = {}; for (var k3 in it.label) c2.label[k3] = it.label[k3];
-          c2.label.color = (iu === n2) ? THEME.texteSurvol : (THEME.texte || '#ffffff');
+          c2.label.color = (iu === n2)
+            ? (adminN123 ? '#ffffff' : THEME.texteSurvol)
+            : (THEME.texte || '#ffffff');
           return c2;
         });
         carte.setOption({ series: [{ id: 'noms-zones', data: ndN }] });
