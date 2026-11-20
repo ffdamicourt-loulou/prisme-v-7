@@ -112,7 +112,11 @@
     carte.on('click', function (e) {
       if (e.componentType !== 'series' || e.seriesType !== 'map') return;
       var V = A.vue();
-      if (V.type === 'monde') return; // en vue monde, le panneau gouverne l'ouverture
+      if (V.type === 'monde') {
+        // clic sur un pays en vue monde : charger le package et ouvrir (niv1)
+        if (e.name && A.parId[e.name]) ouvrir(e.name);
+        return;
+      }
       if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
       if (!A.descendreSous(e.name)) {
         // pas d'enfants au niveau suivant : proposer le niveau déjà connu
