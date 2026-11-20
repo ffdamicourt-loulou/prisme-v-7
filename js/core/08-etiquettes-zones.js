@@ -224,9 +224,14 @@
       // Vue monde : comportement historique inchangé (codes compact).
       // v0.94 : PAYS (vues admin) — noms ET codes des pays extérieurs
       // 2 px PLUS PETITS : t.etiquette − 2. Vue monde inchangée.
-      var FPaysAdmin = vue.type === 'monde' ? t.etiquette : Math.max(7, t.etiquette - 2);
+      // v7.13 : +30 % sur les NOMS et les CODES des pays entre zoom 5× et
+      // 40× (demande utilisateur) — hors de cette plage, tailles inchangées.
+      var boostPays = (etat.zoom >= 5 && etat.zoom <= 40) ? 1.3 : 1;
+      var FPaysAdmin = vue.type === 'monde'
+        ? Math.max(7, Math.round(t.etiquette * boostPays))
+        : Math.max(7, Math.round((t.etiquette - 2) * boostPays));
       var Fdefaut = estPays ? (vue.type === 'monde'
-          ? Math.max(7, Math.round(STYLES.pays.facteurCode * t.etiquette))
+          ? Math.max(7, Math.round(STYLES.pays.facteurCode * t.etiquette * boostPays))
           : FPaysAdmin) : t.etiquette;
       // v0.86 : LE NOM NE DOIT PAS DÉBORDER DE SA ZONE. La boîte élargie par
       // la marge doit rester ENTIÈREMENT intérieure (8 points de contrôle sur

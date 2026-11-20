@@ -155,6 +155,26 @@
       var selPays = [];
       if (e.selection) selPays.push(e.selection);
       (e.selections || []).forEach(function (id) { if (selPays.indexOf(id) === -1) selPays.push(id); });
+      // v7.13 : si le clic porte sur UN PAYS DE LA SÉLECTION, proposer
+      // UNIQUEMENT ce pays (désélection ciblée) — plus « tout » ; la
+      // liste complète ne reste que pour un Alt+clic SANS pays ciblé.
+      var cSel = (cible && selPays.indexOf(cible) !== -1) ? cible : null;
+      if (cSel) {
+        opts.push({
+          label: 'Désélectionner ' + nomPaysDe(cSel) + ' (' + cSel + ')',
+          type: 'etat',
+          appliquer: function () {
+            if (e.selection === cSel) e.selection = null;
+            e.selections = (e.selections || []).filter(function (x) { return x !== cSel; });
+          }
+        });
+        if (selPays.length > 1) opts.push({
+          label: 'Tout désélectionner (' + selPays.length + ' pays)',
+          type: 'etat',
+          appliquer: function () { e.selection = null; e.selections = []; }
+        });
+        return opts;
+      }
       selPays.forEach(function (id) {
         opts.push({
           label: 'Désélectionner ' + nomPaysDe(id) + ' (' + id + ')',
@@ -264,6 +284,11 @@
     if (V.type !== 'monde') {
       if (nom && nom.slice(0, 6) === 'socle@') return { ok: true };
       cible = nom && nom.slice(0, 2) === 'x-' ? nomPaysDe(nom.slice(2)) : nom;
+    } else if (nom && S.parId[nom]) {
+      // v7.13 : la CIBLE du clic en vue monde est le PAYS cliqué — le
+      // panneau proposera de désélectionner UNIQUEMENT celui-ci, pas
+      // la liste entière de la sélection multiple.
+      cible = nom;
     }
     ouvrirPanneau(cible);
     return { ok: true, optionCount: options.length };

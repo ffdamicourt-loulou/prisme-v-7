@@ -364,6 +364,21 @@ test('v7.9 : les DEUX pays peints en teinte sélection (-10 %)',
     && r.itemStyle.areaColor === P.selectionnes[P.parId.FR.continent])
   && (appels.regions || []).some(r => r && r.name === 'DE'
     && r.itemStyle.areaColor === P.selectionnes[P.parId.DE.continent]));
+// v7.13 : cadrage de la sélection multiple = l'ENSEMBLE FR+DE, centré
+// horizontalement, 80 % de la hauteur (pas le seul DE).
+const cf13 = P.boitePrincipale(P.parId.FR.geometry), cd13 = P.boitePrincipale(P.parId.DE.geometry);
+const cxGrp13 = (Math.min(cf13[0], cd13[0]) + Math.max(cf13[2], cd13[2])) / 2;
+const gz13 = appels.geoZoom || {};
+test('v7.13 : cadrage multi-sélection FR+DE : ENSEMBLE centré horizontalement (centre ' + (gz13.center ? gz13.center[0].toFixed(1) : '?') + '°, attendu ' + cxGrp13.toFixed(1) + '°)',
+  gz13.center && Math.abs(gz13.center[0] - cxGrp13) < 0.5
+  && gz13.center[0] > (cf13[0] + cf13[2]) / 2 + 1);
+// v7.13 : Alt+clic sur DE (FR+DE sélectionnés) → proposer UNIQUEMENT DE
+const rAlt13 = ctx.window.__PR2_SEL.altClic({ name: 'DE', event: { offsetX: 300, offsetY: 300 } });
+const opts13 = ctx.window.__PR2_SEL.options().join(' | ');
+test('v7.13 : Alt+clic sur DE (multi FR+DE) → désélectionner UNIQUEMENT le pays cliqué',
+  rAlt13 && rAlt13.ok === true && opts13.indexOf('(FR)') === -1
+  && opts13.indexOf('(DE)') !== -1 && opts13.indexOf('Tout désélectionner') !== -1);
+ctx.window.__PR2_SEL.annuler();
 
 // en vue pays : FR n1 (régions) + Maj+clic x-DE → VUE COMBINÉE niveau 2 (régions)
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
@@ -429,6 +444,16 @@ if (SEL10 && SEL10.touche && SEL10.traiteClic) {
   test('v7.10 : clic VIDE (zrender, sans zone) → tout déselectionné',
     !P.etat.selection && (P.etat.selections || []).length === 0);
 } else { test('v7.10 : gestionnaire unique exporté (traiteClic/touche/zrClic)', false); }
+
+// 18. v7.13 — tailles des NOMS/CODES de pays : +30 % entre zoom 5× et 40×.
+P.etat.zoom = 20; P.majEtiquettes();
+const tPx13 = P.tailles(20).etiquette;
+const boost13 = Math.max(7, Math.round(Math.min(16, 8 * Math.sqrt(20) + 3) * 1.3));
+test('v7.13 : noms de pays ×1,3 au zoom 20 (attendu ' + boost13 + ' px, base ' + tPx13 + ')',
+  (appels.etiquettes || []).some(t2 => t2 && t2.label && t2.label.fontSize === boost13));
+P.etat.zoom = 45; P.majEtiquettes();
+test('v7.13 : hors plage (zoom 45) → tailles de pays INCHANGÉES (' + tPx13 + ' px)',
+  (appels.etiquettes || []).some(t2 => t2 && t2.label && t2.label.fontSize === tPx13));
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

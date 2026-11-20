@@ -115,6 +115,56 @@
     majEtiquettes();
   }
 
+  // v7.13 : CADRAGE DE SÉLECTION MULTIPLE (vue monde, Maj+clic) —
+  // l'ENSEMBLE des pays sélectionnés est centré HORIZONTALEMENT et occupe
+  // 80 % de la HAUTEUR du viewport (même règle que le pays seul ; avant :
+  // seul le DERNIER pays cliqué était cadré, les autres sortaient du
+  // champ). Modèle analytique de centrerSur : chaque pays compte sa
+  // boîte principale + ses composantes détachées (normalisation ±360°
+  // qui minimise la LARGEUR DE L'UNION avec l'ensemble déjà cadré).
+  function cadrerGroupe(ids) {
+    var uniques = [];
+    (ids || []).forEach(function (id) { if (id && uniques.indexOf(id) === -1 && parId[id]) uniques.push(id); });
+    if (!uniques.length) return;
+    var b = null;
+    uniques.forEach(function (id) {
+      var bp = boitePrincipale(parId[id].geometry);
+      composantesDetachees(id).forEach(function (bd0) {
+        var meilleur = null;
+        [0, 360, -360].forEach(function (sv) {
+          var bd = [bd0[0] + sv, bd0[1], bd0[2] + sv, bd0[3]];
+          var wu = Math.max(bp[2], bd[2]) - Math.min(bp[0], bd[0]);
+          if (!meilleur || wu < meilleur.wu) meilleur = { bd: bd, wu: wu };
+        });
+        bp = [Math.min(bp[0], meilleur.bd[0]), Math.min(bp[1], meilleur.bd[1]),
+              Math.max(bp[2], meilleur.bd[2]), Math.max(bp[3], meilleur.bd[3])];
+      });
+      // replacer chaque pays au multiple de 360° qui minimise la largeur
+      // de l'union avec les pays déjà cadrés (FR + US : pas d'aller-retour
+      // autour du globe)
+      if (b) {
+        var best = null;
+        [0, 360, -360].forEach(function (sv) {
+          var cb = [bp[0] + sv, bp[1], bp[2] + sv, bp[3]];
+          var wu = Math.max(b[2], cb[2]) - Math.min(b[0], cb[0]);
+          if (!best || wu < best.wu) best = { cb: cb, wu: wu };
+        });
+        bp = best.cb;
+        b = [Math.min(b[0], bp[0]), Math.min(b[1], bp[1]), Math.max(b[2], bp[2]), Math.max(b[3], bp[3])];
+      } else b = bp.slice();
+    });
+    if (!b) return;
+    var cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    var LS = tailleCarte() || 1200;
+    var w = carte.getWidth(), h = carte.getHeight();
+    var bh = Math.max(b[3] - b[1], 1e-6) * LS / 350;
+    var bw = Math.max(b[2] - b[0], 1e-6) * LS / 360;
+    var z = Math.min(60, 0.80 * h / bh, 0.90 * w / bw);
+    etat.zoom = z; etat.centre = [cx, cy];
+    carte.setOption({ geo: { zoom: z, center: [cx, cy] } });
+    majEtiquettes();
+  }
+
   // ---------- Borne du pan/zoom : la carte du monde est le cadre absolu ----------
   // La largeur maximale affichable est celle de la carte du monde : jamais de
   // dézoom laissant des espaces vides à droite et à gauche (le monde remplit

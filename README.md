@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20n -->
+<!-- rebuild-pages 2026-11-20o -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,29 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.13 — cadrage multi-sélection, Alt+clic ciblé, polices pays +30 % (2026-11-20o)
+
+Trois demandes utilisateur :
+1. **Cadrage de sélection multiple** (vue monde, Maj+clic) : l'ENSEMBLE
+   des pays sélectionnés est désormais cadré — centré horizontalement,
+   occupant 80 % de la hauteur du viewport (même règle que le pays
+   seul). Avant, seul le DERNIER pays cliqué était cadré : les autres
+   membres sortaient du champ. Nouvelle fonction `cadrerGroupe`
+   (12-camera-cadrage.js), modèle analytique de `centrerSur` : boîtes
+   principales + composantes détachées, chaque pays replacé au multiple
+   de 360° qui minimise la largeur de l'union (FR+US sans tour du
+   globe) ; appelée par `reinitialiserVers` quand l'ajout conserve la
+   sélection.
+2. **Alt+clic sur un pays d'une sélection multiple** : le panneau
+   propose de désélectionner UNIQUEMENT le pays cliqué (plus
+   « Tout désélectionner »), au lieu de la liste entière des membres.
+   Alt+clic SANS pays ciblé garde la liste complète (greffon-selection :
+   cible transmise en vue monde + priorité `cSel`).
+3. **Polices des pays** : noms ET codes des pays +30 % entre zoom 5× et
+   40× (08-etiquettes-zones.js, `boostPays`) ; hors de cette plage les
+   tailles sont inchangées.
+Harnais navigation : 60/60 (4 nouveaux contrôles) ; apparence 11/11 ×2.
 
 ## v7.12 — nom de sélection au dézoom à taille commune + survol « collé » (2026-11-20n)
 

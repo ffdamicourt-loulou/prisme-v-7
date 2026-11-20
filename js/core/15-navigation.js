@@ -413,7 +413,11 @@
     // (app n2) : on ouvre jusqu'au niveau APP = niveau − 1.
     var nivU = niveau || 1;
     if (nivU >= 2 && ouvrirAuNiveau(idPays, nivU - 1, pt)) { restaurer(); return; }
-    centrerSur(parId[idPays], 0.80); // niveau 1 : le pays seul, 80 % de la hauteur
+    // v7.13 : SÉLECTION MULTIPLE au niveau 1 — l'ENSEMBLE des pays
+    // sélectionnés est centré horizontalement, à 80 % de la hauteur du
+    // viewport ; pays seul : cadrage inchangé (centrerSur 0,80).
+    if (conserver && garder && garder.length) cadrerGroupe([idPays].concat(garder));
+    else centrerSur(parId[idPays], 0.80); // niveau 1 : le pays seul, 80 % de la hauteur
     restaurer();
     majEtiquettes(); // peindre la (nouvelle) sélection
   }
