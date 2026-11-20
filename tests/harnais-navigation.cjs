@@ -13,6 +13,7 @@ const CORE = ['00-const','01-styles-couleurs','02-geo-ancres','03-etat-monde','0
 const appCore = CORE.map(n => fs.readFileSync(path.join(RAC, 'js/core', n + '.js'), 'utf8')).join('\n');
 const comprehension = fs.readFileSync(path.join(RAC, 'js/app/couche-comprehension.js'), 'utf8');
 const greffon = fs.readFileSync(path.join(RAC, 'js/app/greffon-pays.js'), 'utf8');
+const greffonSel = fs.readFileSync(path.join(RAC, 'js/app/greffon-selection.js'), 'utf8');
 
 const DATA = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(RAC, 'data/monde.json.gz'))).toString());
 const ADMIN = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(RAC, 'data/admin.json.gz'))).toString());
@@ -61,13 +62,20 @@ vm.createContext(ctx);
 vm.runInContext('window.__PR2_DATA = __D__;window.__PR2_ADMIN = __A__;window.__PR2_COULEURS = __C__;window.__PR2_PKGS = __P__;'
   .replace('__D__', JSON.stringify(DATA)).replace('__A__', JSON.stringify(ADMIN))
   .replace('__C__', JSON.stringify(coul)).replace('__P__', JSON.stringify({ base: '', manifest: pkgsMan })), ctx, { filename: 'boot.js' });
-vm.runInContext(appCore + '\n' + comprehension + '\n' + greffon, ctx, { filename: 'app.js' });
+vm.runInContext(appCore + '\n' + comprehension + '\n' + greffon + '\n' + greffonSel, ctx, { filename: 'app.js' });
 
 const P = ctx.window.__PR2;
 let ok = 0, ko = [];
 const test = (n, c) => { if (c) ok++; else ko.push(n); console.log((c ? 'OK  ' : 'KO  ') + n); };
 
 const clic = (name) => (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name }));
+// v7.8 : clic zone + confirmation automatique si la validation n2→n3 s'ouvre
+const SELAjax = () => ctx.window.__PR2_SEL;
+const clicZone = (name) => {
+  clic(name);
+  const SEL = ctx.window.__PR2_SEL;
+  if (SEL && SEL.descenteAttente && SEL.descenteAttente()) SEL.confirmerDescente();
+};
 const charge = (id) => {
   vm.runInContext(fs.readFileSync(path.join(RAC, 'packages', id + '.js'), 'utf8'), ctx, { filename: 'packages/' + id + '.js' });
   // v7.5 : comme dans un vrai navigateur, le onload d un script ne tire
@@ -97,7 +105,7 @@ test('après package : vue admin niv1 — régions (' + v1.type + '/' + v1.nivea
 // 4. clic sur une région → niv2
 if (v1.type === 'admin' && v1.parNom) {
   const premiereRegion = Object.keys(v1.parNom)[0];
-  clic(premiereRegion);
+  clicZone(premiereRegion);
   const v2 = P.vue();
   test('clic région « ' + premiereRegion + ' » → niv2 (' + v2.type + '/' + v2.niveau + ')', v2.type === 'admin' && v2.niveau === 2);
 } else test('clic région → niv2', false);
@@ -117,7 +125,7 @@ if (deOk) {
   const vd = P.vue();
   test('après package DE : vue niv1', vd.type === 'admin' && vd.niveau === 1);
   const reg = Object.keys(vd.parNom)[0];
-  clic(reg);
+  clicZone(reg);
   test('DE clic région « ' + reg + ' » → niv2', P.vue().type === 'admin' && P.vue().niveau === 2);
 }
 
@@ -141,7 +149,7 @@ clic('FR'); clic('FR'); // sélection puis descente
 charge('FR');
 const vfr1 = P.vue();
 test('FR : vue niv1', vfr1.type === 'admin' && vfr1.niveau === 1);
-clic('Auvergne-Rhône-Alpes');
+clicZone('Auvergne-Rhône-Alpes');
 const vfr2 = P.vue();
 test('FR : clic région → niv2', vfr2.type === 'admin' && vfr2.niveau === 2);
 const nbScriptsAvant = appels.scripts.length;
@@ -208,7 +216,7 @@ test('descente ES → vue niv1 Espagne',
   vES.type === 'admin' && vES.niveau === 1 && vES.paysId === 'ES'
   && (vES.parent === 'Espagne' || (P.parId['ES'] || {}).nom === 'Espagne'));
 // depuis ES niv2, cliquer le voisin FR : nouvelle SÉLECTION niveau 1
-const prov = Object.keys(P.vue().parNom)[0]; clic(prov);
+const prov = Object.keys(P.vue().parNom)[0]; clicZone(prov);
 const vES2 = P.vue();
 if (vES2.niveau === 2) { clic('x-FR'); }
 test('depuis ES niv2, clic x-FR → FR SÉLECTIONNÉE niveau 1 (l\'US/ES ne bloque plus)',
@@ -239,9 +247,9 @@ for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 clic('US'); clic('US'); charge('US');
 let vUS = P.vue();
 test('US ouverte en niv1', vUS.type === 'admin' && vUS.niveau === 1 && vUS.paysId === 'US');
-const etatUS = Object.keys(vUS.parNom)[0]; clic(etatUS); charge('US'); // 2e cran au cas où
+const etatUS = Object.keys(vUS.parNom)[0]; clicZone(etatUS); charge('US'); // 2e cran au cas où
 vUS = P.vue();
-if (vUS.niveau === 1) { clic(etatUS); } // descente directe : comtés de l État
+if (vUS.niveau === 1) { clicZone(etatUS); } // descente directe : comtés de l État
 vUS = P.vue();
 if (vUS.niveau === 2) { clic('x-DE'); }
 test('depuis US niv2 (comtés), clic x-DE → DE SÉLECTIONNÉE (niveau 1), l\'US ne bloque plus',
@@ -250,7 +258,7 @@ test('depuis US niv2 (comtés), clic x-DE → DE SÉLECTIONNÉE (niveau 1), l\'U
 // 13. v7.5 — dézoom ×3,5 en niveau 3 : seules les frontières éteintes, teinte uniforme
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 clic('FR'); clic('FR'); charge('FR');
-for (let n = 0; n < 6 && P.vue().niveau < 3; n++) { clic('Auvergne-Rhône-Alpes'); clic('Ain'); }
+for (let n = 0; n < 6 && P.vue().niveau < 3; n++) { clicZone('Auvergne-Rhône-Alpes'); clic('Ain'); }
 const vAvant = P.vue();
 if (vAvant.niveau >= 2 && P.zoomMolette) {
   for (let k = 0; k < 7; k++) P.zoomMolette(600, null, null); // dézoom ×1.3 x7 ≈ ×6.3
@@ -268,6 +276,58 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
     && etqFusion.label && etqFusion.label.color === '#ffffff'
     && P.vue().niveau >= 2); // la sélection/niveau reste courant
 } else test('dézoom ×3,5 (vue niv>=2 atteinte)', false);
+
+// 14. v7.8 — VALIDATION n2→n3 par info-bulle (bloqué jusqu'à confirmation)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR');
+const SEL = ctx.window.__PR2_SEL;
+clic('Auvergne-Rhône-Alpes'); // SANS confirmer : la descente doit être BLOQUÉE
+test('v7.8 : clic région (n2→n3 utilisateur) BLOQUÉ tant que l\'info-bulle attend la validation',
+  P.vue().niveau === 1 && SEL.descenteAttente() === true);
+test('v7.8 : info-bulle de validation affichée (prisme2-validation)',
+  SEL.descenteAttente() === true && SEL.infoBulleOuverte() === true);
+SEL.confirmerDescente();
+test('v7.8 : confirmation → descente effective au niveau suivant, info-bulle fermée',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && SEL.descenteAttente() === false);
+
+// 15. v7.8 — clic MER / ZONE VIDE : tout désélectionner, cadrage conservé
+const zAvantVide = P.etat.zoom, vueAvantVide = P.vue();
+const rVide = SEL.clicVide();
+test('v7.8 : clic zone vide → tout désélectionné, vue et cadrage CONSERVÉS',
+  rVide.ok === true && P.etat.selection === null && (P.etat.selections || []).length === 0
+  && P.vue() === vueAvantVide && P.etat.zoom === zAvantVide
+  && P.vue().paysId === vueAvantVide.paysId);
+
+// 16. v7.8 — panneau Alt+clic : propositions contextuelles + aperçu + annuler
+// (remonter au n2 avec le pays sélectionné, puis Alt+clic sur le département Ain)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR'); clicZone('Auvergne-Rhône-Alpes');
+const nivOrig16 = P.vue().niveau;
+SEL.altClic({ name: 'Ain', event: { offsetX: 600, offsetY: 300 } });
+const opts = SEL.options();
+
+test('v7.8 : panneau Alt+clic ouvert, propositions contextuelles (' + opts.length + ')',
+  SEL.ouvert() === true && opts.length >= 4
+  && opts.some(o => o.indexOf('zone « Ain »') !== -1)
+  && opts.some(o => o.indexOf('remonter au niveau 2') !== -1)
+  && opts.some(o => o.indexOf('Retour au niveau 1') !== -1)
+  && opts.some(o => o.indexOf('pays « France »') !== -1));
+// aperçu : remonter d'un cran (régions apparentes)
+SEL.choisir(opts.findIndex(o => o.indexOf('remonter au niveau 2') !== -1));
+test('v7.8 : aperçu radio « remonter au niveau 2 » → vue n1 effective en direct',
+  P.vue().type === 'admin' && P.vue().niveau === nivOrig16 - 1 && P.vue().paysId === 'FR');
+// revenir à « conserver » : restauration du chemin d'origine
+SEL.choisir(0);
+test('v7.8 : bascule « conserver » → retour à l\'état d\'ouverture (même niveau, même pays)',
+  P.vue().type === 'admin' && P.vue().niveau === nivOrig16 && P.vue().paysId === 'FR');
+// aperçu « désélectionner le pays » = retour à la vue monde sans sélection
+SEL.choisir(opts.findIndex(o => o.indexOf('retour à la vue monde') !== -1));
+test('v7.8 : aperçu « désélectionner le pays » → vue monde, aucune sélection',
+  P.vue().type === 'monde' && P.etat.selection === null && (P.etat.selections || []).length === 0);
+// annuler referme sans rien garder
+SEL.choisir(opts.findIndex(o => o.indexOf('Retour au niveau 1') !== -1));SEL.annuler();test('v7.8 : Annuler → retour à l\'état d\'ouverture (vue admin n2 FR), panneau fermé',
+  SEL.ouvert() === false && P.vue().type === 'admin' && P.vue().niveau === nivOrig16
+  && P.vue().paysId === 'FR');
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

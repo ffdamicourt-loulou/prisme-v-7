@@ -50,7 +50,8 @@
     fetchTxt('data/couleurs-continents.json').then(function (t) { return JSON.parse(t); }),
     Promise.all(CORE.map(function (n) { return fetchTxt('js/core/' + n + '.js'); })).then(function (t) { return t.join('\n'); }),
     fetchTxt('js/app/couche-comprehension.js'),
-    fetchTxt('js/app/greffon-pays.js')
+    fetchTxt('js/app/greffon-pays.js'),
+    fetchTxt('js/app/greffon-selection.js')
   ]).then(function (r) {
     window.__PR2_DATA = r[0];
     window.__PR2_ADMIN = r[1];
@@ -59,6 +60,7 @@
     injecte(r[4]);   // noyau complet (IIFE 00→17, fenêtrée par window.__PR2)
     injecte(r[5]);   // couche compréhension
     injecte(r[6]);   // greffon pays : window.__PR2_PAYS puis démarrage
+    injecte(r[7]);   // v7.8 : greffon sélection — règles de (dé)sélection
   }).catch(function (e) {
     bandeau(e && e.message ? e.message : e);
     throw e;

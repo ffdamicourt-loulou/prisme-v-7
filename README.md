@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20g -->
+<!-- rebuild-pages 2026-11-20h -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,30 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.8 — module unique de sélection/désélection (2026-11-20h)
+
+**Nouveau fichier `js/app/greffon-selection.js`** : TOUTES les règles de
+sélection/désélection vivent désormais dans un seul module (le noyau reste
+fournisseur d'état et de primitives). Règles implémentées :
+
+- **Clic mer / zone vide → TOUT désélectionner**, SANS changer la vue ni
+  le cadrage (caméra et zoom conservés).
+- **Descente n2→n3 VALIDÉE par info-bulle** (« Afficher le niveau 3 de X ? ») :
+  le clic région est bloqué jusqu'à la confirmation ; la demande de package
+  « Charger les sous-zones ? » reste inchangée au niveau 2. Les zones en
+  fin de chaîne ne déclenchent pas d'info-bulle.
+- **Alt+clic → pop-up PERSISTANTE et contextuelle** de désélection :
+  propositions par radio-boutons (zone cliquée, remonter d'un cran, retour
+  au niveau 1, désélectionner le pays, retirer un pays d'un groupe…),
+  étiquettes avec les NOMS des zones/pays concernés, **aperçu complet en
+  direct** à chaque bascule (restauration par journal d'inverses),
+  boutons Valider / Annuler, positionnée hors de la zone cliquée.
+- **Généralité** : propositions indexées sur les niveaux RÉELS de la vue —
+  la Grande-Bretagne à 4 niveaux (ou tout pays plus profond) marche sans
+  cas particulier.
+- Harnais navigation : 43 contrôles (9 nouveaux : blocage/validation n2→n3,
+  clic vide cadrage conservé, panneau Alt : options, aperçus, restauration).
 
 ## v7.7 — dézoom fusion : nom du niveau supérieur + teinte sélection (2026-11-20g)
 

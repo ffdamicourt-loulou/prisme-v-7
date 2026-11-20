@@ -141,6 +141,17 @@
     carte.on('click', function (e) {
       if (e.componentType !== 'series' || e.seriesType !== 'map') return;
       var V = A.vue();
+      // v7.8 : Alt+clic → panneau de désélection du greffon sélection.
+      if (e.event && e.event.altKey && window.__PR2_SEL) {
+        window.__PR2_SEL.altClic(e);
+        return;
+      }
+      // v7.8 : clic MER / ZONE VIDE (sans nom) → tout désélectionner,
+      // SANS changer la vue ni le cadrage.
+      if (!e.name && window.__PR2_SEL) {
+        window.__PR2_SEL.clicVide();
+        return;
+      }
       if (V.type === 'monde') {
         // v7.6 : 1er clic = SÉLECTION (niveau 1 : le pays seul, centré à
         // 80 %) ; clic sur le pays DÉJÀ SÉLECTIONNÉ = descente (régions).
@@ -159,6 +170,8 @@
         if (A.parId[idX] && A.ouvrir) A.ouvrir(idX, 1, null);
         return;
       }
+      // v7.8 : descente utilisateur n2→n3 — validation par info-bulle.
+      if (window.__PR2_SEL && !window.__PR2_SEL.validerDescente(e.name)) return;
       if (!A.descendreSous(e.name)) {
         // pas d'enfants au niveau suivant : proposer le niveau déjà connu
         var demande = false;
@@ -182,13 +195,41 @@
     var bKo = document.getElementById('prisme2-demande-annuler');
     if (bOk) bOk.addEventListener('click', function () { A.validerDemande(); });
     if (bKo) bKo.addEventListener('click', function () { A.annulerDemande(); });
+    // v7.8 : clic sur le FOND DE CARTE (geo) = zone vide → tout désélectionner
+    carte.on('click', function (e) {
+      if (!window.__PR2_SEL) return;
+      if (e && (e.componentType === 'geo' || !e.name)) window.__PR2_SEL.clicVide();
+    });
     try { if (carte.getZr) carte.getZr().on('contextmenu', function (ev) { try { ev.preventDefault && ev.preventDefault(); } catch (err) { } A.retour(); }); } catch (err) { }
 
     branche = true;
     return true;
   }
 
-  window.__PR2_PAYS = { init: init, ouvrir: ouvrir, retourMonde: retourMonde, liste: liste };
+  // v7.8 : descente APRÈS validation n2→n3 (info-bulle du greffon sélection)
+  // — même flux que le clic : descendre, sinon demanderSous (package).
+  function descendreAvecDemande(nom) {
+    var A = window.__PR2;
+    if (!A) return false;
+    if (!A.descendreSous(nom)) {
+      var demande = false;
+      try { demande = A.demanderSous(nom); } catch (err) { }
+      var info = document.getElementById('prisme2-info');
+      if (!demande) {
+        if (info) {
+          info.textContent = '« ' + nom + ' » : pas de subdivision plus fine disponible.';
+          info.style.display = 'block';
+          clearTimeout(info._t);
+          info._t = setTimeout(function () { info.style.display = 'none'; }, 2600);
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
+  window.__PR2_PAYS = { init: init, ouvrir: ouvrir, retourMonde: retourMonde, liste: liste,
+    descendreAvecDemande: descendreAvecDemande };
   if (!init() && window.__PR2 && window.__PR2.apresDemarrage) {
     window.__PR2.apresDemarrage(init);
   }
