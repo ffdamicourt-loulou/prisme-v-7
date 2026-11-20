@@ -31,11 +31,13 @@
     var conf = window.__PR2_PKGS;
     var fiche = conf && conf.manifest && conf.manifest.pays ? conf.manifest.pays[id] : null;
     if (fiche && fiche.alias && A.parId[fiche.alias]) id = fiche.alias;
-    // descendre() charge le package à la demande (mécanisme v0.80 du noyau :
-    // admin absent + package déclaré → __PR2_PKG_REG → descente retentée),
-    // même réponse que la sélection par clic (true = vue niv1 ouverte).
-    var r = A.descendre(id);
-    return { ok: r === true, enAttente: r === false };
+    // v7.5 : RÈGLE DE NAVIGATION — le nouveau pays s'ouvre TOUJOURS au
+    // NIVEAU 1, que l'on parte de la vue monde ou d'un niveau 2/3 d'un
+    // autre pays (l'ancien ouvrir « même niveau » est retiré). Le niveau 1
+    // est cadré à 80 % de la hauteur du viewport (ajusterSur, appliquerVue).
+    var okPan = A.ouvrir ? A.ouvrir(id, 1, null) : false;
+    var attente = A.descendPossible ? !A.descendPossible(id) : false;
+    return { ok: okPan && !attente, enAttente: attente };
   }
 
   function retourMonde() {
@@ -137,15 +139,14 @@
         return;
       }
       if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
-      // v7.4 : clic sur un PAYS EXTÉRIEUR (« x-ES »…) depuis une vue pays —
-      // règle v0.31 du noyau RÉTABLIE : le nouveau pays s'ouvre au MÊME
-      // NIVEAU. Sans cela, une fois un pays ouvert, il était impossible
-      // d'en sélectionner un autre en cliquant sur un voisin visible.
+      // v7.5 : clic sur un PAYS EXTÉRIEUR (« x-ES »…) depuis une vue pays :
+      // le nouveau pays s'ouvre au NIVEAU 1 (règle de navigation v7.5,
+      // cadré à 80 % de la hauteur), même si l'on vient d'un niveau 2/3.
       if (e.name && e.name.slice(0, 2) === 'x-') {
         var idX = e.name.slice(2);
         var fx = (conf() && conf().manifest && conf().manifest.pays) ? conf().manifest.pays[idX] : null;
         if (fx && fx.alias && A.parId[fx.alias]) idX = fx.alias;
-        if (A.parId[idX] && A.ouvrir) A.ouvrir(idX, V.niveau || 1, null);
+        if (A.parId[idX] && A.ouvrir) A.ouvrir(idX, 1, null);
         return;
       }
       if (!A.descendreSous(e.name)) {

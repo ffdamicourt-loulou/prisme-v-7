@@ -23,7 +23,9 @@ const appels = { events: {}, scripts: [], _scripts: [] };
 const fauxEcharts = {
   registerMap: (nom) => { (appels.maps = appels.maps || []).push(nom); },
   init: () => ({
-    setOption: (o) => { appels.setOption = (appels.setOption || 0) + 1; if (o && o.series) (o.series || []).forEach(s => { if (s && s.id === 'noms-zones') appels.etiquettes = s.data || []; }); },
+    setOption: (o) => { appels.setOption = (appels.setOption || 0) + 1;
+      if (o && o.series) (o.series || []).forEach(sr => { if (sr && sr.id === 'noms-zones') appels.etiquettes = sr.data || []; });
+      if (o && o.geo) { if (o.geo.zoom != null) appels.geoZoom = { zoom: o.geo.zoom, center: o.geo.center }; if (o.geo.regions) appels.regions = o.geo.regions; } },
     getOption: () => ({}),
     on: (ev, fn) => { (appels.events[ev] = appels.events[ev] || []).push(fn); },
     convertToPixel: (f, c) => [c[0] * 2, -c[1] * 2],
@@ -68,7 +70,9 @@ const test = (n, c) => { if (c) ok++; else ko.push(n); console.log((c ? 'OK  ' :
 const clic = (name) => (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name }));
 const charge = (id) => {
   vm.runInContext(fs.readFileSync(path.join(RAC, 'packages', id + '.js'), 'utf8'), ctx, { filename: 'packages/' + id + '.js' });
-  (appels._scripts || []).forEach(s => { if (s.onload && new RegExp(id).test(s._src || '')) s.onload(); });
+  // v7.5 : comme dans un vrai navigateur, le onload d un script ne tire
+  // QU UNE FOI — relancer un rappel déjà consommé réempilait des vues.
+  (appels._scripts || []).forEach(s => { if (s.onload && new RegExp(id).test(s._src || '')) { const cb = s.onload; s.onload = null; cb(); } });
 };
 
 // 1. vue monde au départ
@@ -199,9 +203,10 @@ test('clic x-ES depuis FR niv1 → ES ouverte au MÊME niveau (niv1)', // règle
 // même niveau depuis un niv2 : depuis ES niv1, descendre puis cliquer un voisin
 const prov = Object.keys(P.vue().parNom)[0]; clic(prov);
 const vES2 = P.vue();
-if (vES2.niveau === 2) { clic('x-FR'); charge('FR'); if (P.vue().paysId === 'FR') {} } // package FR déjà fait
-test('depuis ES niv2, clic x-FR → FR réouverte (même niveau si disponible)',
-  ['FR', 'ES'].indexOf(P.vue().paysId) !== -1);
+if (vES2.niveau === 2) { clic('x-FR'); } // package FR déjà fait depuis plus haut
+const vFrApres = P.vue();
+test('depuis ES niv2, clic x-FR → FR réouverte au NIVEAU 1 (règle v7.5)',
+  vFrApres.type === 'admin' && vFrApres.niveau === 1 && vFrApres.paysId === 'FR');
 
 // 10. v7.4 — ancre Auvergne-Rhône-Alpes : correction du noyau (cpDe),
 // l'étiquette descend au centre vertical du territoire (45,25°N).
@@ -214,6 +219,42 @@ test('étiquette Auvergne-Rhône-Alpes : valeur de la série = [4.5242, 45.2514]
   !!etqAura && Array.isArray(etqAura.value)
   && Math.abs(etqAura.value[0] - 4.524247353084002) < 1e-6
   && Math.abs(etqAura.value[1] - 45.25144749960415) < 1e-6);
+
+// 11. v7.5 — CADRAGE PAR NIVEAU : 80 % (niv 1) vs 60 % (niv 2/3)
+// bbox fine (bw=bh) → cadrage borné par la HAUTEUR : ratio attendu 0,60/0,80 = 0,75
+const bp = [20, 40, 26, 46];
+P.ajusterSur(bp, 0.80); const z80 = appels.geoZoom && appels.geoZoom.zoom;
+P.ajusterSur(bp, 0.60); const z60 = appels.geoZoom && appels.geoZoom.zoom;
+test('cadrage : niv 1 à 80 %, niv 2/3 à 60 % de la hauteur (ratio 0,75)',
+  isFinite(z80) && isFinite(z60) && Math.abs(z60 / z80 - 0.75) < 1e-6);
+
+// 12. v7.5 — depuis les États-Unis (niveau 2 comtés), clic x-autre-pays
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('US'); charge('US');
+let vUS = P.vue();
+test('US ouverte en niv1', vUS.type === 'admin' && vUS.niveau === 1 && vUS.paysId === 'US');
+const etatUS = Object.keys(vUS.parNom)[0]; clic(etatUS); charge('US'); // 2e cran au cas où
+vUS = P.vue();
+if (vUS.niveau === 1) { clic(etatUS); } // descente directe : comtés de l État
+vUS = P.vue();
+if (vUS.niveau === 2) { clic('x-DE'); charge('DE'); }
+test('depuis US niv2 (comtés), clic x-DE → DE s\'ouvre (niv1), l\'US ne bloque plus',
+  P.vue().paysId === 'DE' && P.vue().niveau === 1);
+
+// 13. v7.5 — dézoom ×3,5 en niveau 3 : seules les frontières éteintes, teinte uniforme
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR');
+for (let n = 0; n < 6 && P.vue().niveau < 3; n++) { clic('Auvergne-Rhône-Alpes'); clic('Ain'); }
+const vAvant = P.vue();
+if (vAvant.niveau === 3 && P.zoomMolette) {
+  for (let k = 0; k < 7; k++) P.zoomMolette(600, null, null); // dézoom ×1.3 x7 ≈ ×6.3
+  const regs = appels.regions || [];
+  const zones = regs.filter(r => r && r.name && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
+  test('dézoom ×3,5 en niv3 : frontières internes éteintes (niveau 2 apparent)',
+    zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0)
+    && zones.every(r => r.itemStyle.areaColor === zones[0].itemStyle.areaColor)
+    && P.vue().niveau === 3); // la sélection/niveau reste courant
+} else test('dézoom ×3,5 en niv3 (vue atteinte)', false);
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

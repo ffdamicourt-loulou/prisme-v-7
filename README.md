@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20d -->
+<!-- rebuild-pages 2026-11-20e -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,3 +55,19 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.5 — navigation, cadrages, dézoom niv3 (2026-11-20e)
+- **Pays sélectionné : TOUJOURS le niveau 1** — depuis la vue monde comme
+  depuis un niveau 2/3 d'un autre pays (l'ancienne règle « même niveau »
+  est retirée). Le greffon passe par `A.ouvrir(id, 1)`.
+- **Cadrage par niveau** : niveau 1 = 80 % de la hauteur du viewport,
+  niveaux 2/3 = 60 % (`appliquerVue`, v0.79 → v7.5).
+- **Dézoom ×3,5 en niveau 3** : la sélection reste courante mais les
+  frontières internes s'éteignent, teinte uniforme — seule la région de
+  niveau 2 apparaît (fini la tache illisible).
+- **Caméra rendue** : toute interpolation de zoom (molette) en cours est
+  ANNULÉE au changement de vue — ses geoRoam traînants ramenaient la
+  caméra sur l'ancienne sélection ½ seconde après l'ouverture du nouveau
+  pays (surtout visible sur les comtés des États-Unis).
+- Harnais : `charge()` ne rejoue plus un onload consommé (sémantique
+  navigateur) ; 31/31 navigation, 11/11 apparence ×2 thèmes.

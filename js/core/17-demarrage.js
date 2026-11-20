@@ -205,6 +205,12 @@
       }
     } catch (eMolette) { }
     zoomMoletteRef = zoomMolette; // export harnais (voir __PR2)
+    // v7.5 : annulation de l'interpolation en cours — branchée dans
+    // appliquerVue (15-navigation.js) : tout changement de vue (ouverture
+    // de pays, descente, retour, autre pays cliqué) INTERROMPT l'anim de
+    // zoom, sinon ses geoRoam traînants ramenaient la caméra sur
+    // l'ancienne sélection (demi-seconde après l'ouverture du nouveau).
+    ANNULER_ZOOM_ANIM = function () { zoomAnim = null; cibleZoom = null; };
 
     window.addEventListener('resize', function () { ZOOM_CONTENU = null; carte.resize(); carte.setOption({ geo: { layoutSize: tailleCarte() } }); bornerRoam(); majEtiquettes(); });
     for (var iDm = 0; iDm < apresDemarrageFns.length; iDm++) {

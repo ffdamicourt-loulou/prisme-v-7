@@ -1,4 +1,13 @@
+  // v7.5 : crochet posé par demarrer() (17-demarrage.js) — ANNULER
+  // l'interpolation de zoom (molette) en cours au moment d'un changement
+  // de vue. Sans cela, l'animation encore active réappliquait ses geoRoam
+  // APRÈS le cadrage de la nouvelle vue : la caméra revenait sur
+  // l'ancienne sélection une demi-seconde plus tard — vécu comme « le
+  // nouveau pays s'ouvre puis se referme sur l'ancienne sélection »,
+  // surtout sur les vues très zoomées (comtés des États-Unis).
+  var ANNULER_ZOOM_ANIM = function () { };
   function appliquerVue(sansAjustement) {
+    try { ANNULER_ZOOM_ANIM(); } catch (eAnim) { }
     etat.selectionZone = null; // v0.58 : la sélection de zone ne survit pas au changement de vue
     ZOOM_CONTENU = null; // v0.46 : la porte code/nom se recalcule par vue
     carte.setOption(optionsBase());
@@ -20,7 +29,10 @@
           });
         });
       }
-      ajusterSur(b, vue.type !== 'monde' ? 0.80 : 0); // v0.79 : 80 % de la hauteur
+      // v7.5 : CADRAGE PAR NIVEAU — le niveau 1 occupe 80 % de la HAUTEUR
+      // du viewport, les niveaux 2 et 3 occupent 60 % (les détails petits
+      // restent visualisables avec le contexte de leur région).
+      ajusterSur(b, vue.type !== 'monde' ? (vue.niveau === 1 ? 0.80 : 0.60) : 0);
     }
     bornerRoam();
     majEtiquettes();

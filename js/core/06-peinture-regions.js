@@ -5,6 +5,14 @@
     // SÉLECTIONNÉES PAR DÉFAUT — un clic descend directement. Le survol
     // assombrit encore un peu (-20 % supplémentaires) pour rester perceptible.
     var enSelection = vue.type !== 'monde';
+    // v7.5 : DÉZOOM ×3,5 EN NIVEAU 3 — la sélection de niveau 3 RESTE la
+    // sélection courante, mais la vue ne dessine PLUS le détail du niveau 3 :
+    // frontières INTERNES ÉTEINTES et teinte UNIFORME du continent, les
+    // zones du niveau 3 se fondent en une seule tache = la RÉGION de
+    // NIVEAU 2 (le socle du niveau courant esquisse exactement son
+    // contour). Re-zoomer sous le seuil réaffiche le détail tel quel.
+    var dezoomN3 = vue.type !== 'monde' && vue.niveau === 3
+      && etat.zoomEntree > 0 && etat.zoom <= etat.zoomEntree / 3.5;
     // v0.41 : ensemble des entités sélectionnées (pays, zones « c- »),
     // partagé par toutes les branches ci-dessous.
     var sel = ensembleSelection();
@@ -105,7 +113,9 @@
       var vis = false;
       return {
         name: p.id,
-        itemStyle: { areaColor: base, color: base, borderColor: THEME.contour, borderWidth: epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
+        itemStyle: { areaColor: base, color: base,
+          borderColor: (dezoomN3 && !zoneSel) ? base : THEME.contour,
+          borderWidth: (dezoomN3 && !zoneSel) ? 0 : epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
         emphasis: { disabled: true,
           itemStyle: { areaColor: survol, color: survol, borderColor: THEME.contour, borderWidth: epSurv },
           label: { show: false },
