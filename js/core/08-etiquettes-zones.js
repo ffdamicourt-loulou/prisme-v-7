@@ -226,7 +226,10 @@
       // 2 px PLUS PETITS : t.etiquette − 2. Vue monde inchangée.
       // v7.13 : +30 % sur les NOMS et les CODES des pays entre zoom 5× et
       // 40× (demande utilisateur) — hors de cette plage, tailles inchangées.
-      var boostPays = (etat.zoom >= 5 && etat.zoom <= 40) ? 1.3 : 1;
+      // v7.15 : la demande de +30 % est REVUE à la baisse de 15 % depuis
+      // la taille courante → facteur net 1,3 × 0,85 ≈ 1,105 (+10,5 % sur
+      // la taille d'origine).
+      var boostPays = (etat.zoom >= 5 && etat.zoom <= 40) ? 1.105 : 1;
       var FPaysAdmin = vue.type === 'monde'
         ? Math.max(7, Math.round(t.etiquette * boostPays))
         : Math.max(7, Math.round((t.etiquette - 2) * boostPays));

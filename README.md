@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20p -->
+<!-- rebuild-pages 2026-11-20q -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,13 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.15 — polices pays revues : -15 % depuis la taille courant (2026-11-20q)
+
+Le +30 % (v7.13) sur les noms et codes des pays entre zoom 5× et 40× est
+réduit de 15 % depuis la taille courante : facteur net 1,3 × 0,85 ≈ 1,105
+(soit +10,5 % sur la taille d'origine). Plage (5×–40×) et coefficients
+inchangés ailleurs. Harnais navigation : 61/61 ; apparence 11/11 ×2.
 
 ## v7.14 — la sélection PRIME sur le survol (bug récurrent du dernier pays) (2026-11-20p)
 

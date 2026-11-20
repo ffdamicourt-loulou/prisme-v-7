@@ -459,8 +459,8 @@ if (SEL10 && SEL10.touche && SEL10.traiteClic) {
 // 18. v7.13 — tailles des NOMS/CODES de pays : +30 % entre zoom 5× et 40×.
 P.etat.zoom = 20; P.majEtiquettes();
 const tPx13 = P.tailles(20).etiquette;
-const boost13 = Math.max(7, Math.round(Math.min(16, 8 * Math.sqrt(20) + 3) * 1.3));
-test('v7.13 : noms de pays ×1,3 au zoom 20 (attendu ' + boost13 + ' px, base ' + tPx13 + ')',
+const boost13 = Math.max(7, Math.round(Math.min(16, 8 * Math.sqrt(20) + 3) * 1.105));
+test('v7.15 : noms de pays ×1,105 (1,3 revu -15 %) au zoom 20 (attendu ' + boost13 + ' px, base ' + tPx13 + ')',
   (appels.etiquettes || []).some(t2 => t2 && t2.label && t2.label.fontSize === boost13));
 P.etat.zoom = 45; P.majEtiquettes();
 test('v7.13 : hors plage (zoom 45) → tailles de pays INCHANGÉES (' + tPx13 + ' px)',
