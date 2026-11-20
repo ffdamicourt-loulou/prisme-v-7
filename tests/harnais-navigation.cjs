@@ -50,7 +50,7 @@ function fauxDocument() {
 }
 const doc = fauxDocument();
 const ctx = {
-  window: { addEventListener: () => {}, __PR2_COMPLET: 'v0.210', __PR2_THEME: { fond: '#eaf2f8', contour: '#ffffff', traitNiveaux: 0.6 } },
+  window: { addEventListener: () => {}, __PR2_COMPLET: 'v0.210', __PR2_VBUILD: 'v7.3-test', __PR2_THEME: { fond: '#eaf2f8', contour: '#ffffff', traitNiveaux: 0.6 } },
   document: doc, echarts: fauxEcharts,
   setTimeout: (fn) => { fn(); return 1; }, clearTimeout: () => {}, console,
 };
@@ -159,6 +159,29 @@ test('sélection d\'un autre pays (ES) depuis une vue niv2 → package chargé, 
 if (rEsp.enAttente) charge('ES');
 const ves = P.vue();
 test('après ES : vue niv1 Espagne', ves.type === 'admin' && ves.niveau === 1 && ves.paysId === 'ES');
+
+// 8. v7.3 — RÉGRESSIONS du clic depuis la vue monde.
+// (a) après retours au monde, un NOUVEAU clic pays ouvre bien le NIVEAU 1
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('IT'); charge('IT');
+const vit = P.vue();
+test('clic IT en vue monde (après historique complet) → niv1, jamais niv2',
+  vit.type === 'admin' && vit.niveau === 1 && vit.paysId === 'IT');
+// (b) double événement clic (deux dispatchs avant l arrivée du package)
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('BE'); clic('BE'); charge('BE');
+const vbe = P.vue();
+test('double clic BE en vue monde → niv1 (le 2e événement ne saute pas niv2)',
+  vbe.type === 'admin' && vbe.niveau === 1 && vbe.paysId === 'BE');
+// (c) pays au package DÉJÀ enregistré (PKG_FAIT) : re-clic monde → niv1
+P.retour();
+clic('FR'); // package FR déjà enregistré plus haut
+const vfr = P.vue();
+test('re-clic FR en vue monde (package déjà chargé) → niv1',
+  vfr.type === 'admin' && vfr.niveau === 1 && vfr.paysId === 'FR');
+// (d) l anti-cache est bien actif : les packages portent l identifiant de version
+test('anti-cache : les <script> de package portent ?v=',
+  appels.scripts.every(s => s.indexOf('?v=') !== -1));
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

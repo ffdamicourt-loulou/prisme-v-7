@@ -21,15 +21,22 @@
     bandeau((e && e.message ? e.message : e) + (e && e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
   });
   function fetchGz(url) {
-    return fetch(url)
+    return fetch(cb(url))
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + url); return r.arrayBuffer(); })
       .then(function (buf) {
         return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
       })
       .then(function (txt) { return JSON.parse(txt); });
   }
+  // v7.3 : ANTI-CACHE — chaque chargement (core, app, données, manifest)
+  // porte l'identifiant de version en paramètre : un navigateur qui garde
+  // un ancien js en cache HTTP ne peut plus JAMAIS exécuter un noyau périmé
+  // mêlé aux nouveaux fragments (cause de bugs fantômes : menu doublé,
+  // niveaux de descente incohérents entre deux versions du code).
+  var BUILD = window.__PR2_VBUILD || 'dev';
+  function cb(url) { return url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + encodeURIComponent(BUILD); }
   function fetchTxt(url) {
-    return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + url); return r.text(); });
+    return fetch(cb(url)).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + url); return r.text(); });
   }
   function injecte(code) {
     var s = document.createElement('script');

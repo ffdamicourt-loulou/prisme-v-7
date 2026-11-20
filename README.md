@@ -36,4 +36,11 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20b -->
+<!-- rebuild-pages 2026-11-20c -->
+
+## v7.3 — anti-cache (2026-11-20c)
+Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
+(`window.__PR2_VBUILD` dans index.html) : un navigateur ne peut plus exécuter
+un ancien noyau servi par le cache HTTP mêlé aux nouveaux fragments — cause de
+comportements incohérents (menu doublé, descente directe au niveau 2 au clic monde).
+Harnais navigation : 4 contrôles de régression ajoutés (22/22).

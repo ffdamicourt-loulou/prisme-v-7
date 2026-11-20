@@ -188,7 +188,9 @@
     if (PKG_FAIT[fiche.a3]) return false;
     PKG_EN_COURS[idPays] = true;
     var s = document.createElement('script');
-    s.src = (conf.base || '') + fiche.fichier;
+    // v7.3 : anti-cache — le package porte aussi l'identifiant de version.
+    var bld = window.__PR2_VBUILD;
+    s.src = (conf.base || '') + fiche.fichier + (bld ? '?v=' + encodeURIComponent(bld) : '');
     s.onload = function () { delete PKG_EN_COURS[idPays]; try { if (rappel) rappel(idPays); } catch (err) { } };
     s.onerror = function () { delete PKG_EN_COURS[idPays]; };
     document.body.appendChild(s);
