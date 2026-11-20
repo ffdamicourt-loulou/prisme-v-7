@@ -430,6 +430,17 @@ if (SEL10 && SEL10.touche && SEL10.traiteClic) {
   const selAvant = (P.etat.selections || []).slice();
   clicBrut({ componentType: 'series', seriesType: 'map', name: 'DE',
     event: { event: { event: { shiftKey: true } } } });
+  // v7.14 : survol RÉSIDUEL sur DE (mouse RE-fire après le setOption du
+  // clic, comme dans le vrai navigateur) puis REPEINTURE COMPLÈTE : un
+  // MEMBRE de la sélection multiple doit garder la teinte de sélection,
+  // quoi qu'il arrive — la sélection prime sur le survol.
+  (appels.events.mouseover || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name: 'DE' }));
+  P.majEtiquettes();
+  const survCollant = (appels.regions || []).filter(r => r && r.name === 'DE')[0];
+  test('v7.14 : survol résiduel sur un MEMBRE : teinte de sélection INTACTE ('
+    + (survCollant && survCollant.itemStyle ? survCollant.itemStyle.areaColor : '?') + ')',
+    survCollant && survCollant.itemStyle
+    && survCollant.itemStyle.areaColor === P.selectionnes[P.parId.DE.continent]);
   const selDE = (P.etat.selections || []);
   test('v7.10 : Maj+clic DE avec enveloppe NICHÉE → DE sélectionné, FR AJOUTÉ au groupe',
     P.etat.selection === 'DE' && selDE.indexOf('FR') !== -1);

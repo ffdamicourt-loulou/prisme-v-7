@@ -101,7 +101,18 @@
       // assombrie DIRECTEMENT dans la peinture (survolNom, mis à jour par
       // initSurvol puis repaint majEtiquettes) et l'emphasis interne est
       // désactivé : plus aucun re-rendu fragile au survol.
-      if (survolNom === p.id) base = survol;
+      // v7.14 : LA SÉLECTION PRIME SUR LE SURVOL — un pays MEMBRE de la
+      // sélection (vue monde : primaire ou additionnel) garde sa teinte
+      // de sélection, MÊME si un état de survol survit au clic : dans un
+      // vrai navigateur, le setOption qui suit un Maj+clic recrée la
+      // série et ECharts ne renvoie pas de mouseout pour la zone sous le
+      // pointeur — un survolNom résiduel repeignait le DERNIER pays
+      // sélectionné en teinte de survol « sélection » au lieu de la
+      // teinte commune de la sélection multiple. ICI c'est impossible par
+      // construction : quel que soit l'état interne du survol, un membre
+      // affiche exactement la teinte de sélection. (Le survol continue
+      // de s'appliquer pleinement aux zones NON sélectionnées.)
+      if (survolNom === p.id && !sel[p.id] && !sel['c-' + p.id]) base = survol;
       SURVOL_PAR_NOM[p.id] = survol; // v0.80e : survol chirurgical
       // v0.78 : ENCLAVE — MÊME TEINTE que n'importe quelle zone. La v0.74
       // l'assombrissait de 20 % de plus que son hôte : à l'écran elle

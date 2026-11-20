@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20o -->
+<!-- rebuild-pages 2026-11-20p -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,25 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.14 — la sélection PRIME sur le survol (bug récurrent du dernier pays) (2026-11-20p)
+
+Nouveau signalement : « le dernier pays sélectionné garde la couleur
+selected au lieu de prendre la couleur sélection multiple ». La v7.12
+éteignait l'état de survol au clic, mais un état de survol résiduel peut
+encore survivre dans un vrai navigateur (le setOption recrée la série,
+ECharts re-émet mouseover, et les chemins Alt/panneau ne passent pas par
+traiteClic). Correctif PAR CONSTRUCTION, indépendant de l'état interne du
+survol : dans la peinture (06-peinture-regions.js), un pays MEMBRE de la
+sélection (primaire ou additionnel, vue monde) garde TOUJOURS sa teinte de
+sélection ; la teinte de survol ne s'applique plus qu'aux pays NON
+sélectionnés. Quel que soit l'état résiduel du survol, aucun membre ne
+peut plus afficher une teinte différente de la sélection multiple.
+Ajout diagnostic : la version exécutée s'affiche dans le bandeau
+(l'index.html peut lui-même être servi depuis le cache HTTP du
+navigateur — « je teste bien v7.14 ? » se vérifie d'un coup d'œil).
+Harnais navigation : 61/61 (nouveau contrôle : survol résiduel sur un
+membre repeint, teinte de sélection intacte) ; apparence 11/11 ×2.
 
 ## v7.13 — cadrage multi-sélection, Alt+clic ciblé, polices pays +30 % (2026-11-20o)
 

@@ -34,6 +34,13 @@
   // mêlé aux nouveaux fragments (cause de bugs fantômes : menu doublé,
   // niveaux de descente incohérents entre deux versions du code).
   var BUILD = window.__PR2_VBUILD || 'dev';
+  // v7.14 : version AFFICHÉE dans le bandeau — la page index.html elle-même
+  // peut être servie depuis le cache HTTP du navigateur : montrer la version
+  // exécutée supprime toute ambiguïté (« je teste bien v7.14 ? »).
+  try {
+    var bl = document.getElementById('prisme2-bandeau');
+    if (bl) bl.innerHTML += ' <b>[' + BUILD + ']</b>';
+  } catch (eB) { }
   function cb(url) { return url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + encodeURIComponent(BUILD); }
   function fetchTxt(url) {
     return fetch(cb(url)).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' sur ' + url); return r.text(); });
