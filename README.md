@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20h -->
+<!-- rebuild-pages 2026-11-20i -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,31 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.9 — Maj+clic : l'ajout à la sélection réparé et généralisé (2026-11-20i)
+
+Le modificateur Maj n'était PLUS transmis au noyau depuis le passage en
+greffon (v7.6) : « ajouter un pays à la sélection » ne fonctionnait plus.
+
+- **Maj+clic pays en vue monde** : le pays rejoint la sélection (vue
+  combinée au niveau 1) ; le pays déjà sélectionné est conservé, les deux
+  peints en teinte sélection (-10 %) — réutilise le paramètre `conserver`
+  v0.34 de `reinitialiserVers`.
+- **Maj+clic pays extérieur (x-…) en vue pays** : les divisions du nouveau
+  pays REJOIGNENT la vue au MÊME niveau (vue combinée FR + DE : régions +
+  länder côte à côte) ; package du pays chargé à la demande si absent
+  (`chargerPackage` exporté, ajout retenté) ; repli sur la sélection
+  niveau 1 si le pays n'a pas de subdivisions à ce niveau.
+- **Maj+clic sœur (règle v0.52 restaurée)** : les enfants de la sœur
+  du niveau supérieur rejoignent la vue ; nouveau Maj+clic les retire.
+- **Maj+clic zone de la vue** : bascule dans la sélection de niveau —
+  peinte en teinte sélection (-10 %) comme la zone cliquée, et proposée
+  par la demande multi-zones « Charger les sous-zones ».
+- **Purge** : un pays retiré du groupe (panneau Alt+clic) est retiré de la
+  sélection persistée — le retour au monde ne le ressuscite pas.
+- Harnais navigation : 50 contrôles (7 nouveaux : Maj monde, peinture
+  double sélection, vue combinée FR+DE, retrait groupe avec aperçu,
+  persistance/purge au retour monde).
 
 ## v7.8 — module unique de sélection/désélection (2026-11-20h)
 

@@ -75,7 +75,12 @@
       var epSurv = epTrait;
       // v7.6 : SÉLECTION = couleur d'origine -10 % de luminosité (distincte
       // du survol -20 %) ; la règle vaut à TOUS les niveaux.
-      var base = enSelection ? (zoneSel ? selectionnes[p.continent] : COULEURS[p.continent]) : (sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent]);
+      // v7.9 : en vue admin, une zone Maj+sélectionnée (etat.selections)
+      // se peint en teinte de sélection (-10 %), comme la zone cliquée.
+      var base = enSelection
+        ? (zoneSel ? selectionnes[p.continent]
+           : ((sel[p.id] || sel['c-' + p.id]) ? selectionnes[p.continent] : COULEURS[p.continent]))
+        : (sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent]);
       // v7.7 : DÉZOOM FUSION — la tache (zones fondues = zone du NIVEAU
       // SUPÉRIEUR apparent) prend la couleur du PAYS SÉLECTIONNÉ à -10 % de
       // luminosité (TS L, assombrirFacteur × 0,90), comme toute sélection :

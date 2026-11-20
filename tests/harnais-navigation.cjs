@@ -329,5 +329,57 @@ SEL.choisir(opts.findIndex(o => o.indexOf('Retour au niveau 1') !== -1));SEL.ann
   SEL.ouvert() === false && P.vue().type === 'admin' && P.vue().niveau === nivOrig16
   && P.vue().paysId === 'FR');
 
+// 17. v7.9 — MAJ+CLIC : ajout d'un pays à la sélection
+// en vue monde : sélection FR, puis Maj+clic DE → DE sélectionné, FR conservé
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+SEL.clicVide(); // repartir d'un monde SANS sélection : le clic FR = sélection
+clic('FR'); // sélection niveau 1
+(appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map',
+  name: 'DE', event: { shiftKey: true } }));
+test('v7.9 : Maj+clic DE en vue monde → DE sélectionné, FR CONSERVÉ dans la sélection',
+  P.etat.selection === 'DE' && (P.etat.selections || []).indexOf('FR') !== -1
+  && P.vue().type === 'monde');
+test('v7.9 : les DEUX pays peints en teinte sélection (-10 %)',
+  (appels.regions || []).some(r => r && r.name === 'FR'
+    && r.itemStyle.areaColor === P.selectionnes[P.parId.FR.continent])
+  && (appels.regions || []).some(r => r && r.name === 'DE'
+    && r.itemStyle.areaColor === P.selectionnes[P.parId.DE.continent]));
+
+// en vue pays : FR n1 (régions) + Maj+clic x-DE → VUE COMBINÉE niveau 2 (régions)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+SEL.clicVide(); // monde sans sélection : clic FR = sélection, 2e clic = descente
+clic('FR'); clic('FR'); // sélection puis descente (package FR déjà enregistré)
+(appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map',
+  name: 'x-DE', event: { shiftKey: true } }));
+const vg = P.vue();
+const paysG = (vg.paysIds || []);
+test('v7.9 : Maj+clic x-DE depuis FR n1 → VUE COMBINÉE FR + DE (régions + länder)',
+  vg.type === 'admin' && vg.niveau === 1 && paysG.indexOf('FR') !== -1
+  && paysG.indexOf('DE') !== -1 && vg.features.length > 15
+  && (vg.parPays['Sachsen'] === 'DE' || vg.parPays['Auvergne-Rhône-Alpes'] === 'FR'));
+// retrait via le panneau Alt+clic : « Retirer Allemagne de la sélection groupée »
+SEL.altClic({ name: 'Sachsen', event: { offsetX: 300, offsetY: 300 } });
+const optRet = SEL.options();
+const iRet = optRet.findIndex(o => o.indexOf('Retirer Allemagne') !== -1);
+test('v7.9 : panneau Alt propose « Retirer Allemagne de la sélection groupée »',
+  iRet !== -1);
+if (iRet !== -1) {
+  SEL.choisir(iRet);
+  const vp = P.vue();
+  test('v7.9 : APERÇU du retrait → vue groupe FR seulement (DE retiré en direct)',
+    vp.type === 'admin' && (vp.paysIds || []).length === 1 && vp.paysIds[0] === 'FR');
+  SEL.valider();
+  const vf7 = P.vue();
+  test('v7.9 : VALIDATION → le groupe ne contient plus que la France',
+    vf7.type === 'admin' && (vf7.paysIds || []).length === 1 && vf7.paysIds[0] === 'FR');
+} else { test('v7.9 : retrait de groupe', false); }
+
+// retour au monde : la addition PERSISTE (les membres restent sélectionnés)
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+const selApres = (P.etat.selections || []);
+test('v7.9 : retour au monde — la France persiste (sélection primaire), le pays RETIRÉ est purgé',
+  P.vue().type === 'monde' && (P.etat.selection === 'FR' || selApres.indexOf('FR') !== -1)
+  && selApres.indexOf('DE') === -1 && P.etat.selection !== 'DE'); // la désélection purge
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

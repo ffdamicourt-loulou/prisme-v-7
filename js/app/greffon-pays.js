@@ -153,10 +153,20 @@
         return;
       }
       if (V.type === 'monde') {
-        // v7.6 : 1er clic = SÉLECTION (niveau 1 : le pays seul, centré à
-        // 80 %) ; clic sur le pays DÉJÀ SÉLECTIONNÉ = descente (régions).
-        if (e.name && A.parId[e.name])
+        // v7.9 : Maj+clic AJOUTE le pays à la sélection (vue combinée au
+        // niveau 1 : le pays déjà sélectionné REJOINT la sélection —
+        // conserver v0.34 du noyau, perdu depuis le passage en greffon).
+        var maj = !!(e.event && e.event.shiftKey);
+        if (e.name && A.parId[e.name]) {
+          var idM = e.name;
+          var fM = (conf().manifest && conf().manifest.pays) ? conf().manifest.pays[idM] : null;
+          if (fM && fM.alias && A.parId[fM.alias]) idM = fM.alias;
+          if (maj && A.reinitialiserVers && (!A.etat || A.etat.selection !== idM)) {
+            A.reinitialiserVers(idM, 1, null, true);
+            return;
+          }
           ouvrir(e.name, !!(A.etat && A.etat.selection === e.name));
+        }
         return;
       }
       if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
@@ -167,7 +177,38 @@
         var idX = e.name.slice(2);
         var fx = (conf() && conf().manifest && conf().manifest.pays) ? conf().manifest.pays[idX] : null;
         if (fx && fx.alias && A.parId[fx.alias]) idX = fx.alias;
+        // v7.9 : Maj+clic sur un pays extérieur = AJOUT À LA VUE COURANTE
+        // au MÊME niveau (règle utilisateur : les divisions du nouveau
+        // pays rejoignent celles du/des pays sélectionnés).
+        if (e.event && e.event.shiftKey && A.ajouterAuGroupe) {
+          if (ajouterPaysAuGroupe(idX)) return;
+          // pas de subdivisions à ce niveau (ou package absent) : repli
+          // sur la SÉLECTION du pays seul au niveau 1 (règle v7.5).
+          if (A.parId[idX] && A.ouvrir) A.ouvrir(idX, 1, null);
+          return;
+        }
         if (A.parId[idX] && A.ouvrir) A.ouvrir(idX, 1, null);
+        return;
+      }
+      // v7.9 : Maj+clic sur une SŒUR du niveau supérieur (règle v0.52) —
+      // ses enfants REJOIGNENT la vue au niveau courant, bascule pour retirer.
+      if (e.event && e.event.shiftKey && A.ajouterSousVue && V.soeurs) {
+        var fzS = null;
+        (V.soeurs || []).forEach(function (f) {
+          if (!fzS && (f.id === e.name || f.nom === e.name || ('c-' + f.id) === e.name)) fzS = f;
+        });
+        if (fzS) { if (A.ajouterSousVue(fzS)) return; }
+      }
+      // v7.9 : Maj+clic sur une ZONE DE LA VUE : bascule la zone dans la
+      // sélection de niveau (etat.selections) — peinte en séletion et
+      // proposée par la demande multi-zones « Charger ».
+      if (e.event && e.event.shiftKey && A.etat && V.parNom && V.parNom[e.name]) {
+        var selZ = (A.etat.selections || []).slice();
+        var posZ = selZ.indexOf(e.name);
+        if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(e.name);
+        A.etat.selections = selZ;
+        if (window.__PR2_SEL && window.__PR2_SEL.validerTout === undefined) { }
+        if (A.majEtiquettes) A.majEtiquettes();
         return;
       }
       // v7.8 : descente utilisateur n2→n3 — validation par info-bulle.
@@ -206,6 +247,24 @@
     return true;
   }
 
+  // v7.9 : AJOUT D'UN PAYS EXTÉRIEUR À LA VUE COURANTE (Maj+clic x-…).
+  // Essai direct du groupe (membre au niveau de la vue) ; si l'admin du
+  // pays est absent, son PACKAGE est chargé à la demande (mécanisme
+  // v0.80) puis l'ajout est RETENTÉ. Retour false = impossible (pas de
+  // subdivisions au niveau courant, ou package non déclaré).
+  function ajouterPaysAuGroupe(idX) {
+    var A = window.__PR2;
+    try { if (A.ajouterAuGroupe(idX)) return true; } catch (err) { }
+    if (A.featuresNiv1 && !A.featuresNiv1(idX) && A.chargerPackage) {
+      try {
+        return A.chargerPackage(idX, function () {
+          try { A.ajouterAuGroupe(idX); } catch (err) { }
+        });
+      } catch (err) { return false; }
+    }
+    return false;
+  }
+
   // v7.8 : descente APRÈS validation n2→n3 (info-bulle du greffon sélection)
   // — même flux que le clic : descendre, sinon demanderSous (package).
   function descendreAvecDemande(nom) {
@@ -229,7 +288,7 @@
   }
 
   window.__PR2_PAYS = { init: init, ouvrir: ouvrir, retourMonde: retourMonde, liste: liste,
-    descendreAvecDemande: descendreAvecDemande };
+    descendreAvecDemande: descendreAvecDemande, ajouterPaysAuGroupe: ajouterPaysAuGroupe };
   if (!init() && window.__PR2 && window.__PR2.apresDemarrage) {
     window.__PR2.apresDemarrage(init);
   }
