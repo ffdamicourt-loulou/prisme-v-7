@@ -108,15 +108,33 @@
       var propre = enSelection && p.id.slice(0, 2) !== 'c-'
         && p.id.slice(0, 2) !== 'x-' && p.id.slice(0, 6) !== 'socle@'
         && p.id.slice(0, 5) !== 'socle';
+      // v7.17 : SÉLECTION MULTIPLE DE N2 — au niveau des RÉGIONS (vue
+      // niveau 1), une zone présente dans etat.selections (clic simple,
+      // nouveau mécanisme) se peint PLUS SOMBRE (-20 %) que le fond
+      // d'origine du pays sélectionné (-10 %) : la sélection de
+      // plusieurs régions est VISIBLE d'un coup d'œil.
+      var selN2 = vue.niveau === 1 && sel[p.id] && p.id.slice(0, 2) !== 'c-'
+        && p.id.slice(0, 2) !== 'x-' && p.id.slice(0, 6) !== 'socle@'
+        && p.id.slice(0, 5) !== 'socle';
       var base = enSelection
         ? (zoneSel ? selectionnes[p.continent]
+           : selN2 ? assombris[p.continent]
            : (propre || sel[p.id] || sel['c-' + p.id]) ? selectionnes[p.continent] : COULEURS[p.continent])
         : (sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent]);
       // v7.7 : DÉZOOM FUSION — la tache (zones fondues = zone du NIVEAU
       // SUPÉRIEUR apparent) prend la couleur du PAYS SÉLECTIONNÉ à -10 % de
       // luminosité (TS L, assombrirFacteur × 0,90), comme toute sélection :
       // le socle visible est la zone sélectionnée du niveau au-dessus.
-      if (dezoomN3 && !zoneSel) base = selectionnes[p.continent];
+      // v7.7 : DÉZOOM FUSION — la tache (zones fondues = zone du NIVEAU
+      // SUPÉRIEUR apparent) prend la couleur du PAYS SÉLECTIONNÉ à -10 % de
+      // luminosité (TS L, assombrirFacteur × 0,90), comme toute sélection :
+      // le socle visible est la zone sélectionnée du niveau au-dessus.
+      // v7.17 : la fusion s'applique AUSSI aux zones sélectionnées
+      // (zoneSel) : vue de loin, une sélection de niveau 3 (départements)
+      // s'affiche comme un N2 sélectionné — UNE teinte uniforme, AUCUN
+      // trait blanc interne (les traits blancs, vus de loin, formaient
+      // une sorte de tache blanche).
+      if (dezoomN3) base = selectionnes[p.continent];
       var survol = assombris[p.continent];
       // v0.80 : SURVOL PEINT PAR LE NOYAU — l'emphasis interne d'ECharts
       // re-rend les polygones géants du niveau 3 et, au sortir puis au
@@ -169,8 +187,8 @@
       return {
         name: p.id,
         itemStyle: { areaColor: base, color: base,
-          borderColor: (dezoomN3 && !zoneSel) ? base : THEME.contour,
-          borderWidth: (dezoomN3 && !zoneSel) ? 0 : epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
+          borderColor: dezoomN3 ? base : THEME.contour,
+          borderWidth: dezoomN3 ? 0 : epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
         emphasis: { disabled: true,
           itemStyle: { areaColor: survol, color: survol, borderColor: THEME.contour, borderWidth: epSurv },
           label: { show: false },

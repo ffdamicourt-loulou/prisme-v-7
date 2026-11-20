@@ -392,6 +392,33 @@
   // zr du greffon-sélection dans le vrai navigateur — le drapeau est
   // donc déjà posé quand zrClic s'exécute.
   var clicNommeFlag = false;
+  // v7.17 : point du 2e clic pays en attente d'arrivée du package (la
+  // descente async re-tentera la sélection de la région sous le curseur).
+  var pendPoint = null;
+  // v7.17 : AJOUT d'une zone (région) à la sélection multiple de niveaux 2
+  // — mécanisme : 1er clic pays, 2e clic pays = régions + région du clic
+  // sélectionnée, clics suivants sur d'autres régions = ajout (multi-N2).
+  function selectionnerZone(S, idZone) {
+    if (!idZone || !S.etat) return false;
+    var selZ = (S.etat.selections || []).slice();
+    if (selZ.indexOf(idZone) !== -1) return false;
+    selZ.push(idZone);
+    S.etat.selections = selZ;
+    if (S.effacerSurvol) S.effacerSurvol();
+    if (S.majEtiquettes) S.majEtiquettes();
+    return true;
+  }
+  // v7.17 : appelé par le noyau en FIN de descente réussie — si un point
+  // était en attente (package chargé après le 2e clic), la région sous le
+  // curseur rejoint la sélection maintenant que la vue régions existe.
+  function retenterPoint() {
+    if (!pendPoint) return;
+    var px = pendPoint.px; pendPoint = null;
+    var S = A();
+    if (!S || !S.zoneAuPoint) return;
+    var fz = S.zoneAuPoint(px);
+    if (fz) selectionnerZone(S, fz.id);
+  }
   function ajouterPays(idX) {
     var S = A();
     try { if (S.ajouterAuGroupe(idX)) return true; } catch (err) { }
@@ -414,7 +441,12 @@
     var estSerie = !!(e && e.componentType === 'series' && e.seriesType === 'map');
     var nom = (e && e.name) || null;
     var maj = touche(e, 'shiftKey'), alt = touche(e, 'altKey');
-    if (nom) clicNommeFlag = true;
+    // Drapeau « clic nommé » :
+    // v7.17 : le SOCLE (mer autour des pays, fond de la vue) n'est PAS une
+    // « zone nommée » : il posait le drapeau et le clic zrender suivant
+    // (même clic physique dans le vide) était consommé silencieusement —
+    // la DESÉLECTION par clic dans une zone vide ne fonctionnait plus.
+    if (nom && nom !== 'socle' && nom.slice(0, 6) !== 'socle@') clicNommeFlag = true;
     // v7.12 : un clic INTERPRÉTÉ éteint le survol — sinon, la série étant
     // recréée par le setOption du changement de sélection, ECharts ne
     // renvoie pas mouseout et le pays cliqué restait en teinte de SURVOL
@@ -435,7 +467,25 @@
       if (maj && S.reinitialiserVers && (!S.etat || S.etat.selection !== idP)) {
         S.reinitialiserVers(idP, 1, null, true);      // AJOUT pays supplémentaire
       } else if (S.etat && S.etat.selection === idP) {
-        S.descendre(idP);                              // 2e clic : descente
+        // v7.17 : 2e clic — descente aux régions + SÉLECTION de la région
+        // SOUS LE CURSEUR (nouveau mécanisme : 1er clic = pays, 2e clic =
+        // régions avec sélection immédiate de la région cliquée).
+        var descendu = S.descendre(idP);
+        var pxC = null, evC = e && e.event, nC = 0;
+        while (evC && nC++ < 6) {
+          if (evC.offsetX !== undefined && evC.offsetY !== undefined) {
+            pxC = [evC.offsetX, evC.offsetY]; break;
+          }
+          evC = evC.event || evC.rawEvent || evC.originalEvent || null;
+        }
+        var fzP = (pxC && S.zoneAuPoint) ? S.zoneAuPoint(pxC) : null;
+        if (fzP) {
+          selectionnerZone(S, fzP.id);
+        } else if (pxC && !descendu) {
+          // package en cours de chargement : la vue régions n'existe pas
+          // encore — retenir le point, la descente re-tentera la sélection.
+          pendPoint = { px: pxC };
+        }
       } else {
         S.reinitialiserVers(idP, 1, null, false);      // 1er clic : sélection
       }
@@ -468,6 +518,19 @@
       if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(nom);
       S.etat.selections = selZ;
       if (S.majEtiquettes) S.majEtiquettes();
+      return true;
+    }
+    // ── v7.17 : VUE RÉGIONS (admin niveau 1) — clic simple = SÉLECTION de
+    // la région (nouveau mécanisme) : plusieurs N2 peuvent être
+    // sélectionnées d'affilée. Un SECOND clic sur une région DÉJÀ
+    // sélectionnée déclenche la descente vers ses subdivisions
+    // (info-bulle de confirmation conservée). Maj+clic bascule toujours
+    // la sélection manuellement. Aux niveaux plus profonds (départements,
+    // arrondissements), le clic simple descend comme avant.
+    if (V.type === 'admin' && V.niveau === 1 && !maj
+        && V.parNom && V.parNom[nom]
+        && (S.etat.selections || []).indexOf(nom) === -1) {
+      selectionnerZone(S, nom);
       return true;
     }
     // ── DESCENTE : validation n2→n3 d'abord, puis descente/demande
@@ -511,6 +574,7 @@
     ouvrirPanneau: ouvrirPanneau, choisir: choisir, valider: valider,
     infoBulleOuverte: function () { return !!boiteValidation; },
     traiteClic: traiteClic, touche: touche, zrClic: zrClic, brancherZr: brancherZr,
+    selectionnerZone: selectionnerZone, retenterPoint: retenterPoint, // v7.17
     annuler: annuler, ouvert: ouvert,
     options: function () { return options.map(function (o) { return o.label; }); },
     journalTaille: function () { return origine && origine.journal ? origine.journal.length : -1; }

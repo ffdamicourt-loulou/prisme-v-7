@@ -371,6 +371,55 @@
     return c;
   }
 
+  // v7.17 : ZONE SOUS LE POINTEUR — le 2e clic sur un pays sélectionné
+  // descend aux régions ET sélectionne la région sous le curseur : il faut
+  // retrouver la subdivision qui contient le point [offsetX, offsetY] du clic.
+  // Projection pixel → [lon, lat] via convertFromPixel('geo'), puis test
+  // d'appartenance (ray casting) sur les features de la vue courante.
+  function pointDansAnneau(pt, ring) {
+    var dans = false;
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (((yi > pt[1]) !== (yj > pt[1]))
+        && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) dans = !dans;
+    }
+    return dans;
+  }
+  function featureContient(f, ll) {
+    var g = f && f.geometry;
+    if (!g || !ll) return false;
+    var polys = g.type === 'Polygon' ? [g.coordinates]
+      : (g.type === 'MultiPolygon' ? g.coordinates : null);
+    if (!polys) return false;
+    if (!f.__bboxZone) f.__bboxZone = boite(g); // cache bbox (éjection rapide)
+    var b = f.__bboxZone;
+    if (ll[0] < b[0] || ll[1] < b[1] || ll[0] > b[2] || ll[1] > b[3]) return false;
+    for (var p = 0; p < polys.length; p++) {
+      if (pointDansAnneau(ll, polys[p][0])) {
+        for (var r = 1; r < polys[p].length; r++) {
+          if (pointDansAnneau(ll, polys[p][r])) return false; // dans un trou
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+  // Retourne la feature de la vue courante sous le pixel [x, y] (ou null).
+  // En cas de frontières partagées, la première zone qui contient gagne
+  // (ordre des features de la vue).
+  function zoneAuPoint(px) {
+    try {
+      var ll = carte && typeof carte.convertFromPixel === 'function'
+        ? carte.convertFromPixel('geo', [px[0], px[1]]) : null;
+      if (!ll || !isFinite(ll[0]) || !isFinite(ll[1])) return null;
+      var feats = vue.features || [];
+      for (var i = 0; i < feats.length; i++) {
+        if (feats[i] && featureContient(feats[i], ll)) return feats[i];
+      }
+    } catch (err) { }
+    return null;
+  }
+
   // v0.74 : ENCLAVES & CEINTURE DE COMPLÉTUDE.
   // ENCLAVES_MONDE : pays entièrement contenus dans un autre (Lesotho,
   // Saint-Marin, Vatican…), calculés une fois à la préparation du monde.

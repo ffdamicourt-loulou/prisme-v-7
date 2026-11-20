@@ -74,6 +74,12 @@ const SELAjax = () => ctx.window.__PR2_SEL;
 const clicZone = (name) => {
   clic(name);
   const SEL = ctx.window.__PR2_SEL;
+  // v7.17 : au niveau des RÉGIONS (vue admin niveau 1), le 1er clic
+  // SÉLECTIONNE la zone (nouveau mécanisme) — un second clic sur la région
+  // sélectionnée déclenche la descente (info-bulle comprise).
+  const vv = P.vue();
+  if (vv && vv.type === 'admin' && vv.niveau === 1 && vv.parNom && vv.parNom[name]
+    && (P.etat.selections || []).indexOf(name) !== -1) clic(name);
   if (SEL && SEL.descenteAttente && SEL.descenteAttente()) SEL.confirmerDescente();
 };
 const charge = (id) => {
@@ -295,14 +301,28 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 clic('FR'); clic('FR'); charge('FR');
 const SEL = ctx.window.__PR2_SEL;
-clic('Auvergne-Rhône-Alpes'); // SANS confirmer : la descente doit être BLOQUÉE
-test('v7.8 : clic région (n2→n3 utilisateur) BLOQUÉ tant que l\'info-bulle attend la validation',
+clic('Auvergne-Rhône-Alpes'); // v7.17 : 1er clic = SÉLECTION, PAS de descente
+test('v7.17 : 1er clic sur une région → SÉLECTION (etat.selections), vue INCHANGÉE',
+  P.vue().niveau === 1 && (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
+  && SEL.descenteAttente() === false);
+test('v7.17 : région sélectionnée peinte PLUS SOMBRE que le fond du pays (-20 % vs -10 %)',
+  (() => { const r = (appels.regions || []).filter(x => x && x.name === 'Auvergne-Rhône-Alpes')[0];
+    return !!r && !!r.itemStyle && r.itemStyle.areaColor === P.assombris[P.parId.FR.continent]; })());
+clic('Occitanie'); // v7.17 : une 2e région rejoint la sélection (multi-N2)
+test('v7.17 : clic sur une AUTRE région → MULTI-N2 (les deux sélectionnées, vue inchangée)',
+  P.vue().niveau === 1
+  && (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
+  && (P.etat.selections || []).indexOf('Occitanie') !== -1);
+clic('Auvergne-Rhône-Alpes'); // déjà sélectionnée → info-bulle de descente
+test('v7.17/v7.8 : clic sur région DÉJÀ sélectionnée → info-bulle descente (demeure bloquée)',
   P.vue().niveau === 1 && SEL.descenteAttente() === true);
-test('v7.8 : info-bulle de validation affichée (prisme2-validation)',
-  SEL.descenteAttente() === true && SEL.infoBulleOuverte() === true);
+const svSeln2 = (P.etat.selections || []).slice();
 SEL.confirmerDescente();
-test('v7.8 : confirmation → descente effective au niveau suivant, info-bulle fermée',
+test('v7.17/v7.8 : confirmation → descente, info-bulle fermée',
   P.vue().type === 'admin' && P.vue().niveau === 2 && SEL.descenteAttente() === false);
+test('v7.17 : les AUTRES N2 RESTENT sélectionnées après la descente (multi-N2 persistant)',
+  (P.etat.selections || []).indexOf('Occitanie') !== -1
+  && P.vue().parent === 'Auvergne-Rhône-Alpes');
 
 // 15. v7.8 — clic MER / ZONE VIDE : tout désélectionner, cadrage conservé
 const zAvantVide = P.etat.zoom, vueAvantVide = P.vue();
@@ -444,15 +464,17 @@ if (SEL10 && SEL10.touche && SEL10.traiteClic) {
   const selDE = (P.etat.selections || []);
   test('v7.10 : Maj+clic DE avec enveloppe NICHÉE → DE sélectionné, FR AJOUTÉ au groupe',
     P.etat.selection === 'DE' && selDE.indexOf('FR') !== -1);
-  // (b) un clic NOMMÉ pose le drapeau : le zr correspondant ne déselectionne RIEN
+  // (b) v7.17 : un clic sur le SOCLE (zone vide) n'est PAS une « zone
+  // nommée » — il posait le drapeau et le clic zrender qui suit (le même
+  // clic physique dans le vide) était consommé silencieusement : la
+  // DÉSÉLECTION par clic dans une zone vide ne fonctionnait plus.
+  SEL10.zrClic(); // consomme un éventuel drapeau résiduel des clics nommés précédents
   clicBrut({ componentType: 'series', seriesType: 'map', name: 'socle' });
   SEL10.zrClic();
-  test('v7.10 : clic sur zone nommée puis zrClic → RIEN n\'est déselectionné',
-    (P.etat.selection !== null && P.etat.selection !== undefined)
-    || (P.etat.selections || []).length > 0);
-  // (c) clic « vide » (zr SANS zone) → tout déselectionné, vue conservée
-  SEL10.zrClic();
-  test('v7.10 : clic VIDE (zrender, sans zone) → tout déselectionné',
+  test('v7.17 : clic ZONE VIDE (socle) + zr → TOUT déselectionné (le socle ne pose plus le drapeau)',
+    !P.etat.selection && (P.etat.selections || []).length === 0);
+  SEL10.zrClic(); // v7.17 : direct, sans clic nommé au préalable
+  test('v7.10 : clic VIDE (zrender, sans zone) → tout reste déselectionné',
     !P.etat.selection && (P.etat.selections || []).length === 0);
 } else { test('v7.10 : gestionnaire unique exporté (traiteClic/touche/zrClic)', false); }
 
@@ -502,6 +524,22 @@ const trous716c = (v716c.features || []).filter(f => f && f.id
        && par716c[f.id].itemStyle.areaColor !== '#eaf2f8'));
 test('v7.16 : vue combinée — ceinture : TOUS les départements (y c. ajoutés) peints (0 trou blanc)',
   (v716c.features || []).length > nbAv716 && trous716c.length === 0);
+
+// 20. v7.17 — 2e clic pays AVEC POSITION du curseur : la région sous le clic
+// est sélectionnée d'office (mécanisme : 1er clic = pays, 2e clic = régions).
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+SEL.clicVide();
+clic('FR');
+test('v7.17 : préambule — 1er clic FR → sélection (vue monde)', P.etat.selection === 'FR');
+clicBrut({ componentType: 'series', seriesType: 'map', name: 'FR',
+  event: { offsetX: 2 * 1.44, offsetY: -2 * 43.6 } }); // curseur sur Toulouse
+charge('FR');
+test('v7.17 : 2e clic FR (curseur sur Toulouse) → vue régions + OCCITANIE sélectionnée',
+  P.vue().type === 'admin' && P.vue().niveau === 1
+  && (P.etat.selections || []).indexOf('Occitanie') !== -1);
+test('v7.17 : zoneAuPoint([pixel de Toulouse]) → Occitanie (test direct du hit-test)',
+  (() => { const fz = P.zoneAuPoint([2 * 1.44, -2 * 43.6]);
+    return !!fz && fz.id === 'Occitanie'; })());
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

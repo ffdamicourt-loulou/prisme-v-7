@@ -85,6 +85,9 @@
     etat.selections = [];
     appliquerVue();
     etat.zoomEntree = etat.zoom;
+    // v7.17 : si un 2e clic pays attendait le package, la vue régions
+    // existe enfin — sélectionner la région sous le curseur retenu.
+    try { var SELh = window.__PR2_SEL; if (SELh && SELh.retenterPoint) SELh.retenterPoint(); } catch (err) { }
     return true;
   }
   // Entrer dans la subdivision nomSub (niveau 2, ex. régions françaises)
@@ -158,7 +161,10 @@
     };
     enfants.forEach(function (f) { vue.parNom[f.id] = f; });
     etat.selection = null;
-    etat.selections = [];
+    // v7.17 : les sélections de N2 (etat.selections) SURVIVENT à la
+    // descente — le mécanisme multi-régions : descendre dans les
+    // départements d'une région ne doit pas dé-sélectionner les autres
+    // régions choisies (elles deviennent sœurs « c- » peintes en sélection).
     appliquerVue();
     etat.zoomEntree = etat.zoom;
     return true;
@@ -266,6 +272,11 @@
       if (liste.indexOf(id) === -1 && liste.indexOf(n) === -1) liste.push(id);
     });
     return liste.filter(function (n) {
+      // v7.17 : la proposition ne couvre que les zones de la VUE COURANTE —
+      // les N2 sélectionnées qui survivent à la descente (multi-régions)
+      // ne viennent plus polluer la demande d'une zone de fin de chaîne.
+      var idV = n && n.slice(0, 2) === 'c-' ? n.slice(2) : n;
+      if (!vue.parNom || !vue.parNom[idV]) return false;
       var e = enfantsDe(n); return e && e.length;
     });
   }

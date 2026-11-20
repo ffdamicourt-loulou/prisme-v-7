@@ -224,6 +224,7 @@
     version: VERSION, assombrir: assombrir, boite: boite, sectionsZone: sectionsZone, faitTient: faitTient,
     tailles: tailles, tientDansZone: tientDansZone, MARGE_ETIQ: MARGE_ETIQ, // v0.86 : intérieur des étiquettes
     cpDe: cpDe, // v0.87 : ancre de zone (centre géométrique) — test d uniformité n1/n2/n3
+    zoneAuPoint: zoneAuPoint, // v7.17 : feature de la vue sous un pixel [x, y]
     etiquettesDetail: function () { return ETQ_DETAIL; },
     etqPx: function () { return ETQ_PX; },
     zoomAffiche: function () { return compteurZoom ? compteurZoom.textContent : null; }, // v0.99 : compteur de zoom

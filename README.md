@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20r -->
+<!-- rebuild-pages 2026-11-20s -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,31 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.17 — désélection zone vide, dézoom « comme un n2 », nouveau mécanisme de sélection (2026-11-20s)
+
+Quatre changements :
+1. **Désélection dans une zone vide réparée** : le socle (fond/mer de la vue)
+   posait le drapeau « clic nommé », le clic zrender du même clic physique
+   était consommé silencieusement — rien ne se désélectionnait. Le socle
+   n'est plus une zone nommée : clic dans le vide = tout désélectionner.
+2. **Dézoom d'une sélection niveau 3 = affichage « n2 sélectionné »** : la
+   fusion de dézoom s'applique aussi aux zones sélectionnées — UNE teinte
+   uniforme, AUCUN trait blanc interne (les traits blancs, vus de loin,
+   formaient une sorte de tache blanche).
+3. **Nouveau mécanisme de sélection** : 1er clic = pays ; 2e clic (curseur
+   sur le pays) = affichage des régions ET sélection immédiate de la région
+   sous le clic (hit-test pixel → lon/lat → zone, `zoneAuPoint`). À partir
+   de là, dans la vue régions, un clic simple sur une autre région
+   l'AJOUTE à la sélection (multi-N2) ; un second clic sur une région déjà
+   sélectionnée déclenche la descente vers ses départements (info-bulle
+   conservée). Les N2 sélectionnées se peignent plus sombres (-20 %) que
+   le fond du pays sélectionné (-10 %).
+4. **Multi-N2 persistant** : descendre dans les départements d'une région
+   ne dé-sélectionne plus les autres (elles restent peintes en sélection en
+   tant que sœurs « c- ») ; la proposition multi-zones ne propose plus que
+   les zones de la vue courante. Harnais navigation : 71/71 ; apparence
+   11/11 ×2.
 
 ## v7.16 — doublon d'étiquettes, noms du niveau supérieur, ceinture de peinture à chaque setOption (2026-11-20r)
 
