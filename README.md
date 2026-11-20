@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20u -->
+<!-- rebuild-pages 2026-11-21v -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,18 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.20 — communautés uniprovinciales : sélection de Madrid (2026-11-21v)
+
+L'Espagne compte des communautés UNIPROVINCIALES (Madrid, Murcia,
+Asturias, Cantabria, Navarra, La Rioja, Baleares, Ceuta, Melilla) : la
+zone n'a PAS de tableau de subdivisions — la province EST la
+communauté. Le clic sur « c-Madrid » depuis une vue provinces échouait
+dans ajouterSousVue (aucun enfant) et affichait « aucune subdivision
+plus fine disponible » : impossible de sélectionner Madrid au niveau 3.
+Repli uniprovincial : la zone rejoint la vue comme sa PROPRE fille
+(marquage __uniprov pour la bascule de retrait) ; un nouveau clic la
+retire. Harnais navigation : 75/75 ; apparence 11/11 ×2.
 
 ## v7.19 — clic simple sur une région sœur : ses subdivisions rejoignent la vue (2026-11-20u)
 

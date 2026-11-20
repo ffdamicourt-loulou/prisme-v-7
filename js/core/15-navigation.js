@@ -191,10 +191,25 @@
     // affiché (étiquettes, tooltip) est inchangé.
     var preR = String(fz.id).replace(/[^A-Za-z0-9]/g, '');
     var enf = a3 && ADMIN.niv2[a3] && ADMIN.niv2[a3][fz.nom];
+    if ((!enf || !enf.length)
+      && (fz.__niv === undefined || fz.__niv === vue.niveau - 1)) {
+      // v7.20 : COMMUNAUTÉ UNIPROVINCIALE (Espagne : Madrid, Murcia,
+      // Asturias, Cantabria, Navarra, La Rioja, Baleares, Ceuta,
+      // Melilla…) — la sœur n'a PAS de subdivisions dans les données :
+      // la zone du niveau courant EST la zone elle-même (province =
+      // communauté). Elle rejoint la vue comme sa PROPRE fille
+      // (marquée __uniprov : la bascule de retrait la retrouve même si
+      // l'objet est reconstruit à chaque appel) ; avant, le clic sur
+      // « c-Madrid » depuis une vue provinces échouait et affichait
+      // « aucune subdivision plus fine disponible ».
+      enf = [{ id: fz.id, nom: fz.nom, geometry: fz.geometry, __cp: fz.__cp, __uniprov: fz.id }];
+    }
     if (!enf || !enf.length) return false;
     var enfR = enf.map(function (e) {
       var occupant = vue.parNom[e.id];
-      if (!occupant || enf.indexOf(occupant) !== -1) return e;
+      // v7.20 : l'occupant peut être la zone uniprovinciale elle-même
+      // (identique, pas de collision à renommer) ;
+      if (!occupant || occupant.__uniprov === e.__uniprov) return e;
       return { id: preR + '/' + e.id, nom: e.nom, geometry: e.geometry };
     });
     var idsEnf = {};

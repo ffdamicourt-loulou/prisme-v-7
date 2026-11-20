@@ -559,5 +559,22 @@ test('v7.19 : nouveau clic sur la sœur ajoutée → RETRAIT (bascule)',
   (P.vue().features || []).length === nAv719
   && !((P.vue().soeurs || []).some(f => f && f.id === 'Occitanie' && f.__masquee)));
 
+// 22. v7.20 — Espagne UNIPROVINCIALE : sélection de Madrid depuis une vue provinces
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+SEL.clicVide();
+clic('ES'); clic('ES'); charge('ES'); // 2e clic ES → vue communautés
+clicZone('Andalucía'); // sélection + descente → vue provinces d'Andalucía
+const nAvES = (P.vue().features || []).length;
+clic('c-Madrid'); // sœur UNIPROVINCIALE (pas de subdivisions dans les données)
+const v720 = P.vue();
+test('v7.20 : clic sur « c-Madrid » (uniprovinciale) depuis la vue provinces → Madrid REJOINT la vue au niveau courant',
+  v720.niveau === 2 && (v720.features || []).some(f => f && f.id === 'Madrid')
+  && (v720.features || []).length === nAvES + 1
+  && (v720.soeurs || []).some(f => f && f.id === 'Madrid' && f.__masquee));
+clic('c-Madrid'); // bascule de retrait
+test('v7.20 : nouveau clic → RETRAIT de Madrid (bascule)',
+  !((P.vue().features || []).some(f => f && f.id === 'Madrid'))
+  && (P.vue().features || []).length === nAvES);
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);
