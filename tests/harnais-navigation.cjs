@@ -496,9 +496,10 @@ clicZone('Auvergne-Rhône-Alpes'); // vue départements (niveau 2)
 const v716 = P.vue();
 P.majEtiquettes();
 const etq716 = appels.etiquettes || [];
-test('v7.16 : vue départements — AUCUNE étiquette « c- » (noms de régions effacés)',
+test('v7.18 : vue départements — les autres régions (sœurs « c- ») CONSERVENT leurs noms',
   v716.type === 'admin' && v716.niveau === 2
-  && !etq716.some(t => t && t.etqId && String(t.etqId).indexOf('c-') === 0));
+  && (v716.soeurs || []).some(f => f && f.id === 'Occitanie' && !f.__masquee)
+  && etq716.some(t => t && t.etqId === 'c-Occitanie'));
 const regs716 = appels.regions || [];
 const par716 = {}; regs716.forEach(r => { if (r && r.name) par716[r.name] = r; });
 const trous716 = (v716.features || []).filter(f => f && f.id

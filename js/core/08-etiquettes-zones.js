@@ -127,14 +127,14 @@
         if (f && f.geometry) items.push([f.id, f.nom, f.geometry, f.__ct || vue.continent, false]);
       });
       (vue.soeurs || []).forEach(function (f) {
-        // v7.16 : (1) une sœur __masquee (ses propres zones sont affichées
-        // dans la vue combinée) ne porte PLUS d'étiquette : son nom était
-        // ancré au centre de son territoire, PAR-DESSUS les départements
+        // v7.16/v7.18 : une sœur __masquee (ses propres zones sont affichées
+        // dans la vue combinée — c'est LE « nom de niveau 2 de la zone
+        // cliquée ») ne porte PLUS d'étiquette : son nom était ancré au
+        // centre de son territoire, PAR-DESSUS les départements
         // (« Côte-d'Or » et « Bourgogne-Franche-Comté » sur le même
-        // territoire). (2) au niveau 3+ (vue départements, niveau ≥ 2),
-        // les noms du niveau supérieur (régions) ne s'affichent plus :
-        // seules les étiquettes du niveau courant restent.
-        if (!f || !f.geometry || f.__masquee || (vue.niveau || 1) >= 2) return;
+        // territoire). v7.18 : les AUTRES régions (niveau 2) CONSERVENT
+        // leurs noms à tous les niveaux.
+        if (!f || !f.geometry || f.__masquee) return;
         items.push(['c-' + f.id, f.nom, f.geometry, f.__ct || vue.continent, false]);
       });
       // v0.83 : extérieurs — même règle nom-si-tient / code, même cp

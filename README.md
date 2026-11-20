@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20s -->
+<!-- rebuild-pages 2026-11-20t -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,20 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.18 — sélecteur de pays supprimé, étiquettes des régions voisines rétablies (2026-11-20t)
+
+1. **Le sélecteur de pays du panneau en haut à gauche est SUPPRIMÉ**
+   (liste déroulante « Pays (packages à la demande) » et boutons
+   Ouvrir / Monde) : la sélection vit entièrement sur la carte. Le
+   panneau garde l'export PNG/HTML, la compréhension et l'info-bulle.
+2. **Rétablissement des noms des régions voisines** : la directive v7.16
+   (« au niveau 3, efface les noms de niveaux 2 ») visait UNIQUEMENT la
+   région de la zone descendue/cliquée (une sœur __masquee — son nom
+   apparaissait par-dessus ses propres départements). Les AUTRES régions
+   du pays conservent leurs étiquettes à tous les niveaux. La fusion du
+   nom du parent (tache au dézoom) est inchangée. Harnais : 71/71 ;
+   apparence 11/11 ×2.
 
 ## v7.17 — désélection zone vide, dézoom « comme un n2 », nouveau mécanisme de sélection (2026-11-20s)
 

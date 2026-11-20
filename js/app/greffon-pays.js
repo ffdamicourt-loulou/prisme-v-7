@@ -73,9 +73,12 @@
     panneau.style.cssText = 'position:fixed;top:44px;left:8px;z-index:60;background:#fff'
       + ';border:1px solid #bbb;border-radius:6px;padding:8px;font:12px system-ui;max-height:70vh;overflow:auto';
 
-    var titre = el('div', {}); titre.innerHTML = '<b>Pays</b> (packages à la demande)';
-    panneau.appendChild(titre);
-
+    // v7.18 : le SÉLECTEUR DE PAYS (titre « Pays (packages à la demande) »,
+    // liste déroulante, boutons Ouvrir / Monde) est SUPPRIMÉ — la sélection
+    // des pays vit entièrement sur la carte (clic, Alt+clic, packages à la
+    // demande). Le panneau garde l'export, la compréhension et l'info-bulle.
+    var choix = null; // v7.18 : plus de sélecteur — conservé en null pour les branches repli
+    /*
     var choix = el('select', { id: 'prisme2-pays-choix' });
     var ids = liste();
     for (var i = 0; i < ids.length; i++) {
@@ -92,6 +95,7 @@
     bMonde.addEventListener('click', function () { retourMonde(); });
     boite.appendChild(bOuvrir); boite.appendChild(document.createTextNode(' ')); boite.appendChild(bMonde);
     panneau.appendChild(boite);
+    */
 
     // ── EXPORT (bases v0.200) : image fixe ou HTML interactif autonome
     var ex = el('div', {});
