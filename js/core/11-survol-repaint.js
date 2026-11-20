@@ -74,6 +74,12 @@
       }
     } catch (errNoms) { }
   }
+  // v7.12 : EFFACER LE SURVOL « COLLÉ ». Au clic qui change la sélection,
+  // le setOption recrée la série : ECharts ne renvoie PAS mouseout pour la
+  // zone sous le pointeur — survolNom restait posé et la zone se repeignait
+  // en teinte de SURVOL (-20 %) au lieu de la teinte de sélection. Tout
+  // clic interprété (traiteClic) éteint l'état de survol AVANT l'action.
+  function effacerSurvol() { survolNom = null; }
   function initSurvol() {
     var nu = function (n) { return (n || '').replace(/^[cx]-/, ''); };
     // v0.80e : chaque entrée/sortie de pointeur appelle repaintSurvol

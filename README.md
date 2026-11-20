@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20m -->
+<!-- rebuild-pages 2026-11-20n -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,31 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.12 — nom de sélection au dézoom à taille commune + survol « collé » (2026-11-20n)
+
+Deux corrections signalées et validées par l'utilisateur :
+1. **Étiquette de la sélection au dézoom** (niveau 3 masqué, tache fondue) :
+   le nom du pays portant la sélection avait sa propre règle de taille
+   (test de contenance avec cible +44 %) — il « criait » plus fort que
+   ses voisins. Il suit désormais EXACTEMENT la règle des autres pays au
+   même niveau de zoom (règle des extérieurs « x- » : `t.etiquette − 2`,
+   réduite au prorata du dézoom, plancher 6 px), nom si la boîte tient
+   (centre puis point profond), sinon SIGLE/ID à la même taille
+   (08-etiquettes-zones.js, bloc fusionN23).
+2. **Couleur du dernier pays ajouté à une sélection multiple** : au clic,
+   le `setOption` du changement de sélection recrée la série et ECharts
+   ne renvoie PAS de `mouseout` pour la zone sous le pointeur —
+   `survolNom` restait posé et le pays cliqué se repeignait en teinte de
+   SURVOL (-20 %) au lieu de rejoindre la teinte de sélection multiple
+   (mi-chemin). Tout clic interprété par `traiteClic` éteint maintenant
+   l'état de survol AVANT l'action (11-survol-repaint.js :
+   `effacerSurvol`, exporté dans 17-demarrage.js, appelé dans
+   greffon-selection.js). Invisible pour les harnais sans événements de
+   pointeur : le contrôle simule désormais le mouseover posé avant le
+   Maj+clic (le test « DEUX pays peints » devient le test de
+   non-régression de ce bug).
+Harnais navigation : 56/56 ; apparence 11/11 ×2.
 
 ## v7.11 — teinte mi-chemin étendue aux niveaux du pays sélectionné (2026-11-20m)
 

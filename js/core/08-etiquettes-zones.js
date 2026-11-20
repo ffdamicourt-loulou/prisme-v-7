@@ -424,28 +424,26 @@
     if (fusionN23) {
       var geoF = vue.socleGeometry;
       var nomF = vue.parent;
-      var cpF = altDe(geoF) || cpDe('fusion', geoF);
-      var texteF = nomF, FF = null, lignesF = 1;
-      var plafondF = plafondZones(t) * 1.44; // la.zone parent est grande : cible +44 %
-      for (var Fb = Math.round(plafondF); Fb >= 10; Fb -= 1) {
-        var dbF = demiBoitePx(nomF, Fb);
-        if (tientDansZone(geoF, cpF, dbF[0] / pxLon, dbF[1] / pxLat)) { FF = Fb; break; }
-      }
-      if (FF == null) { // repli : coupe équilibrée sur deux lignes
-        var dzF = deuxLignes(nomF);
-        if (dzF) {
-          for (var Fb2 = Math.round(plafondF); Fb2 >= 9; Fb2 -= 1) {
-            var db2F = demiBoiteLignes(dzF, Fb2);
-            if (tientDansZone(geoF, cpF, db2F[0] / pxLon, db2F[1] / pxLat)) { FF = Fb2; lignesF = 2; break; }
-          }
-          if (FF != null) texteF = dzF[0] + String.fromCharCode(10) + dzF[1];
+      var cpF = cpDe('fusion', geoF);
+      var texteF = nomF;
+      // v7.12 : MÊME TAILLE que les autres pays au même niveau de zoom —
+      // exactement la règle des pays extérieurs « x- » (t.etiquette − 2,
+      // réduite au prorata du dézoom, plancher 6 px), nom si la boîte
+      // tient (centre puis point profond), sinon SIGLE/ID à la MÊME
+      // taille. Fini le grossissement +44 % qui faisait « crier » le nom
+      // de la sélection plus fort que ses voisins.
+      var FF = Math.max(6, Math.round(Math.max(7, t.etiquette - 2) * coeffDezoom));
+      var dnF = demiBoitePx(nomF, FF);
+      if (!tientDansZone(geoF, cpF, dnF[0] / pxLon, dnF[1] / pxLat)) {
+        var altF = altDe(geoF), gardeNom = false;
+        if (altF) {
+          var daF = demiBoitePx(nomF, FF);
+          if (tientDansZone(geoF, altF, daF[0] / pxLon, daF[1] / pxLat)) { cpF = altF; gardeNom = true; }
         }
+        if (!gardeNom) texteF = sigles[nomF] || abrev(nomF);
       }
-      if (FF == null) { // dernier recours : sigle au point profond
-        FF = Math.max(8, (Fcommun != null ? Fcommun : t.etiquette));
-        texteF = sigles[nomF] || abrev(nomF);
-      }
-      var demiF = lignesF === 2 ? demiBoiteLignes(String(texteF).split('\n'), FF) : demiBoitePx(texteF, FF);
+      var lignesF = 1;
+      var demiF = demiBoitePx(texteF, FF);
       ETQ_DETAIL.push({ id: 'fusion-' + nomF, cp: cpF, geo: geoF, texte: texteF, F: FF,
                         lignes: lignesF, hwDeg: demiF[0] / pxLon, hhDeg: demiF[1] / pxLat,
                         entier: texteF === nomF });

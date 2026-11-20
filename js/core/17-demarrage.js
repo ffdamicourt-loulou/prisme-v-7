@@ -246,6 +246,7 @@
     demandeEnCours: function () { return cibleDemande && cibleDemande.length === 1 ? cibleDemande[0] : cibleDemande; },
     zoomMolette: function () { return zoomMoletteRef ? zoomMoletteRef.apply(null, arguments) : false; },
     carte: function () { return carte; },
+    effacerSurvol: effacerSurvol, // v7.12 : éteindre le survol collé au clic
     majEtiquettes: majEtiquettes, centrerSur: centrerSur, ajusterSur: ajusterSur,
     boiteEnsemble: boiteEnsemble, enfantsDe: enfantsDe, ouvrirAuNiveau: ouvrirAuNiveau,
     reinitialiserVers: reinitialiserVers, ajouterSousVue: ajouterSousVue,

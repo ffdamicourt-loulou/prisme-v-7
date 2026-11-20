@@ -390,6 +390,11 @@
     var nom = (e && e.name) || null;
     var maj = touche(e, 'shiftKey'), alt = touche(e, 'altKey');
     if (nom) clicNommeFlag = true;
+    // v7.12 : un clic INTERPRÉTÉ éteint le survol — sinon, la série étant
+    // recréée par le setOption du changement de sélection, ECharts ne
+    // renvoie pas mouseout et le pays cliqué restait en teinte de SURVOL
+    // au lieu de rejoindre la teinte de sélection multiple (mi-chemin).
+    if (nom && S.effacerSurvol) S.effacerSurvol();
     if (!estSerie || !nom) return true; // geo déjà vu côté série ; vide → zr
     // ── ALT : panneau de désélection (pas de réouverture en cascade)
     if (alt) { if (!origine) altClic(e); return true; }

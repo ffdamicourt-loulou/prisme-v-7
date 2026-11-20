@@ -281,7 +281,15 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
     !!etqFusion && etqFusion.name === vAvant.parent
     && etqFusion.label && etqFusion.label.color === '#ffffff'
     && P.vue().niveau >= 2); // la sélection/niveau reste courant
-} else test('dézoom ×3,5 (vue niv>=2 atteinte)', false);
+  // v7.12 : le nom du pays de la sélection (fusion) a la MÊME TAILLE de
+  // police que les autres pays visibles au même niveau de zoom.
+  const etqXP = (appels.etiquettes || []).filter(t2 => t2 && t2.etqId
+    && String(t2.etqId).indexOf('x-') === 0 && t2.label)[0];
+  test('v7.12 : nom de la sélection au dézoom à la MÊME taille que les autres pays ('
+    + (etqFusion && etqFusion.label ? etqFusion.label.fontSize : '?') + ' vs '
+    + (etqXP && etqXP.label ? etqXP.label.fontSize : '?') + ')',
+    !!etqFusion && !!etqXP && etqFusion.label.fontSize === etqXP.label.fontSize);
+  } else test('dézoom ×3,5 (vue niv>=2 atteinte)', false);
 
 // 14. v7.8 — VALIDATION n2→n3 par info-bulle (bloqué jusqu'à confirmation)
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
@@ -339,6 +347,12 @@ SEL.choisir(opts.findIndex(o => o.indexOf('Retour au niveau 1') !== -1));SEL.ann
 // en vue monde : sélection FR, puis Maj+clic DE → DE sélectionné, FR conservé
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 SEL.clicVide(); // repartir d'un monde SANS sélection : le clic FR = sélection
+// v7.12 : comme dans le VRAI navigateur, le POINTEUR est sur DE au moment
+// du clic — mouseover posé, ECharts ne renverra pas de mouseout quand le
+// setOption recréera la série. Sans l'effacement du survol au clic, DE
+// resterait peint en teinte de SURVOL (-20 %) au lieu de la teinte de
+// sélection multiple (le test « DEUX pays peints » ci-dessous échouerait).
+(appels.events.mouseover || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name: 'DE' }));
 clic('FR'); // sélection niveau 1
 (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map',
   name: 'DE', event: { shiftKey: true } }));
