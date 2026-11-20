@@ -176,10 +176,13 @@
   // ---------- Données dérivées ----------
   var parId = {};
   DATA.pays.forEach(function (p) { parId[p.id] = p; });
-  var assombris = {}, textes = {};
+  var assombris = {}, selectionnes = {}, textes = {};
   Object.keys(COULEURS).forEach(function (k) {
     if (THEME.pays) COULEURS[k] = THEME.pays;                 // thème : pays/zones
-    assombris[k] = THEME.survol || assombrir(COULEURS[k]);   // thème : survol + sélection
+    assombris[k] = THEME.survol || assombrir(COULEURS[k]);   // survol : -20 % de luminosité
+    // v7.6 : SÉLECTION = couleur d'origine -10 % de luminosité — à tous les
+    // niveaux (pays sélectionné, zone sélectionnée) ; distincte du survol.
+    selectionnes[k] = assombrirFacteur(COULEURS[k], 0.90);   // sélection : -10 %
     textes[k] = THEME.texte || couleurTexte(COULEURS[k]);    // thème : textes
   });
   // v0.49 : ÉTIQUETTES DES PAYS D AFRIQUE ET D ASIE EN BLANC — demandé

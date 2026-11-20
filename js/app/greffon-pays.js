@@ -23,7 +23,12 @@
     });
   }
 
-  function ouvrir(id) {
+  // v7.6 : DEUX TEMPS — un clic sur un pays en vue monde le SÉLECTIONNE
+  // (niveau 1 : LE PAYS SEUL, cadré à 80 % de la hauteur, peint en teinte
+  // d'origine -10 % de luminosité) ; un SECOND clic sur le pays déjà
+  // sélectionné y DESCEND (niveau 2 : les régions, package à la demande,
+  // cadrées à 60 %).
+  function ouvrir(id, dansPays) {
     var A = window.__PR2;
     if (!A || !A.parId[id]) return { ok: false, raison: 'pays inconnu : ' + id };
     // v7.2 : résoudre l'alias vers le pays réel (FR-NA → FR) — sinon la
@@ -31,13 +36,16 @@
     var conf = window.__PR2_PKGS;
     var fiche = conf && conf.manifest && conf.manifest.pays ? conf.manifest.pays[id] : null;
     if (fiche && fiche.alias && A.parId[fiche.alias]) id = fiche.alias;
-    // v7.5 : RÈGLE DE NAVIGATION — le nouveau pays s'ouvre TOUJOURS au
-    // NIVEAU 1, que l'on parte de la vue monde ou d'un niveau 2/3 d'un
-    // autre pays (l'ancien ouvrir « même niveau » est retiré). Le niveau 1
-    // est cadré à 80 % de la hauteur du viewport (ajusterSur, appliquerVue).
-    var okPan = A.ouvrir ? A.ouvrir(id, 1, null) : false;
-    var attente = A.descendPossible ? !A.descendPossible(id) : false;
-    return { ok: okPan && !attente, enAttente: attente };
+    if (!dansPays) {
+      // NIVEAU 1 : sélection du pays seul (reinitialiserVers, centrage 80 %)
+      var okSel = A.ouvrir ? A.ouvrir(id, 1, null) : false;
+      return { ok: okSel, enAttente: false };
+    }
+    // NIVEAU 2 : descente dans les régions (package chargé à la demande,
+    // mécanisme v0.80 : admin absent + package déclaré → __PR2_PKG_REG →
+    // descente retentée).
+    var r = A.descendre(id);
+    return { ok: r === true, enAttente: r === false };
   }
 
   function retourMonde() {
@@ -79,7 +87,7 @@
 
     var boite = el('div', {});
     var bOuvrir = el('button', { type: 'button' }); bOuvrir.textContent = 'Ouvrir';
-    bOuvrir.addEventListener('click', function () { ouvrir(choix.value); });
+    bOuvrir.addEventListener('click', function () { ouvrir(choix.value, !!(A.etat && A.etat.selection === choix.value)); });
     var bMonde = el('button', { type: 'button' }); bMonde.textContent = 'Monde';
     bMonde.addEventListener('click', function () { retourMonde(); });
     boite.appendChild(bOuvrir); boite.appendChild(document.createTextNode(' ')); boite.appendChild(bMonde);
@@ -134,8 +142,10 @@
       if (e.componentType !== 'series' || e.seriesType !== 'map') return;
       var V = A.vue();
       if (V.type === 'monde') {
-        // clic sur un pays en vue monde : charger le package et ouvrir (niv1)
-        if (e.name && A.parId[e.name]) ouvrir(e.name);
+        // v7.6 : 1er clic = SÉLECTION (niveau 1 : le pays seul, centré à
+        // 80 %) ; clic sur le pays DÉJÀ SÉLECTIONNÉ = descente (régions).
+        if (e.name && A.parId[e.name])
+          ouvrir(e.name, !!(A.etat && A.etat.selection === e.name));
         return;
       }
       if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas

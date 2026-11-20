@@ -5,13 +5,14 @@
     // SÉLECTIONNÉES PAR DÉFAUT — un clic descend directement. Le survol
     // assombrit encore un peu (-20 % supplémentaires) pour rester perceptible.
     var enSelection = vue.type !== 'monde';
-    // v7.5 : DÉZOOM ×3,5 EN NIVEAU 3 — la sélection de niveau 3 RESTE la
-    // sélection courante, mais la vue ne dessine PLUS le détail du niveau 3 :
+    // v7.5→v7.6 : DÉZOOM ×3,5 AUX NIVEAUX SÉLECTIONNÉS SUIVANTS (régions
+    // fermées : départements, arrondissements…) — la sélection RESTE la
+    // sélection courante, mais la vue ne dessine PLUS le détail fin :
     // frontières INTERNES ÉTEINTES et teinte UNIFORME du continent, les
-    // zones du niveau 3 se fondent en une seule tache = la RÉGION de
-    // NIVEAU 2 (le socle du niveau courant esquisse exactement son
-    // contour). Re-zoomer sous le seuil réaffiche le détail tel quel.
-    var dezoomN3 = vue.type !== 'monde' && vue.niveau === 3
+    // zones se fondent en une seule tache = la RÉGION du NIVEAU SUPÉRIEUR
+    // (le socle du niveau courant esquisse exactement son contour).
+    // Re-zoomer sous le seuil réaffiche le détail tel quel.
+    var dezoomN3 = vue.type !== 'monde' && vue.niveau >= 2
       && etat.zoomEntree > 0 && etat.zoom <= etat.zoomEntree / 3.5;
     // v0.41 : ensemble des entités sélectionnées (pays, zones « c- »),
     // partagé par toutes les branches ci-dessous.
@@ -72,7 +73,9 @@
       // d'épaississement (1,2) sont supprimées.
       var epSel = epTrait;
       var epSurv = epTrait;
-      var base = enSelection ? (zoneSel ? assombris[p.continent] : COULEURS[p.continent]) : (sel[p.id] ? assombris[p.continent] : COULEURS[p.continent]);
+      // v7.6 : SÉLECTION = couleur d'origine -10 % de luminosité (distincte
+      // du survol -20 %) ; la règle vaut à TOUS les niveaux.
+      var base = enSelection ? (zoneSel ? selectionnes[p.continent] : COULEURS[p.continent]) : (sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent]);
       var survol = assombris[p.continent];
       // v0.80 : SURVOL PEINT PAR LE NOYAU — l'emphasis interne d'ECharts
       // re-rend les polygones géants du niveau 3 et, au sortir puis au
@@ -187,7 +190,7 @@
         // v0.41 : une sœur ajoutée à la sélection par Maj+clic est peinte
         // en teinte de sélection (la sélection mémorise son nom de carte
         // « c-XXX » ; l'id nu est accepté aussi).
-        var selS = (sel['c-' + f.id] || sel[f.id]) ? assombris[ctSoeur] : COULEURS[ctSoeur];
+        var selS = (sel['c-' + f.id] || sel[f.id]) ? selectionnes[ctSoeur] : COULEURS[ctSoeur];
         var survS = assombris[ctSoeur];
         // v0.80 : survol peint par le noyau (voir donneesRegions principal)
         if (survolNom === f.id) selS = survS;
@@ -238,7 +241,7 @@
         var muetExt = p.id === 'ES-002'; // v0.29 : pas d'étiquette sur les Canaries
         // v0.41 : un pays extérieur ajouté à la sélection (Maj+clic) est
         // peint en teinte de sélection.
-        var baseExt = sel[p.id] ? assombris[p.continent] : COULEURS[p.continent];
+        var baseExt = sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent];
         var survExt = assombris[p.continent];
         // v0.80 : survol peint par le noyau (voir donneesRegions principal)
         if (survolNom === p.id) baseExt = survExt;

@@ -78,14 +78,21 @@ const charge = (id) => {
 // 1. vue monde au départ
 test('départ : vue monde', P.vue().type === 'monde');
 
-// 2. clic sur FR en vue monde → package demandé
+// 2. v7.6 — clic sur FR en vue monde : SÉLECTION (niveau 1 = pays seul)
+const nbScriptsAvantSel = appels.scripts.length;
 clic('FR');
-test('clic FR en vue monde → script packages/FR.js ajouté', appels.scripts.some(s => /FR/.test(s)));
+test('1er clic FR en vue monde → SÉLECTION niveau 1 (pays seul, aucun package demandé)',
+  P.etat.selection === 'FR' && P.vue().type === 'monde' && appels.scripts.length === nbScriptsAvantSel
+  && appels.regions && appels.regions.some(r => r && r.name === 'FR' && r.itemStyle
+    && /#[0-9a-f]{6}/i.test(r.itemStyle.areaColor || '') && P.assombris && P.selectionnes
+    && P.selectionnes[P.parId.FR.continent] === r.itemStyle.areaColor));
 
-// 3. arrivée du package (comme le ferait <script src>) → vue niv1
+// 3. second clic sur le pays sélectionné → descente demandée puis package
+clic('FR');
+test('2e clic FR (pays déjà sélectionné) → script packages/FR.js ajouté', appels.scripts.some(s => /FR/.test(s)));
 charge('FR');
 const v1 = P.vue();
-test('après package : vue admin niv1 (' + v1.type + '/' + v1.niveau + ')', v1.type === 'admin' && v1.niveau === 1);
+test('après package : vue admin niv1 — régions (' + v1.type + '/' + v1.niveau + ')', v1.type === 'admin' && v1.niveau === 1);
 
 // 4. clic sur une région → niv2
 if (v1.type === 'admin' && v1.parNom) {
@@ -99,10 +106,12 @@ if (v1.type === 'admin' && v1.parNom) {
 for (let i = 0; i < 5 && P.vue().type !== 'monde'; i++) P.retour();
 test('retour → vue monde', P.vue().type === 'monde');
 
-// 6. deuxième pays : clic DE en vue monde
+// 6. deuxième pays : clic DE (sélection) puis clic (descente)
+clic('DE');
+test('1er clic DE → sélection niveau 1 (pays seul)', P.etat.selection === 'DE');
 clic('DE');
 const deOk = appels.scripts.some(s => s && /DE/.test(s));
-test('clic DE en vue monde → package DE demandé', deOk);
+test('2e clic DE en vue monde → package DE demandé', deOk);
 if (deOk) {
   charge('DE');
   const vd = P.vue();
@@ -118,18 +127,17 @@ const noms2 = listePays.map(id => (P.parId[id] || {}).nom);
 const doublons = noms2.filter((n, i) => noms2.indexOf(n) !== i);
 test('menu : ' + listePays.length + ' pays, sans doublon (' + (doublons.length ? doublons.join(',') : 'OK') + ')',
   listePays.length > 220 && doublons.length === 0 && listePays.indexOf('FR-NA') === -1 && listePays.indexOf('FR-SA') === -1 && listePays.indexOf('US-009') === -1);
-const rAlias = ctx.window.__PR2_PAYS.ouvrir('US-009'); // alias → doit demander US (enAttente)
-test('ouvrir alias US-009 → package US demandé (résolution d\'alias)',
-  rAlias.enAttente === true && appels.scripts.some(s => /US/.test(s)));
-if (rAlias.enAttente) {
-  charge('US');
-  const vu = P.vue();
-  test('après package US (via alias) : vue niv1 États-Unis', vu.type === 'admin' && vu.niveau === 1 && vu.paysId === 'US');
-}
+const rAlias = ctx.window.__PR2_PAYS.ouvrir('US-009'); // alias → sélection de US
+test('ouvrir alias US-009 → SÉLECTION de US (résolution d\'alias, niveau 1)',
+  rAlias.ok === true && P.etat.selection === 'US' && P.vue().type === 'monde');
+clic('US'); // descente dans les régions/États
+charge('US');
+const vu = P.vue();
+test('2e clic US (via alias) : descente → vue niv1 États-Unis', vu.type === 'admin' && vu.niveau === 1 && vu.paysId === 'US');
 
 // 8. v7.2 — FRANCE : remontée au monde puis niveau 3 (arrondissements)
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
-clic('FR');
+clic('FR'); clic('FR'); // sélection puis descente
 charge('FR');
 const vfr1 = P.vue();
 test('FR : vue niv1', vfr1.type === 'admin' && vfr1.niveau === 1);
@@ -158,15 +166,13 @@ test('depuis niv2 : clic région sœur → vue des départements de Bourgogne ('
   && (vAutre.parent === 'Bourgogne-Franche-Comté' || vAutre.nomMap.indexOf('Bourgogne') !== -1));
 // et depuis ce niveau, sélectionner un AUTRE pays via le panneau (descendre direct)
 const rEsp = ctx.window.__PR2_PAYS.ouvrir('ES');
-test('sélection d\'un autre pays (ES) depuis une vue niv2 → package chargé, vue ouverte',
-  rEsp.enAttente === true || rEsp.ok === true);
-if (rEsp.enAttente) charge('ES');
-const ves = P.vue();
-test('après ES : vue niv1 Espagne', ves.type === 'admin' && ves.niveau === 1 && ves.paysId === 'ES');
+test('changement de pays (ES) depuis une vue niv2 → SÉLECTION ES niveau 1 (retour monde, cadrage 80 %)',
+  rEsp.ok === true && P.etat.selection === 'ES' && P.vue().type === 'monde');
 
 // 8. v7.3 — RÉGRESSIONS du clic depuis la vue monde.
 // (a) après retours au monde, un NOUVEAU clic pays ouvre bien le NIVEAU 1
 for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('IT'); test('clic IT (1er) → sélection', P.etat.selection === 'IT');
 clic('IT'); charge('IT');
 const vit = P.vue();
 test('clic IT en vue monde (après historique complet) → niv1, jamais niv2',
@@ -179,7 +185,7 @@ test('double clic BE en vue monde → niv1 (le 2e événement ne saute pas niv2)
   vbe.type === 'admin' && vbe.niveau === 1 && vbe.paysId === 'BE');
 // (c) pays au package DÉJÀ enregistré (PKG_FAIT) : re-clic monde → niv1
 P.retour();
-clic('FR'); // package FR déjà enregistré plus haut
+clic('FR'); clic('FR'); // 1er clic : sélection ; 2e : descente (package déjà enregistré plus haut)
 const vfr = P.vue();
 test('re-clic FR en vue monde (package déjà chargé) → niv1',
   vfr.type === 'admin' && vfr.niveau === 1 && vfr.paysId === 'FR');
@@ -189,29 +195,29 @@ test('anti-cache : les <script> de package portent ?v=',
 
 // 9. v7.4 — clic sur un PAYS EXTÉRIEUR (x-…) depuis une vue pays.
 for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
-clic('FR'); charge('FR');
+clic('FR'); clic('FR'); charge('FR');
 let vF1 = P.vue();
-test('FR ouvert (niv1) pour le test x-', vF1.type === 'admin' && vF1.niveau === 1);
-clic('x-ES'); // Espagne visible en voisin extérieur → doit s'ouvrir
-test('clic x-ES depuis FR niv1 → package ES demandé',
-  appels.scripts.some(s => /ES/.test(s) && s.indexOf('packages/') === 0));
-charge('ES');
+test('FR ouvert (régions, niv1) pour le test x-', vF1.type === 'admin' && vF1.niveau === 1);
+const selAvant = P.etat.selection;
+clic('x-ES'); // Espagne voisine extérieure → SÉLECTION niveau 1 (v7.6)
+test('clic x-ES depuis vue pays → ES SÉLECTIONNÉE au niveau 1 (retour monde, pays seul à 80 %)',
+  P.etat.selection === 'ES' && selAvant !== 'ES' && P.vue().type === 'monde');
+clic('ES'); charge('ES');
 let vES = P.vue();
-test('clic x-ES depuis FR niv1 → ES ouverte au MÊME niveau (niv1)', // règle v0.31
+test('descente ES → vue niv1 Espagne',
   vES.type === 'admin' && vES.niveau === 1 && vES.paysId === 'ES'
   && (vES.parent === 'Espagne' || (P.parId['ES'] || {}).nom === 'Espagne'));
-// même niveau depuis un niv2 : depuis ES niv1, descendre puis cliquer un voisin
+// depuis ES niv2, cliquer le voisin FR : nouvelle SÉLECTION niveau 1
 const prov = Object.keys(P.vue().parNom)[0]; clic(prov);
 const vES2 = P.vue();
-if (vES2.niveau === 2) { clic('x-FR'); } // package FR déjà fait depuis plus haut
-const vFrApres = P.vue();
-test('depuis ES niv2, clic x-FR → FR réouverte au NIVEAU 1 (règle v7.5)',
-  vFrApres.type === 'admin' && vFrApres.niveau === 1 && vFrApres.paysId === 'FR');
+if (vES2.niveau === 2) { clic('x-FR'); }
+test('depuis ES niv2, clic x-FR → FR SÉLECTIONNÉE niveau 1 (l\'US/ES ne bloque plus)',
+  P.etat.selection === 'FR' && P.vue().type === 'monde');
 
 // 10. v7.4 — ancre Auvergne-Rhône-Alpes : correction du noyau (cpDe),
 // l'étiquette descend au centre vertical du territoire (45,25°N).
 for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
-clic('FR'); charge('FR');
+clic('FR'); clic('FR'); charge('FR');
 vF1 = P.vue();
 const etqAura = (appels.etiquettes || []).filter(t => t && t.etqId === 'Auvergne-Rhône-Alpes')[0];
 
@@ -230,31 +236,31 @@ test('cadrage : niv 1 à 80 %, niv 2/3 à 60 % de la hauteur (ratio 0,75)',
 
 // 12. v7.5 — depuis les États-Unis (niveau 2 comtés), clic x-autre-pays
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
-clic('US'); charge('US');
+clic('US'); clic('US'); charge('US');
 let vUS = P.vue();
 test('US ouverte en niv1', vUS.type === 'admin' && vUS.niveau === 1 && vUS.paysId === 'US');
 const etatUS = Object.keys(vUS.parNom)[0]; clic(etatUS); charge('US'); // 2e cran au cas où
 vUS = P.vue();
 if (vUS.niveau === 1) { clic(etatUS); } // descente directe : comtés de l État
 vUS = P.vue();
-if (vUS.niveau === 2) { clic('x-DE'); charge('DE'); }
-test('depuis US niv2 (comtés), clic x-DE → DE s\'ouvre (niv1), l\'US ne bloque plus',
-  P.vue().paysId === 'DE' && P.vue().niveau === 1);
+if (vUS.niveau === 2) { clic('x-DE'); }
+test('depuis US niv2 (comtés), clic x-DE → DE SÉLECTIONNÉE (niveau 1), l\'US ne bloque plus',
+  P.etat.selection === 'DE' && P.vue().type === 'monde');
 
 // 13. v7.5 — dézoom ×3,5 en niveau 3 : seules les frontières éteintes, teinte uniforme
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
-clic('FR');
+clic('FR'); clic('FR'); charge('FR');
 for (let n = 0; n < 6 && P.vue().niveau < 3; n++) { clic('Auvergne-Rhône-Alpes'); clic('Ain'); }
 const vAvant = P.vue();
-if (vAvant.niveau === 3 && P.zoomMolette) {
+if (vAvant.niveau >= 2 && P.zoomMolette) {
   for (let k = 0; k < 7; k++) P.zoomMolette(600, null, null); // dézoom ×1.3 x7 ≈ ×6.3
   const regs = appels.regions || [];
   const zones = regs.filter(r => r && r.name && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
   test('dézoom ×3,5 en niv3 : frontières internes éteintes (niveau 2 apparent)',
     zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0)
     && zones.every(r => r.itemStyle.areaColor === zones[0].itemStyle.areaColor)
-    && P.vue().niveau === 3); // la sélection/niveau reste courant
-} else test('dézoom ×3,5 en niv3 (vue atteinte)', false);
+    && P.vue().niveau >= 2); // la sélection/niveau reste courant
+} else test('dézoom ×3,5 (vue niv>=2 atteinte)', false);
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

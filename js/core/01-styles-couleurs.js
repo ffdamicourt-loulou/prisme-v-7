@@ -104,6 +104,13 @@
     var c = hexVersRgb(hex), hsl = rgbVersHsl(c[0], c[1], c[2]);
     return hslVersHex(hsl[0], hsl[1], Math.max(0, hsl[2] * 0.80));
   }
+  // v7.6 : assombrissement PARAMÉTRABLE en luminosité — la SÉLECTION est la
+  // couleur d'origine MOINS 10 % DE LUMINOSITÉ (facteur 0,90), à tous les
+  // niveaux ; le survol conserve son -20 % historique.
+  function assombrirFacteur(hex, facteur) {
+    var c = hexVersRgb(hex), hsl = rgbVersHsl(c[0], c[1], c[2]);
+    return hslVersHex(hsl[0], hsl[1], Math.max(0, hsl[2] * facteur));
+  }
   function boite(geometry) {
     var b = [Infinity, Infinity, -Infinity, -Infinity];
     function anneaux(polys) {

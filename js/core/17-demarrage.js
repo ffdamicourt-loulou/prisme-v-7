@@ -233,7 +233,7 @@
     composantesDetachees: composantesDetachees, aireGeo: aireGeo, couleurTexte: couleurTexte,
     zoomContenuMonde: zoomContenuMonde, planifierEtiquettes: planifierEtiquettes,
     etiquetteVisible: etiquetteVisible, etat: etat, demarrer: demarrer, parId: parId,
-    couleurs: COULEURS, assombris: assombris, textes: textes, DATA: DATA,
+    couleurs: COULEURS, assombris: assombris, selectionnes: selectionnes, textes: textes, DATA: DATA,
     vue: function () { return vue; }, pile: pile, descendre: descendre,
     descendreSous: descendreSous, retour: retour, featuresNiv1: featuresNiv1,
     reduireAuPays: reduireAuPays, bornerRoam: bornerRoam, bboxMonde: bboxMonde,

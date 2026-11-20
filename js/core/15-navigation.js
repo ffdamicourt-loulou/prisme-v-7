@@ -29,10 +29,11 @@
           });
         });
       }
-      // v7.5 : CADRAGE PAR NIVEAU — le niveau 1 occupe 80 % de la HAUTEUR
-      // du viewport, les niveaux 2 et 3 occupent 60 % (les détails petits
-      // restent visualisables avec le contexte de leur région).
-      ajusterSur(b, vue.type !== 'monde' ? (vue.niveau === 1 ? 0.80 : 0.60) : 0);
+      // v7.6 : CADRAGE PAR NIVEAU UTILISATEUR — niveau 1 = LE PAYS SEUL à
+      // 80 % de la hauteur (centrerSur, reinitialiserVers) ; les niveaux
+      // 2 et 3 (régions, départements…) s'affichent à 60 % de la hauteur :
+      // TOUTES les vues admin de subdivisions sont cadrées à 60 %.
+      ajusterSur(b, vue.type !== 'monde' ? 0.60 : 0);
     }
     bornerRoam();
     majEtiquettes();
@@ -378,11 +379,11 @@
     descendreSous(z2.nom); // niveau 3
     return true;
   }
-  // Règle générale : un clic HORS de la zone active, à TOUT niveau (1, 2,
-  // 3), ouvre le NOUVEAU PAYS AU MÊME NIVEAU (v0.31) — ou le sélectionne en
-  // vue monde s'il n'a pas de subdivisions. v0.34 : le 4e argument CONSERVER
-  // (Maj+clic) ajoute au lieu de remplacer — le pays qu'on quitte rejoint
-  // la sélection, le nouveau pays s'ouvre au même niveau.
+  // Règle générale (v7.6) : un clic sur le NOUVEAU PAYS, à TOUT niveau, le
+  // SÉLECTIONNE au NIVEAU 1 (le pays seul, cadré à 80 % de la hauteur) —
+  // la descente (régions, niveau 2) se fait par un second clic sur le pays
+  // déjà sélectionné. v0.34 : le 4e argument CONSERVER (Maj+clic) ajoute au
+  // lieu de remplacer.
   function reinitialiserVers(idPays, niveau, pt, conserver) {
     if (cibleDemande) annulerDemande();
     var ancien = vue.type !== 'monde' ? vue.paysId : etat.selection;
@@ -406,8 +407,13 @@
     // avant la descente : la snapshot de la pile gardera les sélections, et
     // le retour en vue monde les restaurera (l'ajout persiste)
     restaurer();
-    if (niveau && niveau >= 1 && ouvrirAuNiveau(idPays, niveau, pt)) { restaurer(); return; }
-    centrerSur(parId[idPays], 0.80); // v0.79 : 80 % de la hauteur
+    // v7.6 : NIVEAUX UTILISATEUR — le niveau 1 est LE PAYS SEUL, SÉLECTIONNÉ
+    // et cadré à 80 % de la hauteur du viewport, SANS descendre dans ses
+    // régions ; le niveau 2 = régions (app n1), le niveau 3 = départements
+    // (app n2) : on ouvre jusqu'au niveau APP = niveau − 1.
+    var nivU = niveau || 1;
+    if (nivU >= 2 && ouvrirAuNiveau(idPays, nivU - 1, pt)) { restaurer(); return; }
+    centrerSur(parId[idPays], 0.80); // niveau 1 : le pays seul, 80 % de la hauteur
     restaurer();
     majEtiquettes(); // peindre la (nouvelle) sélection
   }

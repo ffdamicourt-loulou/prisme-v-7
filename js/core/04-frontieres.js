@@ -123,17 +123,17 @@
       for (var i = 0; i < vue.soeurs.length; i++) {
         if (vue.soeurs[i].id === mC[1]) {
           var f = vue.soeurs[i], ct = f.__ct || vue.continent;
-          return { base: (sel[cle] || sel[f.id]) ? assombris[ct] : COULEURS[ct], survol: assombris[ct] };
+          return { base: (sel[cle] || sel[f.id]) ? selectionnes[ct] : COULEURS[ct], survol: assombris[ct] };
         }
       }
     }
     if (mX) {
       var pX = parId[mX[1]];
-      if (pX) return { base: sel[pX.id] ? assombris[pX.continent] : COULEURS[pX.continent], survol: assombris[pX.continent] };
+      if (pX) return { base: sel[pX.id] ? selectionnes[pX.continent] : COULEURS[pX.continent], survol: assombris[pX.continent] };
     }
     if (vue.type === 'monde') {
       var q = parId[cle];
-      if (q) return { base: sel[q.id] ? assombris[q.continent] : COULEURS[q.continent], survol: assombris[q.continent] };
+      if (q) return { base: sel[q.id] ? selectionnes[q.continent] : COULEURS[q.continent], survol: assombris[q.continent] };
     }
     var lz = null;
     var feats = vue.features || [];

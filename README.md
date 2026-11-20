@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20e -->
+<!-- rebuild-pages 2026-11-20f -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,28 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.6 — niveaux utilisateur, sélection -10 %, cadrages 80/60 (2026-11-20f)
+
+- **Niveaux utilisateur redéfinis** : le niveau 1 est LE PAYS SEUL sélectionné
+  (contour, cadré à 80 % de la hauteur du viewport) ; le niveau 2 = régions,
+  le niveau 3 = départements/équivalent. Un clic sur un pays en vue monde le
+  SÉLECTIONNE au niveau 1 ; un SECOND clic sur le pays déjà sélectionné y
+  descend (régions). Plus jamais d'ouverture directe en niveau 2.
+- **Changement de pays** : depuis n'importe quel niveau (1, 2, 3), cliquer un
+  autre pays (ou un pays extérieur « x-… ») le sélectionne au NIVEAU 1
+  (80 % de la hauteur). Fini le retour rapide sur la sélection initiale (US).
+- **Couleur de sélection** : à TOUS les niveaux, la zone/pays sélectionné(e)
+  est peint(e) en teinte d'origine MOINS 10 % de luminosité (le survol reste
+  à -20 %) — distinction nette entre survol et sélection.
+- **Cadrages** : pays sélectionné à 80 % de la hauteur ; toutes les vues de
+  subdivisions (régions, départements, arrondissements) à 60 % de la hauteur
+  pour mieux visualiser les détails et les petites zones.
+- **Dézoom ×3,5 étendu** : en cascade à tous les sous-niveaux (départements →
+  région apparente, arrondissements → département apparent), frontières
+  internes éteintes et teinte uniforme pour éviter la tache illisible.
+- Harnais navigation étendu (33 contrôles, sémantique deux clics) ; thème
+  noir vérifié (11/11).
 
 ## v7.5 — navigation, cadrages, dézoom niv3 (2026-11-20e)
 - **Pays sélectionné : TOUJOURS le niveau 1** — depuis la vue monde comme
