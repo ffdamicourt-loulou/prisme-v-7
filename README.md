@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20q -->
+<!-- rebuild-pages 2026-11-20r -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,28 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.16 — doublon d'étiquettes, noms du niveau supérieur, ceinture de peinture à chaque setOption (2026-11-20r)
+
+Trois correctifs :
+1. **Sœur masquée = étiquette masquée** (doublon « Côte-d'Or » + « Bourgogne-Franche-Comté »
+   sur le même territoire) : dans une vue combinée, la sœur ajoutée est __masquée
+   (ses propres zones s'affichent), mais son étiquette restait ancrée au centre de son
+   territoire, PAR-DESSUS les départements affichés. Elle ne porte plus ni étiquette,
+   ni entrée geo.regions, ni donnée carte (06 + 08).
+2. **Noms du niveau supérieur effacés au niveau 3+** : en vue départements (niveau ≥ 2),
+   les étiquettes des régions (niveau 2, id « c- ») ne s'affichent plus — seules les
+   étiquettes du niveau courant restent (08). Supprime les chevauchements
+   région/département constatés dans les vues combinées du sud.
+3. **Ceinture de peinture à CHAQUE setOption** (immenses zones blanches) : la ceinture
+   de complétude (v0.74) ne vivait que dans majEtiquettes ; le setOption de CHANGEMENT
+   DE VUE (optionsBase → regions: donneesRegions()) passait à côté. Toute zone sans
+   entrée geo.regions est rendue avec la couleur PAR DÉFAUT du geo (blanc cassé) —
+   d'où les trous blancs en vrai navigateur après les sélections multiples.
+   La ceinture est factorisée dans donneesRegionsCeinturees (06, repli d'erreur
+   compris) et utilisée par optionsBase ET majEtiquettes ; le défaut du geo passe
+   d'un blanc cassé à une teinte neutre (#d9e2ec) : plus aucune zone ne peut rester
+   invisible. Harnais navigation : 65/65 ; apparence 11/11 ×2.
 
 ## v7.15 — polices pays revues : -15 % depuis la taille courant (2026-11-20q)
 

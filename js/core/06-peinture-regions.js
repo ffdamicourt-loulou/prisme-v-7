@@ -1,3 +1,27 @@
+  // v7.16 : PEINTURE CEINTURÉE — la ceinture de complétude (v0.74) vivait
+  // UNIQUEMENT dans majEtiquettes : le setOption de CHANGEMENT DE VUE
+  // (optionsBase → regions: donneesRegions()) passait À CÔTÉ. Toute zone
+  // sans entrée geo.regions est rendue avec l'itemStyle PAR DÉFAUT du geo
+  // (quasi blanc) — c'est l'origine des « immenses zones blanches »
+  // apparues en vrai navigateur après les sélections multiples (vues
+  // combinées). Chaque nom enregistré (NOMS_CARTE) reçoit désormais une
+  // entrée peinte à CHAQUE setOption, repli compris.
+  function donneesRegionsCeinturees() {
+    var noms = NOMS_CARTE[vue.type === 'monde' ? 'prisme2' : vue.nomMap] || [];
+    var regions;
+    try {
+      regions = donneesRegions();
+    } catch (e) {
+      console.warn('[Prisme2] donneesRegions a échoué, repli de peinture', e);
+      regions = noms.map(function (n) { return regionRepli(n); });
+    }
+    if (noms.length) {
+      var vus = {};
+      regions.forEach(function (r) { if (r && r.name) vus[r.name] = true; });
+      noms.forEach(function (n) { if (!vus[n]) regions.push(regionRepli(n)); });
+    }
+    return regions;
+  }
   function donneesRegions() {
     var t = tailles(etat.zoom);
     // v0.21 : en mode sélectionné (vue d'un pays, niveaux 1/2/3), les zones
@@ -207,6 +231,7 @@
     // (teinte du continent, hover -20 %, non cliquable). Rien ne disparaît.
     if (vue.type !== 'monde' && vue.soeurs) {
       vue.soeurs.forEach(function (f) {
+        if (f.__masquee) return; // v7.16 : sœur masquée (ses zones propres sont affichées) — pas d'entrée
         var ctSoeur = f.__ct || vue.continent; // v0.37 : continent du pays propriétaire
         var ctS = textePays(ctSoeur);
         // v0.80l : étiquette de sœur via le LAYOUT BANDE (anti-chevauchement)
@@ -314,6 +339,7 @@
     // extérieurs (leur nom seul)
     if (vue.type !== 'monde') {
       if (vue.soeurs) vue.soeurs.forEach(function (f) {
+        if (f.__masquee) return; // v7.16 : pas de donnée carte pour une sœur masquée
         out.push({ name: 'c-' + f.id, nom: f.nom, contexte: true });
       });
       DATA.pays.forEach(function (p) {

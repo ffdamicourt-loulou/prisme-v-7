@@ -108,28 +108,13 @@
     if (typeof majCompteurZoom === 'function') majCompteurZoom(); // v0.99
     var regions;
     try {
-      regions = donneesRegions();
+      // v7.16 : repli ERREUR + CEINTURE DE COMPLÉTUDE factorisés dans
+      // donneesRegionsCeinturees (06) — partagés avec optionsBase, qui
+      // passait à côté de la ceinture (trous blancs au changement de vue).
+      regions = donneesRegionsCeinturees();
     } catch (e) {
-      // v0.74 : peinture de REPLI — si le calcul des régions échoue
-      // entièrement, on repeint quand même toutes les zones connues de la
-      // carte en teinte de continent : jamais de carte blanche.
-      console.warn('[Prisme2] donneesRegions a échoué, repli de peinture', e);
-      regions = (NOMS_CARTE[vue.type === 'monde' ? 'prisme2' : vue.nomMap] || []).map(function (n) {
-        return regionRepli(n);
-      });
-    }
-    // v0.74 : CEINTURE DE COMPLÉTUDE — toute feature enregistrée dans la
-    // carte DOIT avoir une entrée geo.regions : sans entrée, ECharts la
-    // rend avec la couleur PAR DÉFAUT (blanc). C'est l'origine des
-    // « trous blancs » sur les sélections lourdes (comtés américains,
-    // provinces italiennes). Un nom manquant reçoit la teinte de repli.
-    var noms = NOMS_CARTE[vue.type === 'monde' ? 'prisme2' : vue.nomMap] || [];
-    if (noms.length) {
-      var vus = {};
-      regions.forEach(function (r) { vus[r.name] = true; });
-      noms.forEach(function (n) {
-        if (!vus[n]) regions.push(regionRepli(n));
-      });
+      console.warn('[Prisme2] ceinture de peinture a échoué', e);
+      regions = [];
     }
     // v0.80e : cache du survol chirurgical — tableau courant + couleurs
     // de repos ; les couleurs de SURVOL sont posées dans donneesRegions.

@@ -466,5 +466,42 @@ P.etat.zoom = 45; P.majEtiquettes();
 test('v7.13 : hors plage (zoom 45) → tailles de pays INCHANGÉES (' + tPx13 + ' px)',
   (appels.etiquettes || []).some(t2 => t2 && t2.label && t2.label.fontSize === tPx13));
 
+// 19. v7.16 — noms du niveau supérieur EFFACÉS en vue départements ; sœur
+// masquée sans étiquette (fusion BFC / Côte-d'Or) ; ceinture de peinture.
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR');
+clicZone('Auvergne-Rhône-Alpes'); // vue départements (niveau 2)
+const v716 = P.vue();
+P.majEtiquettes();
+const etq716 = appels.etiquettes || [];
+test('v7.16 : vue départements — AUCUNE étiquette « c- » (noms de régions effacés)',
+  v716.type === 'admin' && v716.niveau === 2
+  && !etq716.some(t => t && t.etqId && String(t.etqId).indexOf('c-') === 0));
+const regs716 = appels.regions || [];
+const par716 = {}; regs716.forEach(r => { if (r && r.name) par716[r.name] = r; });
+const trous716 = (v716.features || []).filter(f => f && f.id
+  && !(par716[f.id] && par716[f.id].itemStyle && par716[f.id].itemStyle.areaColor
+       && par716[f.id].itemStyle.areaColor !== '#eaf2f8'));
+test('v7.16 : ceinture — chaque zone propre de la vue a une entrée peinte (' + (v716.features || []).length + ' propres, ' + trous716.length + ' trou(s))',
+  v716.niveau === 2 && (v716.features || []).length > 0 && trous716.length === 0);
+// Maj+sœur → vue combinée : la sœur ajoutée est masquée (ses zones propres
+// s'affichent) mais ne porte PLUS son étiquette par-dessus ses départements.
+const nbAv716 = (v716.features || []).length;
+SEL.traiteClic({ componentType: 'series', seriesType: 'map', name: 'c-Bourgogne-Franche-Comté',
+  event: { event: { shiftKey: true } } });
+const v716c = P.vue(); P.majEtiquettes();
+const etq716c = appels.etiquettes || [];
+test('v7.16 : Maj+sœur → vue combinée : sœur MASQUÉE, sans étiquette (fin du doublon Côte-d\'Or/BFC)',
+  v716c.type === 'admin' && v716c.niveau === 2 && (v716c.features || []).length > nbAv716
+  && (v716c.soeurs || []).some(f => f && f.id === 'Bourgogne-Franche-Comté' && f.__masquee)
+  && !etq716c.some(t => t && t.etqId === 'c-Bourgogne-Franche-Comté'));
+const regs716c = appels.regions || [];
+const par716c = {}; regs716c.forEach(r => { if (r && r.name) par716c[r.name] = r; });
+const trous716c = (v716c.features || []).filter(f => f && f.id
+  && !(par716c[f.id] && par716c[f.id].itemStyle && par716c[f.id].itemStyle.areaColor
+       && par716c[f.id].itemStyle.areaColor !== '#eaf2f8'));
+test('v7.16 : vue combinée — ceinture : TOUS les départements (y c. ajoutés) peints (0 trou blanc)',
+  (v716c.features || []).length > nbAv716 && trous716c.length === 0);
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

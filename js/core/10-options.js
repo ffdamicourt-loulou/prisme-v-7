@@ -34,8 +34,11 @@
         zoom: etat.zoom,
         center: etat.centre,
         scaleLimit: { min: 0.85, max: 600 },
-        itemStyle: { areaColor: THEME.fond, borderColor: THEME.contour, borderWidth: 0 },
-        regions: donneesRegions(),
+        // v7.16 : défaut du geo en TEINTE NEUTRE (et non blanc cassé) —
+        // une zone sans entrée regions ne peut plus former de « trou
+        // blanc » invisible ; les entrées sont ceinturées (06).
+        itemStyle: { areaColor: '#d9e2ec', borderColor: THEME.contour, borderWidth: 0 },
+        regions: donneesRegionsCeinturees(),
       },
       series: [
         {
