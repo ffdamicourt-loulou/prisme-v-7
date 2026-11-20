@@ -542,5 +542,22 @@ test('v7.17 : zoneAuPoint([pixel de Toulouse]) → Occitanie (test direct du hit
   (() => { const fz = P.zoneAuPoint([2 * 1.44, -2 * 43.6]);
     return !!fz && fz.id === 'Occitanie'; })());
 
+// 21. v7.19 — clic simple sur une SŒUR : ses enfants rejoignent la vue
+// (fin du « aucune subdivision plus fine disponible » en multi-N2 niveau 3),
+// puis bascule de retrait au clic suivant.
+clicZone('Auvergne-Rhône-Alpes'); // depuis la vue régions (Occitanie sélectionnée) → départements
+const nAv719 = (P.vue().features || []).length;
+const soeursOcc = (P.vue().soeurs || []).filter(s => s && s.id === 'Occitanie');
+clic('c-Occitanie'); // clic SIMPLE sur la sœur (pas de Maj)
+const v719 = P.vue();
+test('v7.19 : clic simple sur sœur « c-Occitanie » → ses départements REJOIGNENT la vue (plus de message « aucune subdivision »)',
+  soeursOcc.length === 1 && v719.niveau === 2
+  && (v719.features || []).length > nAv719
+  && (v719.soeurs || []).some(f => f && f.id === 'Occitanie' && f.__masquee));
+clic('c-Occitanie'); // clic suivant : bascule de RETRAIT
+test('v7.19 : nouveau clic sur la sœur ajoutée → RETRAIT (bascule)',
+  (P.vue().features || []).length === nAv719
+  && !((P.vue().soeurs || []).some(f => f && f.id === 'Occitanie' && f.__masquee)));
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

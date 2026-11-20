@@ -511,6 +511,25 @@
       });
       if (fzS && S.ajouterSousVue(fzS)) return true;
     }
+    // ── v7.19 : CLIC SIMPLE SUR UNE SŒUR du niveau JUSTE INFÉRIEUR — ses
+    // enfants REJOIGNENT la vue au niveau courant (multi-N2 au niveau 3 :
+    // sélection de plusieurs régions, descente dans les départements de
+    // l'une, puis clic simple sur une autre région pour afficher AUSSI ses
+    // départements). Avant, ce clic tombait dans la descente, échouait sur
+    // le nom « c-XXX » (absent des données) et affichait « aucune
+    // subdivision plus fine disponible ». La sœur doit être du niveau
+    // immédiatement supérieur (__niv = niveau de la vue - 1) et avoir des
+    // enfants ; un nouveau clic les RETIRE (bascule, comme au Maj+clic).
+    if (!maj && S.ajouterSousVue && V.soeurs
+        && (!V.parNom || !V.parNom[nom])) {
+      var fzC = null;
+      (V.soeurs || []).forEach(function (f) {
+        if (!fzC && (f.nom === nom || ('c-' + f.id) === nom
+          || (f.id === nom && String(nom).slice(0, 2) !== 'c-'))) fzC = f;
+      });
+      if (fzC && (fzC.__niv === undefined || fzC.__niv === V.niveau - 1)
+        && S.ajouterSousVue(fzC)) return true;
+    }
     // ── MAJ+ZONE DE LA VUE : bascule dans la sélection de niveau
     if (maj && S.etat && V.parNom && V.parNom[nom]) {
       var selZ = (S.etat.selections || []).slice();

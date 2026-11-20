@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20t -->
+<!-- rebuild-pages 2026-11-20u -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,17 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.19 — clic simple sur une région sœur : ses subdivisions rejoignent la vue (2026-11-20u)
+
+Sélection multi-N2 → descente dans les départements d'une région → clic
+simple sur une AUTRE région (sœur « c- » de la vue) : le clic tombait dans
+la descente, échouait sur le nom « c-XXX » (absent des données) et
+affichait « aucune subdivision plus fine disponible ». Désormais, un clic
+simple sur une sœur du niveau juste inférieur (ayant des enfants) fait
+REJOINDRE ses enfants à la vue courante (même mécanique que le Maj+clic
+v0.52, sœur masquée + teinte sélection) ; un nouveau clic les RETIRE
+(bascule). Harnais navigation : 73/73 ; apparence 11/11 ×2.
 
 ## v7.18 — sélecteur de pays supprimé, étiquettes des régions voisines rétablies (2026-11-20t)
 
