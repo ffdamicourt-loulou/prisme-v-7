@@ -1,14 +1,13 @@
-# Données binaires non versionnées
+# Données binaires — PRISME v-7
 
-Le connecteur GitHub ne transmet pas fidèlement les fichiers binaires. Deux fichiers de `data/` ne sont donc PAS dans le dépôt ; ils sont identiques à ceux validés (harnais 11/11, v0.210) et disponibles :
+Les données binaires sont désormais **dans le dépôt** :
 
-- **data/monde.json.gz** (1,9 Mo) : contours + frontières du monde (ex data-geo-v0210.json.gz)
-- **data/admin.json.gz** (36 octets) : admin quasi vide en mode packages : contenu exact `{"niv1":{},"niv2":{}}`
+- `data/monde.json.gz` : géométrie mondiale (1 905 512 octets), issue de `data-geo-v0210.json.gz`.
+- `data/admin.json.gz` : bornes admin (36 octets) = `{"niv1":{},"niv2":{}}` (mode packages).
 
-Où les récupérer :
-1. Archive **prisme6-v010.zip** (2,3 Mo, aussi sur Drive : prisme V6 / archives) — elle contient les deux fichiers dans prisme6/data/.
-2. Après le clonage : copier les deux fichiers dans `data/`.
+Chargées par `js/app/demarrage.js` via `fetch` + `DecompressionStream("gzip")`.
 
-Vérification : `python3 -c "import gzip; print(gzip.open('data/admin.json.gz').read())"` doit afficher `{"niv1":{},"niv2":{}}`.
+La version complète des bornes admin (15 Mo) reste optionnelle et hors dépôt :
+`prisme6/data/admin-complet-v210.json.gz` (Drive « prisme V6 » / archives locales).
 
-Le gros admin complet (admin-complet-v210.json.gz, 14,4 Mo, optionnel) reste dans prisme V6 / archives / parts sur Drive.
+Les packages de `packages/` (237 + manifest, version corrigée v0.210) sont chargés dynamiquement.
