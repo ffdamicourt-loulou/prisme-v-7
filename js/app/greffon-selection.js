@@ -78,7 +78,7 @@
   // ---------- R1 : clic zone vide / mer → tout désélectionner ----------
   function clicVide() {
     var S = A();
-    annulerDescente();          // referme une validation n2→n3 en attente
+    annulerDescente();          // clic en mer : la validation en attente se referme aussi
     if (!S || !S.etat) return { ok: false, raison: 'noyau absent' };
     S.etat.selection = null;
     S.etat.selections = [];

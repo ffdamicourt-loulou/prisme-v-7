@@ -56,6 +56,16 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
 
+## v7.9b — correctif critique : clic de zone désélectionnait tout (2026-11-20j)
+
+Le gestionnaire « clic fond de carte » traitait TOUT événement geo comme un
+clic vide : or dans un vrai navigateur, le clic sur une RÉGION déclenche
+AUSSI un événement geo PORTANT LE NOM de la zone. Résultat réel : chaque
+clic de zone désélectionnait tout et annulait l'info-bulle de validation
+n2→n3 — sites inutilisables, tests verts car le harnais ne simule pas ce
+double événement. Correctif : « zone vide » = événement SANS NOM
+uniquement.
+
 ## v7.9 — Maj+clic : l'ajout à la sélection réparé et généralisé (2026-11-20i)
 
 Le modificateur Maj n'était PLUS transmis au noyau depuis le passage en

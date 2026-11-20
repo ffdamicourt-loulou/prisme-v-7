@@ -236,10 +236,15 @@
     var bKo = document.getElementById('prisme2-demande-annuler');
     if (bOk) bOk.addEventListener('click', function () { A.validerDemande(); });
     if (bKo) bKo.addEventListener('click', function () { A.annulerDemande(); });
-    // v7.8 : clic sur le FOND DE CARTE (geo) = zone vide → tout désélectionner
+    // v7.8/7.9 : clic MER / ZONE VIDE → tout désélectionner. UNIQUEMENT
+    // les événements SANS NOM : dans un vrai navigateur ECharts, le clic
+    // sur une région déclenche AUSSI un événement geo PORTANT LE NOM de la
+    // zone — le traiter comme « vide » annulait l'info-bulle de validation
+    // et désélectionnait TOUT à chaque clic (le harnais ne simule pas ce
+    // double événement, d'où des tests verts mais un site inutilisable).
     carte.on('click', function (e) {
       if (!window.__PR2_SEL) return;
-      if (e && (e.componentType === 'geo' || !e.name)) window.__PR2_SEL.clicVide();
+      if (e && !e.name) window.__PR2_SEL.clicVide();
     });
     try { if (carte.getZr) carte.getZr().on('contextmenu', function (ev) { try { ev.preventDefault && ev.preventDefault(); } catch (err) { } A.retour(); }); } catch (err) { }
 
