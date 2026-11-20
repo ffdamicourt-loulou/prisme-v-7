@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20i -->
+<!-- rebuild-pages 2026-11-20k -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,32 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.10 — gestionnaire de sélection UNIQUE + vraies causes racines (2026-11-20k)
+
+Réponse à l'analyse d'architecture : oui, l'éclatement de la sémantique de
+sélection/désélection entre greffon-pays et greffon-sélection était la cause
+des régressions en cascade. **Toute l'interprétation des clics vit désormais
+dans un SEUL fichier** : `js/app/greffon-selection.js` (fonction
+`traiteClic`), et `greffon-pays.js` délègue systématiquement (trampoline).
+Causes racines corrigées (invisibles pour les harnais à événements plats) :
+1. **Enveloppe d'événement nichée** : dans un vrai navigateur, ECharts livre
+   `e.event` = enveloppe zrender et l'événement DOM est niché plus bas
+   (`e.event.event`, `.rawEvent`…). La lecture directe
+   `e.event.shiftKey`/`altKey` valait TOUJOURS `undefined` : Maj et Alt ne
+   marchaient QUE dans les harnais. La nouvelle fonction
+   `touche(e, cle)` descend la chaîne d'enveloppes (6 niveaux max).
+2. **Clic en mer** : ECharts n'émet AUCUN événement série/geo quand on
+   clique l'océan, seulement au niveau zrender. Le clic « vide » est donc
+   branché sur `carte.getZr().on('click')` (fonction `zrClic`) : un clic
+   qui a touché une zone nommée pose un drapeau consommé par le zr, seul
+   un clic n'ayant touché AUCUNE zone désélectionne tout (vue conservée).
+3. **Double gestionnaire** : le second `carte.on('click')` « fond de
+   carte » de greffon-pays est supprimé ; le message de fin de chaîne
+   (« aucune subdivision plus fine ») est désormais persistant, géré par
+   `traiteClic` elle-même.
+Harnais navigation : 54/54 (4 nouveaux contrôles v7.10 : enveloppe nichée,
+Maj+enveloppe, drapeau de clic nommé, clic vide zrender) ; apparence 11/11 ×2.
 
 ## v7.9b — correctif critique : clic de zone désélectionnait tout (2026-11-20j)
 

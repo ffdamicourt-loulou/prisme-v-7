@@ -381,5 +381,34 @@ test('v7.9 : retour au monde — la France persiste (sélection primaire), le pa
   P.vue().type === 'monde' && (P.etat.selection === 'FR' || selApres.indexOf('FR') !== -1)
   && selApres.indexOf('DE') === -1 && P.etat.selection !== 'DE'); // la désélection purge
 
+// 17. v7.10 — GESTIONNAIRE UNIQUE + causes racines du VRAI navigateur.
+// (a) Dans un vrai navigateur ECharts, l'événement DOM est NICHÉ dans
+// des enveloppes zrender (e.event.event.rawEvent…) : la lecture directe
+// e.event.shiftKey valait TOUJOURS undefined — Maj ne marchait jamais.
+const SEL10 = ctx.window.__PR2_SEL;
+const clicBrut = (ev) => (appels.events.click || []).forEach(f => f(ev));
+if (SEL10 && SEL10.touche && SEL10.traiteClic) {
+  test('v7.10 : touche() lit shiftKey à 3 niveaux d\'enveloppe (le vrai navigateur)',
+    SEL10.touche({ event: { event: { event: { shiftKey: true } } } }, 'shiftKey') === true
+    && SEL10.touche({ event: { shiftKey: false } }, 'shiftKey') === false
+    && SEL10.touche({}, 'shiftKey') === false);
+  const selAvant = (P.etat.selections || []).slice();
+  clicBrut({ componentType: 'series', seriesType: 'map', name: 'DE',
+    event: { event: { event: { shiftKey: true } } } });
+  const selDE = (P.etat.selections || []);
+  test('v7.10 : Maj+clic DE avec enveloppe NICHÉE → DE sélectionné, FR AJOUTÉ au groupe',
+    P.etat.selection === 'DE' && selDE.indexOf('FR') !== -1);
+  // (b) un clic NOMMÉ pose le drapeau : le zr correspondant ne déselectionne RIEN
+  clicBrut({ componentType: 'series', seriesType: 'map', name: 'socle' });
+  SEL10.zrClic();
+  test('v7.10 : clic sur zone nommée puis zrClic → RIEN n\'est déselectionné',
+    (P.etat.selection !== null && P.etat.selection !== undefined)
+    || (P.etat.selections || []).length > 0);
+  // (c) clic « vide » (zr SANS zone) → tout déselectionné, vue conservée
+  SEL10.zrClic();
+  test('v7.10 : clic VIDE (zrender, sans zone) → tout déselectionné',
+    !P.etat.selection && (P.etat.selections || []).length === 0);
+} else { test('v7.10 : gestionnaire unique exporté (traiteClic/touche/zrClic)', false); }
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

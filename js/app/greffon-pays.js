@@ -140,18 +140,15 @@
     var carte = A.carte();
     carte.on('click', function (e) {
       if (e.componentType !== 'series' || e.seriesType !== 'map') return;
+      // v7.10 : toute l'interprétation des clics vit dans le greffon
+      // sélection (traiteClic : Maj, Alt, x-, sœur, zone, validation
+      // n2→n3) — UN SEUL propriétaire, plus de sémantique éclatée. Le
+      // code en dessous n'est qu'un repli si le greffon est absent.
+      if (window.__PR2_SEL && window.__PR2_SEL.traiteClic) {
+        window.__PR2_SEL.traiteClic(e);
+        return;
+      }
       var V = A.vue();
-      // v7.8 : Alt+clic → panneau de désélection du greffon sélection.
-      if (e.event && e.event.altKey && window.__PR2_SEL) {
-        window.__PR2_SEL.altClic(e);
-        return;
-      }
-      // v7.8 : clic MER / ZONE VIDE (sans nom) → tout désélectionner,
-      // SANS changer la vue ni le cadrage.
-      if (!e.name && window.__PR2_SEL) {
-        window.__PR2_SEL.clicVide();
-        return;
-      }
       if (V.type === 'monde') {
         // v7.9 : Maj+clic AJOUTE le pays à la sélection (vue combinée au
         // niveau 1 : le pays déjà sélectionné REJOINT la sélection —

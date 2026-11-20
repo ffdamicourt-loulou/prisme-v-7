@@ -347,6 +347,132 @@
   }
   function ouvert() { return !!origine; }
 
+  // ---------- v7.10 : INTERPRÉTATION UNIQUE DES CLICS ----------
+  // Dans un VRAI navigateur, ECharts envoie e.event = ENVELOPPE zrender,
+  // l'événement DOM est niché plus bas (e.event.event, .rawEvent…). La
+  // lecture directe e.event.shiftKey était TOUJOURS undefined : Maj et
+  // Alt ne marchaient que dans les harnais (événements plats). On
+  // descend la chaîne d'enveloppes jusqu'à l'événement DOM.
+  function touche(e, cle) {
+    var ev = e && e.event, n = 0;
+    while (ev && n++ < 6) {
+      if (ev[cle] !== undefined) return !!ev[cle];
+      ev = ev.event || ev.rawEvent || ev.originalEvent || null;
+    }
+    return false;
+  }
+  // Drapeau posé par TOUT clic sur une zone NOMMÉE : seul un clic
+  // « vide » (zr sans aucune zone touchée) déclenche la désélection
+  // totale. Ordre garanti : greffon-pays (série) est branché AVANT le
+  // zr du greffon-sélection dans le vrai navigateur — le drapeau est
+  // donc déjà posé quand zrClic s'exécute.
+  var clicNommeFlag = false;
+  function ajouterPays(idX) {
+    var S = A();
+    try { if (S.ajouterAuGroupe(idX)) return true; } catch (err) { }
+    if (S.chargerPackage) {
+      try {
+        return S.chargerPackage(idX, function () {
+          try { S.ajouterAuGroupe(idX); } catch (err) { }
+        });
+      } catch (err) { return false; }
+    }
+    return false;
+  }
+  // TOUTE la sémantique d'un clic carte : Alt (panneau), Maj (ajouts :
+  // pays, extérieur, sœur, zone), sélection/descente pays, x-pays,
+  // validation n2→n3. C'EST LE GESTIONNAIRE UNIQUE — greffon-pays
+  // délègue ici (trampoline) dès que __PR2_SEL.traiteClic existe.
+  function traiteClic(e) {
+    var S = A(); if (!S || !S.vue) return false;
+    var V = S.vue();
+    var estSerie = !!(e && e.componentType === 'series' && e.seriesType === 'map');
+    var nom = (e && e.name) || null;
+    var maj = touche(e, 'shiftKey'), alt = touche(e, 'altKey');
+    if (nom) clicNommeFlag = true;
+    if (!estSerie || !nom) return true; // geo déjà vu côté série ; vide → zr
+    // ── ALT : panneau de désélection (pas de réouverture en cascade)
+    if (alt) { if (!origine) altClic(e); return true; }
+    function alias(id) {
+      var pkgs = window.__PR2_PKGS || {};
+      var f = pkgs.manifest && pkgs.manifest.pays ? pkgs.manifest.pays[id] : null;
+      return (f && f.alias && S.parId[f.alias]) ? f.alias : id;
+    }
+    // ── VUE MONDE : Maj=AJOUT, pays déjà sélectionné=descente, sinon=SÉLECTION
+    if (V.type === 'monde') {
+      if (!S.parId[nom]) return true;
+      var idP = alias(nom);
+      if (maj && S.reinitialiserVers && (!S.etat || S.etat.selection !== idP)) {
+        S.reinitialiserVers(idP, 1, null, true);      // AJOUT pays supplémentaire
+      } else if (S.etat && S.etat.selection === idP) {
+        S.descendre(idP);                              // 2e clic : descente
+      } else {
+        S.reinitialiserVers(idP, 1, null, false);      // 1er clic : sélection
+      }
+      return true;
+    }
+    if (nom.slice(0, 6) === 'socle@' || nom === 'socle') return true;
+    // ── PAYS EXTÉRIEUR x- : Maj=vue combinée au même niveau, sinon sélection
+    if (nom.slice(0, 2) === 'x-') {
+      var idX = alias(nom.slice(2));
+      if (maj && S.ajouterAuGroupe) {
+        if (ajouterPays(idX)) return true;
+        if (S.parId[idX] && S.ouvrir) S.ouvrir(idX, 1, null); // repli n1
+        return true;
+      }
+      if (S.parId[idX] && S.ouvrir) S.ouvrir(idX, 1, null);
+      return true;
+    }
+    // ── MAJ+SŒUR (v0.52) : les enfants de la sœur rejoignent la vue
+    if (maj && S.ajouterSousVue && V.soeurs) {
+      var fzS = null;
+      (V.soeurs || []).forEach(function (f) {
+        if (!fzS && (f.id === nom || f.nom === nom || ('c-' + f.id) === nom)) fzS = f;
+      });
+      if (fzS && S.ajouterSousVue(fzS)) return true;
+    }
+    // ── MAJ+ZONE DE LA VUE : bascule dans la sélection de niveau
+    if (maj && S.etat && V.parNom && V.parNom[nom]) {
+      var selZ = (S.etat.selections || []).slice();
+      var posZ = selZ.indexOf(nom);
+      if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(nom);
+      S.etat.selections = selZ;
+      if (S.majEtiquettes) S.majEtiquettes();
+      return true;
+    }
+    // ── DESCENTE : validation n2→n3 d'abord, puis descente/demande
+    if (!validerDescente(nom)) return true; // info-bulle ouverte : bloqué
+    if (!S.descendreSous(nom)) {
+      // pas d'enfants au niveau suivant : proposer le niveau déjà
+      // connu, et donner un RETOUR VISUEL en fin de chaîne (v7.2 :
+      // message persistant, sans masquage automatique — la vue ne
+      // change pas).
+      var demande = false;
+      try { demande = S.demanderSous(nom); } catch (err) { }
+      var info = (typeof document !== 'undefined') ? document.getElementById('prisme2-info') : null;
+      if (!demande) {
+        if (info) {
+          info.textContent = '« ' + nom + ' » : aucune subdivision plus fine disponible dans les données.';
+          info.style.display = 'block';
+        }
+      } else if (info) info.style.display = 'none';
+    } else {
+      var infoOk = (typeof document !== 'undefined') ? document.getElementById('prisme2-info') : null;
+      if (infoOk) infoOk.style.display = 'none';
+    }
+    return true;
+  }
+  // ── CLIC « VIDE » AU NIVEAU ZRENDER : ECharts n'émet AUCUN événement
+  // série quand on clique la mer ; seul le zr voit passer le clic. Zr
+  // d'un clic nommé : drapeau déjà posé → consommé silencieusement.
+  function zrClic() {
+    if (clicNommeFlag) { clicNommeFlag = false; return; }
+    clicVide();
+  }
+  function brancherZr(carte) {
+    try { if (carte && carte.getZr) carte.getZr().on('click', zrClic); } catch (err) { }
+  }
+
   // ---------- export : LE point d'entrée unique des règles ----------
   window.__PR2_SEL = {
     clicVide: clicVide, altClic: altClic,
@@ -354,8 +480,15 @@
     confirmerDescente: confirmerDescente, annulerDescente: annulerDescente,
     ouvrirPanneau: ouvrirPanneau, choisir: choisir, valider: valider,
     infoBulleOuverte: function () { return !!boiteValidation; },
+    traiteClic: traiteClic, touche: touche, zrClic: zrClic, brancherZr: brancherZr,
     annuler: annuler, ouvert: ouvert,
     options: function () { return options.map(function (o) { return o.label; }); },
     journalTaille: function () { return origine && origine.journal ? origine.journal.length : -1; }
   };
+  // v7.10 : brancher le clic zr (clic vide) dès que la carte existe
+  (function () {
+    var S = window.__PR2;
+    if (S && S.carte && S.carte()) { brancherZr(S.carte()); return; }
+    if (S && S.apresDemarrage) S.apresDemarrage(brancherZr);
+  })();
 })();
