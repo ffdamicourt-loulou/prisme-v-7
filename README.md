@@ -35,3 +35,5 @@
 ## Validation en cours
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
+
+<!-- rebuild-pages 2026-11-20b -->
