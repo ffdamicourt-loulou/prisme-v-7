@@ -1,0 +1,20 @@
+/* Prisme 6 — thème par défaut = apparence claire v0.210.
+   Source unique des paramètres d'apparence : le chargeur (js/theme/chargeur-theme.js)
+   lit ces variables et les expose à window.__PR2_THEME (consommé par le noyau).
+   Laisser une valeur VIDE = repli sur le comportement v0.210 :
+   pays/survol/texte suivent les teintes continents (data/couleurs-continents.json). */
+:root {
+  --pr-fond: #eaf2f8;           /* fond de page */
+  --pr-pays: ;                  /* silhouettes pays : vide = teintes continents */
+  --pr-survol: ;                /* zone survolée/sélectionnée : vide = assombrissement */
+  --pr-contour: #ffffff;       /* filet pays + zones + frontières */
+  --pr-texte: ;                 /* étiquettes : vide = contraste automatique */
+  --pr-texte-survol: #000000;  /* texte sur zone survolée/sélectionnée */
+
+  --pr-ombre-couleur: ;         /* ombre portée côtes : vide = pas d'ombre */
+  --pr-ombre-x: 15;
+  --pr-ombre-y: 15;
+  --pr-ombre-flou: 15;
+
+  --pr-trait: 0.6;              /* épaisseur filets (px) */
+}

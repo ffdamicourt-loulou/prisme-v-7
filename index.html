@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prisme 6</title>
+<link rel="stylesheet" href="css/prisme.css">
+<!-- Thème actif : remplacer css/theme.css par css/theme-black.css pour la variante noire -->
+<link rel="stylesheet" id="prisme6-theme" href="css/theme.css">
+</head>
+<body>
+<div id="prisme2-bandeau">Prisme 6 <b>· PAYS (v0.210)</b> — les packages pays sont chargés à la demande ; molette : zoom ; cliquer une zone : descendre ; Export = Image PNG ou HTML interactif</div>
+<div id="prisme2-fil"></div>
+<div id="prisme2-demande">
+  <div>Charger les <b id="prisme2-demande-nombre"></b> sous-zones de «&nbsp;<b id="prisme2-demande-nom"></b>&nbsp;» ?</div>
+  <div class="prisme2-demande-boutons">
+    <button type="button" id="prisme2-demande-annuler">Annuler</button>
+    <button type="button" id="prisme2-demande-ok">Charger</button>
+  </div>
+</div>
+<div id="prisme2"></div>
+<script src="js/lib/echarts.min.js"></script>
+<script>window.__PR2_COMPLET = 'v0.210';</script>
+<script src="js/theme/chargeur-theme.js"></script>
+<script src="js/app/demarrage.js"></script>
+</body>
+</html>

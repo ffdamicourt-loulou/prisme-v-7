@@ -1,0 +1,19 @@
+/* Prisme 6 — variante noire (apparence prisme-black v7).
+   Activer en remplaçant theme.css par ce fichier dans index.html,
+   ou en le chargeant APRÈS theme.css (les variables sont réévaluées au boot). */
+:root {
+  --pr-fond: #0e0e0e;
+  --pr-pays: #101010;
+  --pr-survol: #ffffff;
+  --pr-texte-survol: #000000;
+
+  --pr-contour: #ffffff;
+  --pr-texte: #ffffff;
+
+  --pr-ombre-couleur: #070707;
+  --pr-ombre-x: 15;
+  --pr-ombre-y: 0;
+  --pr-ombre-flou: 15;
+
+  --pr-trait: 0.3;
+}

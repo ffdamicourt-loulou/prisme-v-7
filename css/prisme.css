@@ -1,0 +1,47 @@
+
+/* Prisme 2 — FEUILLE DE STYLE DU CHROME DOM (v0.80m)
+   Le canvas (carte, étiquettes, villes) est stylé par l'objet STYLES du
+   noyau (prisme2-core.js) : ECharts dessine dans un canvas et le CSS ne
+   peut pas y atteindre les textes. Tout ce qui est DOM (bandeau, fil
+   d'Ariane, fenêtre de dialogue) vit ICI — c'est le point d'entrée du
+   responsive (media queries ci-dessous). */
+
+html, body { margin: 0; height: 100%; background: #0c0c0c; font-family: "Segoe UI", system-ui, sans-serif; }
+#prisme2 { width: 100%; height: 100%; }
+
+#prisme2-bandeau { position: fixed; top: 0; left: 0; right: 0; padding: 6px 14px;
+  font-size: 13px; color: #233; background: rgba(255,255,255,0.82); border-bottom: 1px solid #cdd8e2;
+  pointer-events: none; z-index: 10; }
+#prisme2-bandeau b { color: #0155a7; }
+
+#prisme2-fil { position: fixed; top: 36px; left: 10px; padding: 4px 10px; z-index: 10;
+  font-size: 13px; color: #233; background: rgba(255,255,255,0.88);
+  border: 1px solid #cdd8e2; border-radius: 6px; }
+#prisme2-fil .prisme2-fil-retour { cursor: pointer; color: #0155a7; font-weight: 600; margin-right: 8px; }
+#prisme2-fil .prisme2-fil-retour:hover { text-decoration: underline; }
+
+#prisme2-demande { position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 20; display: none; background: #ffffff; border: 1px solid #cdd8e2; border-radius: 8px;
+  padding: 18px 24px; font-size: 14px; color: #233; box-shadow: 0 2px 14px rgba(20,40,60,0.18); }
+#prisme2-demande b { color: #0155a7; }
+#prisme2-demande .prisme2-demande-boutons { margin-top: 14px; text-align: right; }
+#prisme2-demande button { margin-left: 8px; padding: 6px 16px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #cdd8e2; background: #f4f8fb; font-size: 13px; color: #233; }
+#prisme2-demande #prisme2-demande-ok { background: #0155a7; color: #ffffff; border-color: #0155a7; font-weight: 600; }
+
+/* ---------- RESPONSIVE ---------- */
+/* Écrans étroits (tablette verticale) : chrome compact, le fil passe
+   sous le bandeau ; la typographie du canvas s'adapte via STYLES. */
+@media (max-width: 900px) {
+  #prisme2-bandeau { font-size: 11px; padding: 4px 10px; }
+  #prisme2-fil { top: 30px; font-size: 11px; padding: 3px 8px; }
+  #prisme2-demande { font-size: 13px; padding: 14px 16px; }
+}
+/* Téléphones : bandeau et fil minimaux pour laisser la carte respirer. */
+@media (max-width: 560px) {
+  #prisme2-bandeau { font-size: 10px; padding: 3px 8px; }
+  #prisme2-fil { top: 26px; left: 6px; right: 6px; font-size: 10px; }
+  #prisme2-demande { width: 86vw; font-size: 12px; }
+  #prisme2-demande button { padding: 5px 12px; font-size: 12px; }
+}
+
