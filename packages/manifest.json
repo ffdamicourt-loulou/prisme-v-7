@@ -1,0 +1,1839 @@
+{
+ "version": "v0.210",
+ "genere": "2026-11-20T00:27:38.124Z",
+ "pays": {
+  "AD": {
+   "a3": "AND",
+   "fichier": "packages/AD.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AE": {
+   "a3": "ARE",
+   "fichier": "packages/AE.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AF": {
+   "a3": "AFG",
+   "fichier": "packages/AF.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AG": {
+   "a3": "ATG",
+   "fichier": "packages/AG.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AI": {
+   "a3": "AIA",
+   "fichier": "packages/AI.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AL": {
+   "a3": "ALB",
+   "fichier": "packages/AL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AM": {
+   "a3": "ARM",
+   "fichier": "packages/AM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AO": {
+   "a3": "AGO",
+   "fichier": "packages/AO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AR": {
+   "a3": "ARG",
+   "fichier": "packages/AR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AS": {
+   "a3": "ASM",
+   "fichier": "packages/AS.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AT": {
+   "a3": "AUT",
+   "fichier": "packages/AT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ATC": {
+   "a3": "ATC",
+   "fichier": "packages/ATC.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AU": {
+   "a3": "AUS",
+   "fichier": "packages/AU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "AW": {
+   "a3": "ABW",
+   "fichier": "packages/AW.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AX": {
+   "a3": "ALD",
+   "fichier": "packages/AX.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "AZ": {
+   "a3": "AZE",
+   "fichier": "packages/AZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BA": {
+   "a3": "BIH",
+   "fichier": "packages/BA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BB": {
+   "a3": "BRB",
+   "fichier": "packages/BB.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "BD": {
+   "a3": "BGD",
+   "fichier": "packages/BD.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BE": {
+   "a3": "BEL",
+   "fichier": "packages/BE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BF": {
+   "a3": "BFA",
+   "fichier": "packages/BF.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "BG": {
+   "a3": "BGR",
+   "fichier": "packages/BG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BH": {
+   "a3": "BHR",
+   "fichier": "packages/BH.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "BI": {
+   "a3": "BDI",
+   "fichier": "packages/BI.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BJ": {
+   "a3": "BEN",
+   "fichier": "packages/BJ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BL": {
+   "a3": "BLM",
+   "fichier": "packages/BL.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "BM": {
+   "a3": "BMU",
+   "fichier": "packages/BM.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "BN": {
+   "a3": "BRN",
+   "fichier": "packages/BN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BO": {
+   "a3": "BOL",
+   "fichier": "packages/BO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BR": {
+   "a3": "BRI",
+   "fichier": "packages/BR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BS": {
+   "a3": "BHS",
+   "fichier": "packages/BS.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "BT": {
+   "a3": "BTN",
+   "fichier": "packages/BT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BW": {
+   "a3": "BWA",
+   "fichier": "packages/BW.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BY": {
+   "a3": "BLR",
+   "fichier": "packages/BY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "BZ": {
+   "a3": "BLZ",
+   "fichier": "packages/BZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CA": {
+   "a3": "CAN",
+   "fichier": "packages/CA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CD": {
+   "a3": "COD",
+   "fichier": "packages/CD.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CF": {
+   "a3": "CAF",
+   "fichier": "packages/CF.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CG": {
+   "a3": "COG",
+   "fichier": "packages/CG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CH": {
+   "a3": "CHE",
+   "fichier": "packages/CH.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "CI": {
+   "a3": "CIV",
+   "fichier": "packages/CI.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CK": {
+   "a3": "COK",
+   "fichier": "packages/CK.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "CL": {
+   "a3": "CHL",
+   "fichier": "packages/CL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CM": {
+   "a3": "CMR",
+   "fichier": "packages/CM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CN": {
+   "a3": "CHN",
+   "fichier": "packages/CN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CO": {
+   "a3": "COL",
+   "fichier": "packages/CO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CR": {
+   "a3": "CRI",
+   "fichier": "packages/CR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CSI": {
+   "a3": "CSI",
+   "fichier": "packages/CSI.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "CU": {
+   "a3": "CUB",
+   "fichier": "packages/CU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CV": {
+   "a3": "CPV",
+   "fichier": "packages/CV.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CW": {
+   "a3": "CUW",
+   "fichier": "packages/CW.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "CY": {
+   "a3": "CYP",
+   "fichier": "packages/CY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "CYN": {
+   "a3": "CYN",
+   "fichier": "packages/CYN.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "CZ": {
+   "a3": "CZE",
+   "fichier": "packages/CZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "DE": {
+   "a3": "DEU",
+   "fichier": "packages/DE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "DJ": {
+   "a3": "DJI",
+   "fichier": "packages/DJ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "DK": {
+   "a3": "DNK",
+   "fichier": "packages/DK.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "DM": {
+   "a3": "DMA",
+   "fichier": "packages/DM.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "DO": {
+   "a3": "DOM",
+   "fichier": "packages/DO.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "DZ": {
+   "a3": "DZA",
+   "fichier": "packages/DZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "EC": {
+   "a3": "ECU",
+   "fichier": "packages/EC.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "EE": {
+   "a3": "EST",
+   "fichier": "packages/EE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "EG": {
+   "a3": "EGY",
+   "fichier": "packages/EG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "EH": {
+   "a3": "SAH",
+   "fichier": "packages/EH.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "ER": {
+   "a3": "ERI",
+   "fichier": "packages/ER.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ES": {
+   "a3": "ESP",
+   "fichier": "packages/ES.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ES-002": {
+   "a3": "ESP",
+   "fichier": "packages/ES.js",
+   "alias": "ES",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ET": {
+   "a3": "ETH",
+   "fichier": "packages/ET.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "FI": {
+   "a3": "FIN",
+   "fichier": "packages/FI.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "FJ": {
+   "a3": "FJI",
+   "fichier": "packages/FJ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "FK": {
+   "a3": "FLK",
+   "fichier": "packages/FK.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "FM": {
+   "a3": "FSM",
+   "fichier": "packages/FM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "FO": {
+   "a3": "FRO",
+   "fichier": "packages/FO.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "FR": {
+   "a3": "FRA",
+   "fichier": "packages/FR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "FR-NA": {
+   "a3": "FRA",
+   "fichier": "packages/FR.js",
+   "alias": "FR",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "FR-SA": {
+   "a3": "FRA",
+   "fichier": "packages/FR.js",
+   "alias": "FR",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GA": {
+   "a3": "GAB",
+   "fichier": "packages/GA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GB": {
+   "a3": "GBR",
+   "fichier": "packages/GB.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GD": {
+   "a3": "GRD",
+   "fichier": "packages/GD.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "GE": {
+   "a3": "GEO",
+   "fichier": "packages/GE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GG": {
+   "a3": "GGY",
+   "fichier": "packages/GG.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "GH": {
+   "a3": "GHA",
+   "fichier": "packages/GH.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GI": {
+   "a3": "GIB",
+   "fichier": "packages/GI.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "GL": {
+   "a3": "GRL",
+   "fichier": "packages/GL.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "GM": {
+   "a3": "GMB",
+   "fichier": "packages/GM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GN": {
+   "a3": "GIN",
+   "fichier": "packages/GN.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "GQ": {
+   "a3": "GNQ",
+   "fichier": "packages/GQ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GR": {
+   "a3": "GRC",
+   "fichier": "packages/GR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GT": {
+   "a3": "GTM",
+   "fichier": "packages/GT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GU": {
+   "a3": "GUM",
+   "fichier": "packages/GU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "GW": {
+   "a3": "GNB",
+   "fichier": "packages/GW.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "GY": {
+   "a3": "GUY",
+   "fichier": "packages/GY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "HK": {
+   "a3": "HKG",
+   "fichier": "packages/HK.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "HN": {
+   "a3": "HND",
+   "fichier": "packages/HN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "HR": {
+   "a3": "HRV",
+   "fichier": "packages/HR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "HT": {
+   "a3": "HTI",
+   "fichier": "packages/HT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "HU": {
+   "a3": "HUN",
+   "fichier": "packages/HU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ID": {
+   "a3": "IDN",
+   "fichier": "packages/ID.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "IE": {
+   "a3": "IRL",
+   "fichier": "packages/IE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "IL": {
+   "a3": "ISR",
+   "fichier": "packages/IL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "IM": {
+   "a3": "IMN",
+   "fichier": "packages/IM.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "IN": {
+   "a3": "IND",
+   "fichier": "packages/IN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "IOA": {
+   "a3": "IOA",
+   "fichier": "packages/IOA.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "IQ": {
+   "a3": "IRQ",
+   "fichier": "packages/IQ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "IR": {
+   "a3": "IRN",
+   "fichier": "packages/IR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "IS": {
+   "a3": "ISL",
+   "fichier": "packages/IS.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "IT": {
+   "a3": "ITA",
+   "fichier": "packages/IT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "JE": {
+   "a3": "JEY",
+   "fichier": "packages/JE.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "JM": {
+   "a3": "JAM",
+   "fichier": "packages/JM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "JO": {
+   "a3": "JOR",
+   "fichier": "packages/JO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "JP": {
+   "a3": "JPN",
+   "fichier": "packages/JP.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KE": {
+   "a3": "KEN",
+   "fichier": "packages/KE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KG": {
+   "a3": "KGZ",
+   "fichier": "packages/KG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KH": {
+   "a3": "KHM",
+   "fichier": "packages/KH.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KI": {
+   "a3": "KIR",
+   "fichier": "packages/KI.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KM": {
+   "a3": "COM",
+   "fichier": "packages/KM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KN": {
+   "a3": "KNA",
+   "fichier": "packages/KN.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "KP": {
+   "a3": "PRK",
+   "fichier": "packages/KP.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KR": {
+   "a3": "KOR",
+   "fichier": "packages/KR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KW": {
+   "a3": "KWT",
+   "fichier": "packages/KW.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "KY": {
+   "a3": "CYM",
+   "fichier": "packages/KY.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "KZ": {
+   "a3": "KAZ",
+   "fichier": "packages/KZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LA": {
+   "a3": "LAO",
+   "fichier": "packages/LA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LB": {
+   "a3": "LBN",
+   "fichier": "packages/LB.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LC": {
+   "a3": "LCA",
+   "fichier": "packages/LC.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LI": {
+   "a3": "LIE",
+   "fichier": "packages/LI.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "LK": {
+   "a3": "LKA",
+   "fichier": "packages/LK.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "LR": {
+   "a3": "LBR",
+   "fichier": "packages/LR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LS": {
+   "a3": "LSO",
+   "fichier": "packages/LS.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LT": {
+   "a3": "LTU",
+   "fichier": "packages/LT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LU": {
+   "a3": "LUX",
+   "fichier": "packages/LU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "LV": {
+   "a3": "LVA",
+   "fichier": "packages/LV.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "LY": {
+   "a3": "LBY",
+   "fichier": "packages/LY.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MA": {
+   "a3": "MAR",
+   "fichier": "packages/MA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MD": {
+   "a3": "MDA",
+   "fichier": "packages/MD.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "ME": {
+   "a3": "MNE",
+   "fichier": "packages/ME.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MF": {
+   "a3": "MAF",
+   "fichier": "packages/MF.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MG": {
+   "a3": "MDG",
+   "fichier": "packages/MG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MH": {
+   "a3": "MHL",
+   "fichier": "packages/MH.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MK": {
+   "a3": "MKD",
+   "fichier": "packages/MK.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "ML": {
+   "a3": "MLI",
+   "fichier": "packages/ML.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MM": {
+   "a3": "MMR",
+   "fichier": "packages/MM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MN": {
+   "a3": "MNG",
+   "fichier": "packages/MN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MO": {
+   "a3": "MAC",
+   "fichier": "packages/MO.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MP": {
+   "a3": "MNP",
+   "fichier": "packages/MP.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MR": {
+   "a3": "MRT",
+   "fichier": "packages/MR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MS": {
+   "a3": "MSR",
+   "fichier": "packages/MS.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MT": {
+   "a3": "MLT",
+   "fichier": "packages/MT.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MW": {
+   "a3": "MWI",
+   "fichier": "packages/MW.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "MX": {
+   "a3": "MEX",
+   "fichier": "packages/MX.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MY": {
+   "a3": "MYS",
+   "fichier": "packages/MY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "MZ": {
+   "a3": "MOZ",
+   "fichier": "packages/MZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NA": {
+   "a3": "NAM",
+   "fichier": "packages/NA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NC": {
+   "a3": "NCL",
+   "fichier": "packages/NC.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "NE": {
+   "a3": "NER",
+   "fichier": "packages/NE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NF": {
+   "a3": "NFK",
+   "fichier": "packages/NF.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "NG": {
+   "a3": "NGA",
+   "fichier": "packages/NG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NI": {
+   "a3": "NIC",
+   "fichier": "packages/NI.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NL": {
+   "a3": "NLD",
+   "fichier": "packages/NL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NL-NA": {
+   "a3": "NLD",
+   "fichier": "packages/NL.js",
+   "alias": "NL",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NO": {
+   "a3": "NOR",
+   "fichier": "packages/NO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NP": {
+   "a3": "NPL",
+   "fichier": "packages/NP.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "NR": {
+   "a3": "NRU",
+   "fichier": "packages/NR.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "NU": {
+   "a3": "NIU",
+   "fichier": "packages/NU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "NZ": {
+   "a3": "NZL",
+   "fichier": "packages/NZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "OM": {
+   "a3": "OMN",
+   "fichier": "packages/OM.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "PA": {
+   "a3": "PAN",
+   "fichier": "packages/PA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PE": {
+   "a3": "PER",
+   "fichier": "packages/PE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PF": {
+   "a3": "PYF",
+   "fichier": "packages/PF.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "PG": {
+   "a3": "PNG",
+   "fichier": "packages/PG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PH": {
+   "a3": "PHL",
+   "fichier": "packages/PH.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "PK": {
+   "a3": "PAK",
+   "fichier": "packages/PK.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PL": {
+   "a3": "POL",
+   "fichier": "packages/PL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PM": {
+   "a3": "SPM",
+   "fichier": "packages/PM.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "PN": {
+   "a3": "PCN",
+   "fichier": "packages/PN.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "PR": {
+   "a3": "PRI",
+   "fichier": "packages/PR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PT": {
+   "a3": "PRT",
+   "fichier": "packages/PT.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PW": {
+   "a3": "PLW",
+   "fichier": "packages/PW.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "PY": {
+   "a3": "PRY",
+   "fichier": "packages/PY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "QA": {
+   "a3": "QAT",
+   "fichier": "packages/QA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "RO": {
+   "a3": "ROU",
+   "fichier": "packages/RO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "RS": {
+   "a3": "SRB",
+   "fichier": "packages/RS.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "RU": {
+   "a3": "RUS",
+   "fichier": "packages/RU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "RW": {
+   "a3": "RWA",
+   "fichier": "packages/RW.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SA": {
+   "a3": "SAU",
+   "fichier": "packages/SA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SB": {
+   "a3": "SLB",
+   "fichier": "packages/SB.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SD": {
+   "a3": "SDN",
+   "fichier": "packages/SD.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SE": {
+   "a3": "SWE",
+   "fichier": "packages/SE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SG": {
+   "a3": "SGP",
+   "fichier": "packages/SG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SI": {
+   "a3": "SVN",
+   "fichier": "packages/SI.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "SK": {
+   "a3": "SVK",
+   "fichier": "packages/SK.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SL": {
+   "a3": "SLE",
+   "fichier": "packages/SL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SN": {
+   "a3": "SEN",
+   "fichier": "packages/SN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SO": {
+   "a3": "SOM",
+   "fichier": "packages/SO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SOL": {
+   "a3": "SOL",
+   "fichier": "packages/SOL.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "SR": {
+   "a3": "SUR",
+   "fichier": "packages/SR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SS": {
+   "a3": "SDS",
+   "fichier": "packages/SS.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ST": {
+   "a3": "STP",
+   "fichier": "packages/ST.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SV": {
+   "a3": "SLV",
+   "fichier": "packages/SV.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SX": {
+   "a3": "SXM",
+   "fichier": "packages/SX.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SY": {
+   "a3": "SYR",
+   "fichier": "packages/SY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "SZ": {
+   "a3": "SWZ",
+   "fichier": "packages/SZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TC": {
+   "a3": "TCA",
+   "fichier": "packages/TC.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "TD": {
+   "a3": "TCD",
+   "fichier": "packages/TD.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TG": {
+   "a3": "TGO",
+   "fichier": "packages/TG.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TH": {
+   "a3": "THA",
+   "fichier": "packages/TH.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TJ": {
+   "a3": "TJK",
+   "fichier": "packages/TJ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TL": {
+   "a3": "TLS",
+   "fichier": "packages/TL.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TM": {
+   "a3": "TKM",
+   "fichier": "packages/TM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TN": {
+   "a3": "TUN",
+   "fichier": "packages/TN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TO": {
+   "a3": "TON",
+   "fichier": "packages/TO.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TR": {
+   "a3": "TUR",
+   "fichier": "packages/TR.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TT": {
+   "a3": "TTO",
+   "fichier": "packages/TT.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "TV": {
+   "a3": "TUV",
+   "fichier": "packages/TV.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "TW": {
+   "a3": "TWN",
+   "fichier": "packages/TW.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "TZ": {
+   "a3": "TZA",
+   "fichier": "packages/TZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "UA": {
+   "a3": "UKR",
+   "fichier": "packages/UA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "UG": {
+   "a3": "UGA",
+   "fichier": "packages/UG.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "US": {
+   "a3": "USA",
+   "fichier": "packages/US.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "US-009": {
+   "a3": "USA",
+   "fichier": "packages/US.js",
+   "alias": "US",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "USG": {
+   "a3": "USG",
+   "fichier": "packages/USG.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "UY": {
+   "a3": "URY",
+   "fichier": "packages/UY.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "UZ": {
+   "a3": "UZB",
+   "fichier": "packages/UZ.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "VC": {
+   "a3": "VCT",
+   "fichier": "packages/VC.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "VE": {
+   "a3": "VEN",
+   "fichier": "packages/VE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "VE-NA": {
+   "a3": "VEN",
+   "fichier": "packages/VE.js",
+   "alias": "VE",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "VG": {
+   "a3": "VGB",
+   "fichier": "packages/VG.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "VI": {
+   "a3": "VIR",
+   "fichier": "packages/VI.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "VN": {
+   "a3": "VNM",
+   "fichier": "packages/VN.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "VU": {
+   "a3": "VUT",
+   "fichier": "packages/VU.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "WF": {
+   "a3": "WLF",
+   "fichier": "packages/WF.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "WS": {
+   "a3": "WSM",
+   "fichier": "packages/WS.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "XK": {
+   "a3": "KOS",
+   "fichier": "packages/XK.js",
+   "niveaux": [
+    1
+   ]
+  },
+  "YE": {
+   "a3": "YEM",
+   "fichier": "packages/YE.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ZA": {
+   "a3": "ZAF",
+   "fichier": "packages/ZA.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ZM": {
+   "a3": "ZMB",
+   "fichier": "packages/ZM.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  },
+  "ZW": {
+   "a3": "ZWE",
+   "fichier": "packages/ZW.js",
+   "niveaux": [
+    1,
+    2
+   ]
+  }
+ }
+}

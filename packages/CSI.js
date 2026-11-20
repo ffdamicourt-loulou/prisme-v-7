@@ -1,0 +1,2 @@
+// package Prisme 2 CSI/CSI — v0.210 (charger via <script src>, contournement CORS file://)
+window.__PR2_PKG_REG("CSI", {"id":"CSI","a3":"CSI","nom":"Îles de la mer de Corail","continent":"009","contour":{"type":"Polygon","coordinates":[[[154.391,-21.03],[154.389,-21.029],[154.391,-21.029],[154.391,-21.03]]],"__cp":[154.3903393144175,-21.029334148003834],"__alt":[154.390625,-21.029375],"__sec":[0.001731703992305711,0.0008696572087494303]},"bbox":[154.389,-21.03,154.391,-21.029],"enclaves":null,"niv1":[],"niv2":null});
