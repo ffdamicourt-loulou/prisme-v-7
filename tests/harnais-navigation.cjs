@@ -108,5 +108,57 @@ if (deOk) {
   test('DE clic région « ' + reg + ' » → niv2', P.vue().type === 'admin' && P.vue().niveau === 2);
 }
 
+// 7. v7.2 — menu dédoublonné (les alias FR-NA, FR-SA… ne sont plus des pays)
+const listePays = ctx.window.__PR2_PAYS ? ctx.window.__PR2_PAYS.liste() : [];
+const noms2 = listePays.map(id => (P.parId[id] || {}).nom);
+const doublons = noms2.filter((n, i) => noms2.indexOf(n) !== i);
+test('menu : ' + listePays.length + ' pays, sans doublon (' + (doublons.length ? doublons.join(',') : 'OK') + ')',
+  listePays.length > 220 && doublons.length === 0 && listePays.indexOf('FR-NA') === -1 && listePays.indexOf('FR-SA') === -1 && listePays.indexOf('US-009') === -1);
+const rAlias = ctx.window.__PR2_PAYS.ouvrir('US-009'); // alias → doit demander US (enAttente)
+test('ouvrir alias US-009 → package US demandé (résolution d\'alias)',
+  rAlias.enAttente === true && appels.scripts.some(s => /US/.test(s)));
+if (rAlias.enAttente) {
+  charge('US');
+  const vu = P.vue();
+  test('après package US (via alias) : vue niv1 États-Unis', vu.type === 'admin' && vu.niveau === 1 && vu.paysId === 'US');
+}
+
+// 8. v7.2 — FRANCE : remontée au monde puis niveau 3 (arrondissements)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR');
+charge('FR');
+const vfr1 = P.vue();
+test('FR : vue niv1', vfr1.type === 'admin' && vfr1.niveau === 1);
+clic('Auvergne-Rhône-Alpes');
+const vfr2 = P.vue();
+test('FR : clic région → niv2', vfr2.type === 'admin' && vfr2.niveau === 2);
+const nbScriptsAvant = appels.scripts.length;
+clic('Ain');
+const vfr3 = P.vue();
+test('FR : clic département Ain → niv3 arrondissements (' + vfr3.niveau + ', ' + vfr3.features.length + ' zones)',
+  vfr3.type === 'admin' && vfr3.niveau === 3 && vfr3.features.length >= 2);
+// pas de re-téléchargement du package sur un clic sans suite (fin de chaîne)
+clic('Belley');
+const apres = P.vue();
+const info = doc._els['prisme2-info'];
+test('clic sur un arrondissement (fin de chaîne) : aucune re-télécharge, message affiché',
+  apres === vfr3 && appels.scripts.length === nbScriptsAvant && info && info.style.display !== 'none');
+// changement de niveau 2 SANS remonter au monde : depuis la vue niv2
+// (départements d'Auvergne-Rhône-Alpes), les autres régions sont des sœurs
+for (let i = 0; i < 2 && P.vue().type !== 'monde' && P.vue().niveau !== 2; i++) P.retour();
+clic('Bourgogne-Franche-Comté');
+const vAutre = P.vue();
+test('depuis niv2 : clic région sœur → vue des départements de Bourgogne (' + (vAutre.features || []).length + ' zones)',
+  vAutre.type === 'admin' && vAutre.features.length > 0
+  && vAutre.features.every(f => !f.__masque || true)
+  && (vAutre.parent === 'Bourgogne-Franche-Comté' || vAutre.nomMap.indexOf('Bourgogne') !== -1));
+// et depuis ce niveau, sélectionner un AUTRE pays via le panneau (descendre direct)
+const rEsp = ctx.window.__PR2_PAYS.ouvrir('ES');
+test('sélection d\'un autre pays (ES) depuis une vue niv2 → package chargé, vue ouverte',
+  rEsp.enAttente === true || rEsp.ok === true);
+if (rEsp.enAttente) charge('ES');
+const ves = P.vue();
+test('après ES : vue niv1 Espagne', ves.type === 'admin' && ves.niveau === 1 && ves.paysId === 'ES');
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

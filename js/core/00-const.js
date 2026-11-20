@@ -160,10 +160,12 @@
   // le CORS file://). En HTML tout-embarqué, ADMIN est déjà complet et ce
   // mécanisme ne fait RIEN (window.__PR2_PKGS absent).
   var PKG_EN_COURS = {};
+  var PKG_FAIT = {}; // v7.2 : a3 déjà enregistrés par __PR2_PKG_REG
   window.__PR2_PKG_REG = function (idPays, donnees) {
     if (!donnees || !donnees.a3) return false;
     if (donnees.niv1) ADMIN.niv1[donnees.a3] = donnees.niv1;
     if (donnees.niv2) ADMIN.niv2[donnees.a3] = donnees.niv2;
+    PKG_FAIT[donnees.a3] = true;
     delete PKG_EN_COURS[idPays];
     // v0.210 : DÉDUPLICATION PAR a3 — un alias (FR-NA, FR-SA, ES-002,
     // NL-NA, US-009, VE-NA) charge le FICHIER CANONIQUE (FR.js…) : purger
@@ -181,6 +183,9 @@
     if (!conf || !conf.manifest || !conf.manifest.pays) return false;
     var fiche = conf.manifest.pays[idPays];
     if (!fiche || !fiche.fichier || PKG_EN_COURS[idPays]) return false;
+    // v7.2 : déjà enregistré → JAMAIS re-télécharger (sans ce garde, chaque
+    // clic sur une zone sans sous-niveau re-téléchargeait le package entier).
+    if (PKG_FAIT[fiche.a3]) return false;
     PKG_EN_COURS[idPays] = true;
     var s = document.createElement('script');
     s.src = (conf.base || '') + fiche.fichier;

@@ -9,7 +9,15 @@
     var c = conf();
     if (!c || !c.manifest || !c.manifest.pays) return [];
     var A = window.__PR2, ids = [];
-    Object.keys(c.manifest.pays).forEach(function (id) { if (A && A.parId && A.parId[id]) ids.push(id); });
+    // v7.2 : les ALIAS (FR-NA, FR-SA, US-009…) sont des morceaux de pays
+    // déportés sur la carte monde, PAS des pays distincts : les exclure du
+    // sélecteur sinon « France » y apparaissait trois fois et deux des trois
+    // entrées étaient mortes (descendPossible refuse les ids à tiret).
+    Object.keys(c.manifest.pays).forEach(function (id) {
+      var fiche = c.manifest.pays[id];
+      if (fiche && fiche.alias) return;
+      if (A && A.parId && A.parId[id]) ids.push(id);
+    });
     return ids.sort(function (a, b) {
       return String(A.parId[a].nom).localeCompare(String(A.parId[b].nom), 'fr');
     });
@@ -18,6 +26,11 @@
   function ouvrir(id) {
     var A = window.__PR2;
     if (!A || !A.parId[id]) return { ok: false, raison: 'pays inconnu : ' + id };
+    // v7.2 : résoudre l'alias vers le pays réel (FR-NA → FR) — sinon la
+    // descente échoue toujours (les ids à tiret sont des outre-mer).
+    var conf = window.__PR2_PKGS;
+    var fiche = conf && conf.manifest && conf.manifest.pays ? conf.manifest.pays[id] : null;
+    if (fiche && fiche.alias && A.parId[fiche.alias]) id = fiche.alias;
     // descendre() charge le package à la demande (mécanisme v0.80 du noyau :
     // admin absent + package déclaré → __PR2_PKG_REG → descente retentée),
     // même réponse que la sélection par clic (true = vue niv1 ouverte).
@@ -102,6 +115,12 @@
     cp.appendChild(sortie);
     panneau.appendChild(cp);
 
+    // v7.2 : bandeau d'information fin de descente (aucune donnée plus fine)
+    var info = el('div', { id: 'prisme2-info' });
+    info.style.cssText = 'display:none;margin-top:6px;padding:6px;background:#fff8e1'
+      + ';border:1px solid #e0c97a;border-radius:4px;color:#6b5d2b';
+    panneau.appendChild(info);
+
     ancrage.parentNode.insertBefore(panneau, ancrage.nextSibling);
 
     // ── NAVIGATION PAR CLIC (mode pays) : descendre là où on clique.
@@ -118,9 +137,24 @@
         return;
       }
       if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
+      if (e.name && e.name.slice(0, 6) === 'socle@') return; // le socle ne se parcourt pas
       if (!A.descendreSous(e.name)) {
         // pas d'enfants au niveau suivant : proposer le niveau déjà connu
-        try { A.demanderSous(e.name); } catch (err) { }
+        var demande = false;
+        try { demande = A.demanderSous(e.name); } catch (err) { }
+        // v7.2 : donner un RETOUR VISUEL quand aucune donnée plus fine
+        // n'existe (fin de la chaîne des subdivisions disponibles).
+        var info = document.getElementById('prisme2-info');
+        if (!demande) {
+          if (info) {
+            info.textContent = (e.name ? '« ' + e.name + ' »' : 'Cette zone')
+              + ' : aucune subdivision plus fine disponible dans les données.';
+            info.style.display = 'block';
+          }
+        } else if (info) info.style.display = 'none';
+      } else {
+        var infoOk = document.getElementById('prisme2-info');
+        if (infoOk) infoOk.style.display = 'none';
       }
     });
     var bOk = document.getElementById('prisme2-demande-ok');
