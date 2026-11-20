@@ -412,6 +412,50 @@
                    fontWeight: STYLES.etiquette.fontWeight } });
       });
     }
+    // v7.7 : DÉZOOM FUSION (zoom ≤ zoomEntrée/3,5 en n2/n3) — les
+    // étiquettes du niveau courant sont éteintes (cacheN23) et la tache
+    // uniforme représente la zone du NIVEAU SUPÉRIEUR : son NOM apparaît
+    // au centre géométrique de son socle (repli au point profond), taille
+    // ajustée par le test de contenance comme les autres noms, en BLANC
+    // sur la teinte de sélection (-10 %).
+    var fusionN23 = vue.type !== 'monde' && (vue.niveau || 1) >= 2
+      && etat.zoomEntree > 0 && zCour <= etat.zoomEntree / 3.5
+      && vue.socleGeometry && vue.parent;
+    if (fusionN23) {
+      var geoF = vue.socleGeometry;
+      var nomF = vue.parent;
+      var cpF = altDe(geoF) || cpDe('fusion', geoF);
+      var texteF = nomF, FF = null, lignesF = 1;
+      var plafondF = plafondZones(t) * 1.44; // la.zone parent est grande : cible +44 %
+      for (var Fb = Math.round(plafondF); Fb >= 10; Fb -= 1) {
+        var dbF = demiBoitePx(nomF, Fb);
+        if (tientDansZone(geoF, cpF, dbF[0] / pxLon, dbF[1] / pxLat)) { FF = Fb; break; }
+      }
+      if (FF == null) { // repli : coupe équilibrée sur deux lignes
+        var dzF = deuxLignes(nomF);
+        if (dzF) {
+          for (var Fb2 = Math.round(plafondF); Fb2 >= 9; Fb2 -= 1) {
+            var db2F = demiBoiteLignes(dzF, Fb2);
+            if (tientDansZone(geoF, cpF, db2F[0] / pxLon, db2F[1] / pxLat)) { FF = Fb2; lignesF = 2; break; }
+          }
+          if (FF != null) texteF = dzF[0] + String.fromCharCode(10) + dzF[1];
+        }
+      }
+      if (FF == null) { // dernier recours : sigle au point profond
+        FF = Math.max(8, (Fcommun != null ? Fcommun : t.etiquette));
+        texteF = sigles[nomF] || abrev(nomF);
+      }
+      var demiF = lignesF === 2 ? demiBoiteLignes(String(texteF).split('\n'), FF) : demiBoitePx(texteF, FF);
+      ETQ_DETAIL.push({ id: 'fusion-' + nomF, cp: cpF, geo: geoF, texte: texteF, F: FF,
+                        lignes: lignesF, hwDeg: demiF[0] / pxLon, hhDeg: demiF[1] / pxLat,
+                        entier: texteF === nomF });
+      ETQ_BOITES.push(boiteEtiquette(cpF[0], cpF[1], texteF, FF, pxLon, pxLat));
+      var labelF = { show: true, position: 'inside', formatter: formatterEtiquette(texteF),
+                     fontSize: FF, color: '#ffffff', fontWeight: STYLES.etiquette.fontWeight };
+      if (lignesF === 2) labelF.lineHeight = Math.round(FF * 1.15);
+      sortie.push({ name: nomF, etqId: 'fusion-' + nomF, value: [cpF[0], cpF[1]],
+                    symbolSize: 0, label: labelF });
+    }
     ETQ_SORTIE = sortie; // thème : cache des étiquettes (texte du survol)
     return sortie;
   }

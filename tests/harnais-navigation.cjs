@@ -256,9 +256,16 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
   for (let k = 0; k < 7; k++) P.zoomMolette(600, null, null); // dézoom ×1.3 x7 ≈ ×6.3
   const regs = appels.regions || [];
   const zones = regs.filter(r => r && r.name && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
-  test('dézoom ×3,5 en niv3 : frontières internes éteintes (niveau 2 apparent)',
+  // v7.7 : la tache = couleur du pays -10 % (TSL) et porte le NOM de la
+  // zone du niveau supérieur (vue.parent), en blanc au centre du socle.
+  const etqFusion = (appels.etiquettes || []).filter(t => t && t.etqId === 'fusion-' + vAvant.parent)[0];
+  test('dézoom ×3,5 : tache = teinte Sélection -10 % (TSL, P.selectionnes)',
     zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0)
     && zones.every(r => r.itemStyle.areaColor === zones[0].itemStyle.areaColor)
+    && zones.every(r => r.itemStyle.areaColor === P.selectionnes[P.parId.FR.continent]));
+  test('dézoom ×3,5 : nom du niveau supérieur (« ' + vAvant.parent + ' ») affiché sur la tache (blanc)',
+    !!etqFusion && etqFusion.name === vAvant.parent
+    && etqFusion.label && etqFusion.label.color === '#ffffff'
     && P.vue().niveau >= 2); // la sélection/niveau reste courant
 } else test('dézoom ×3,5 (vue niv>=2 atteinte)', false);
 

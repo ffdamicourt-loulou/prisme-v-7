@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20f -->
+<!-- rebuild-pages 2026-11-20g -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,17 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.7 — dézoom fusion : nom du niveau supérieur + teinte sélection (2026-11-20g)
+
+- **Nom de la zone apparente** : au dézoom ×3,5 (niveaux 2+), quand les
+  subdivisions disparaissent, la tache affiche le NOM de la zone du niveau
+  supérieur (région, département…) au centre géométrique de son socle
+  (repli au point profond, coupe sur deux lignes puis sigle), en BLANC.
+- **Teinte de la tache** : couleur du PAYS SÉLECTIONNÉ à -10 % de
+  luminosité (TSL, `assombrirFacteur` × 0,90) — la tache est une SÉLECTION,
+  cohérente avec la règle v7.6 des sélections à tous les niveaux.
+- Harnais navigation : 34 contrôles (2 nouveaux sur la fusion).
 
 ## v7.6 — niveaux utilisateur, sélection -10 %, cadrages 80/60 (2026-11-20f)
 

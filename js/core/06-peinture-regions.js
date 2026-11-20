@@ -76,6 +76,11 @@
       // v7.6 : SÉLECTION = couleur d'origine -10 % de luminosité (distincte
       // du survol -20 %) ; la règle vaut à TOUS les niveaux.
       var base = enSelection ? (zoneSel ? selectionnes[p.continent] : COULEURS[p.continent]) : (sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent]);
+      // v7.7 : DÉZOOM FUSION — la tache (zones fondues = zone du NIVEAU
+      // SUPÉRIEUR apparent) prend la couleur du PAYS SÉLECTIONNÉ à -10 % de
+      // luminosité (TS L, assombrirFacteur × 0,90), comme toute sélection :
+      // le socle visible est la zone sélectionnée du niveau au-dessus.
+      if (dezoomN3 && !zoneSel) base = selectionnes[p.continent];
       var survol = assombris[p.continent];
       // v0.80 : SURVOL PEINT PAR LE NOYAU — l'emphasis interne d'ECharts
       // re-rend les polygones géants du niveau 3 et, au sortir puis au
