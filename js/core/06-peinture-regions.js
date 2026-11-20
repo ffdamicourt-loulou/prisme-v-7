@@ -77,9 +77,16 @@
       // du survol -20 %) ; la règle vaut à TOUS les niveaux.
       // v7.9 : en vue admin, une zone Maj+sélectionnée (etat.selections)
       // se peint en teinte de sélection (-10 %), comme la zone cliquée.
+      // v7.11 : PAYS SÉLECTIONNÉ — à TOUS les niveaux (1, 2, 3 et 4 pour
+      // GB), ses PROPres zones portent la teinte de sélection (mi-chemin
+      // entre la teinte de repos et la teinte de survol) ; les sœurs
+      // « c- », les extérieurs « x- » et les socles gardent leur teinte.
+      var propre = enSelection && p.id.slice(0, 2) !== 'c-'
+        && p.id.slice(0, 2) !== 'x-' && p.id.slice(0, 6) !== 'socle@'
+        && p.id.slice(0, 5) !== 'socle';
       var base = enSelection
         ? (zoneSel ? selectionnes[p.continent]
-           : ((sel[p.id] || sel['c-' + p.id]) ? selectionnes[p.continent] : COULEURS[p.continent]))
+           : (propre || sel[p.id] || sel['c-' + p.id]) ? selectionnes[p.continent] : COULEURS[p.continent])
         : (sel[p.id] ? selectionnes[p.continent] : COULEURS[p.continent]);
       // v7.7 : DÉZOOM FUSION — la tache (zones fondues = zone du NIVEAU
       // SUPÉRIEUR apparent) prend la couleur du PAYS SÉLECTIONNÉ à -10 % de

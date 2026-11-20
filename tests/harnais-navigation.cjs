@@ -101,6 +101,12 @@ test('2e clic FR (pays déjà sélectionné) → script packages/FR.js ajouté',
 charge('FR');
 const v1 = P.vue();
 test('après package : vue admin niv1 — régions (' + v1.type + '/' + v1.niveau + ')', v1.type === 'admin' && v1.niveau === 1);
+const regsN1 = (appels.regions || []).filter(r => r && r.itemStyle
+  && r.name && r.name.slice(0, 2) !== 'c-' && r.name.slice(0, 2) !== 'x-'
+  && r.name.slice(0, 6) !== 'socle@' && r.name !== 'socle');
+const tintSel = P.selectionnes[P.parId.FR.continent];
+test('v7.11 : régions du PAYS SÉLECTIONNÉ (niveau 1) en teinte MI-CHEMIN sélection (' + regsN1.length + ' zones)',
+  regsN1.length > 0 && regsN1.every(r => r.itemStyle.areaColor === tintSel));
 
 // 4. clic sur une région → niv2
 if (v1.type === 'admin' && v1.parNom) {

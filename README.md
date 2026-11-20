@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-20k -->
+<!-- rebuild-pages 2026-11-20m -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,20 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.11 — teinte mi-chemin étendue aux niveaux du pays sélectionné (2026-11-20m)
+
+Précision utilisateur : quand un pays est sélectionné, le pays ET ses
+niveaux 1, 2, 3 (et 4 pour GB) prennent la teinte à **mi-chemin entre la
+couleur non sélectionnée et la couleur de survol/sélection** (-10 % de
+luminosité, exactement le milieu entre repos et survol -20 %). Auparavant
+seuls le pays en vue monde, les zones Maj+sélectionnées et la tache de
+dézoom portaient cette teinte : les niveaux ouverts restaient en teinte
+de repos. Désormais **toutes les zones propres du pays ouvert** la portent
+(`06-peinture-regions.js`, garde `propre`) ; les sœurs « c- », extérieurs
+« x- » et socles gardent leur teinte. Harnais navigation : 55/55 (nouveau
+contrôle : les 18 régions du pays sélectionné à la teinte mi-chemin) ;
+apparence 11/11 ×2.
 
 ## v7.10 — gestionnaire de sélection UNIQUE + vraies causes racines (2026-11-20k)
 
