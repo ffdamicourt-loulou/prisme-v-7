@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21v -->
+<!-- rebuild-pages 2026-11-21w -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,30 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.21 — suppression de TOUTES les données IGN (2026-11-21w)
+
+**Diagnostic du bug d'affichage** (capture : zones blanches non peintes,
+info-bulle « aucune subdivision plus fine ») : les contours des cinq
+régions ultrapériphériques (Guadeloupe, Martinique, Guyane française,
+La Réunion, Mayotte) sont la SEULE source IGN du projet (`"src":"ign"`),
+au milieu de données GADM 4.1 partout ailleurs. Source mixte = conflits
+de pavage (socle-union vs contour pays, régions surcroquis non issus de
+la même source généalogique) et paquets « alias » FR-NA / FR-SA
+doublons complets de la France (même `a3` "FRA") qui pouvaient ÉCRASER
+`ADMIN.niv2["FRA"]` par une version tronquée.
+
+- **packages/FR.js** : les 5 régions IGN sont retirées du `niv1` (la vue
+  régions de la France affiche les 13 régions métropolitaines GADM) et
+  leurs clés `niv2` supprimées. Fichier réécrit : 4,7 Mo → 2,5 Mo.
+- **packages/FR-NA.js / FR-SA.js supprimés** : paquets alias orphelins
+  (le manifest pointe déjà « FR-NA »/« FR-SA » vers `packages/FR.js`,
+  `alias:"FR"`, depuis v7.2 ; les fichiers ne servaient plus à rien).
+- Aucune autre donnée IGN dans le projet (`data/admin.json.gz`,
+  `data/monde.json.gz`, autres packages : zéro `src:"ign"`).
+- Harnais : navigation 75/75, apparence 11/11 — inchangés.
+- DROM : la France reste dessinée avec ses territoires en vue MONDE
+  (contour de `monde.json`) ; côté subdivisions, ils n'ont plus de zone.
 
 ## v7.20 — communautés uniprovinciales : sélection de Madrid (2026-11-21v)
 

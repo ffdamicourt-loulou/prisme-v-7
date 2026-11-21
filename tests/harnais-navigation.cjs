@@ -576,5 +576,29 @@ test('v7.20 : nouveau clic → RETRAIT de Madrid (bascule)',
   !((P.vue().features || []).some(f => f && f.id === 'Madrid'))
   && (P.vue().features || []).length === nAvES);
 
+// 23. v7.21 — DONNÉES IGN SUPPRIMÉES : la France n'a plus que ses
+// 13 régions métropolitaines GADM (Guadeloupe, Martinique, Guyane
+// française, La Réunion, Mayotte retirées), et la descente marche
+// partout (Corse, Île-de-France).
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+SEL.clicVide();
+clic('FR'); clic('FR'); charge('FR');
+const v721 = P.vue();
+test('v7.21 : 13 régions GADM, AUCUNE zone src "ign" dans la vue FR',
+  v721.type === 'admin' && v721.niveau === 1
+  && Object.keys(v721.parNom).length === 13
+  && !(v721.features || []).some(f => f && f.src === 'ign')
+  && !v721.parNom['Guadeloupe'] && !v721.parNom['Mayotte']
+  && v721.parNom['Île-de-France'] && v721.parNom['Corse']);
+clicZone('Corse'); // était citée dans le bug des zones blanches
+test('v7.21 : descente Corse → 2 départements, aucune zone blanche en filière',
+  P.vue().type === 'admin' && P.vue().niveau === 2
+  && (P.vue().features || []).filter(f => f && f.id === 'Corse-du-Sud' || f.id === 'Haute-Corse').length === 2);
+P.retour(); // retour à la vue régions
+clicZone('Île-de-France');
+test('v7.21 : descente Île-de-France → 8 départements (info-bulle « aucune subdivision » réglée côté données)',
+  P.vue().type === 'admin' && P.vue().niveau === 2
+  && (P.vue().features || []).filter(f => f && ['Essonne','Hauts-de-Seine','Paris','Seine-et-Marne','Seine-Saint-Denis','Val-d\'Oise','Val-de-Marne','Yvelines'].indexOf(f.id) !== -1).length === 8);
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

@@ -163,6 +163,21 @@
   var PKG_FAIT = {}; // v7.2 : a3 déjà enregistrés par __PR2_PKG_REG
   window.__PR2_PKG_REG = function (idPays, donnees) {
     if (!donnees || !donnees.a3) return false;
+    // v7.21 : DONNÉES IGN SUPPRIMÉES — les seules zones marquées
+    // "src":"ign" (contours IGN des régions ultrapériphériques, ex.
+    // Guadeloupe/Martinique) sont retirées du niv1 ET du niv2 : toute
+    // la France est GADM 4.1, source unique, plus de conflit de pavage
+    // ni d'écrasement d'ADMIN.niv2["FRA"] par les paquets alias (les
+    // fichiers FR-NA.js/FR-SA.js, doublons portant le même a3, sont
+    // supprimés du dépôt ; le manifest les redirige vers FR.js).
+    if (donnees.niv1 && donnees.niv1.length) {
+      var ignIds = [];
+      donnees.niv1.forEach(function (f) { if (f && f.src === 'ign') ignIds.push(f.id); });
+      if (ignIds.length) {
+        donnees.niv1 = donnees.niv1.filter(function (f) { return !(f && f.src === 'ign'); });
+        if (donnees.niv2) ignIds.forEach(function (id) { delete donnees.niv2[id]; });
+      }
+    }
     if (donnees.niv1) ADMIN.niv1[donnees.a3] = donnees.niv1;
     if (donnees.niv2) ADMIN.niv2[donnees.a3] = donnees.niv2;
     PKG_FAIT[donnees.a3] = true;
