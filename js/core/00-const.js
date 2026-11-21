@@ -177,6 +177,17 @@
         donnees.niv1 = donnees.niv1.filter(function (f) { return !(f && f.src === 'ign'); });
         if (donnees.niv2) ignIds.forEach(function (id) { delete donnees.niv2[id]; });
       }
+      // v7.27 : ARTEFACTS GADM — « COL+99? » (Colombie), « MEX+99? »
+      // (Mexique) et « UNDOF » (Syrie, zone onusienne sans substance
+      // administrative) sont des unités de repli GADM, pas des zones
+      // réelles : les RETIRER du niveau des premières subdivisions.
+      if (donnees.niv1 && donnees.niv1.length) {
+        donnees.niv1 = donnees.niv1.filter(function (f) {
+          if (!f) return true;
+          var nom = f.nom || f.id || '';
+          return !(/^\w{2,3}\+99\?$/.test(nom) || nom === 'UNDOF');
+        });
+      }
     }
     // v7.22 : RÉGIONS ULTRAPÉRIPHÉRIQUES GADM 4.1 — remplacement définitif
     // des contours IGN supprimés. Les 5 territoires (Guadeloupe,

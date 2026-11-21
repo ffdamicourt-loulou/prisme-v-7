@@ -743,5 +743,37 @@ vN4('PE', 'Pérou');
 vN4('LU', 'Luxembourg');
 for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 
+// 29. v7.27 — FINITION NIVEAU 3 : 12 pays dont certaines zones restaient
+// sans enfants alors que GADM les possède (Corée du Sud, Bruxelles, Phnom
+// Penh, Zanzibar, Suriname, Samoa, Tonga…), + retrait des artefacts
+// « COL+99? », « MEX+99? », « UNDOF ».
+function vN27(id, paysNom, zoneCible, mini) {
+  for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+  clic(id); clic(id); charge(id);
+  const zp = P.vue().parNom || {};
+  test('v7.27 : ' + paysNom + ' — la zone « ' + zoneCible + ' » a maintenant des enfants',
+    !!(zp[zoneCible]));
+  clic(zoneCible);
+  test('v7.27 : ' + paysNom + ' — clic « ' + zoneCible + ' » → descente niveau 3 (complément GADM)',
+    P.vue().type === 'admin' && P.vue().niveau === 2 && (P.vue().features || []).length >= mini);
+  for (let i = 0; i < 4 && P.vue().type !== 'monde'; i++) P.retour();
+}
+vN27('KR', 'Corée du Sud', 'Séoul', 20);
+vN27('BE', 'Belgique', 'Bruxelles-Capitale', 19);
+vN27('SR', 'Suriname', 'Paramaribo', 10);
+vN27('WS', 'Samoa', 'Tuamasaga', 2);
+vN27('KH', 'Cambodge', 'Phnom Penh', 10);
+for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+clic('CO'); clic('CO'); charge('CO');
+test('v7.27 : Colombie — artefact « COL+99? » retiré (33 zones réelles, pas 34)',
+  (P.vue().features || []).length === 33 && !P.vue().parNom['COL+99?']);
+for (let i = 0; i < 4 && P.vue().type !== 'monde'; i++) P.retour();
+clic('MX'); clic('MX'); charge('MX');
+test('v7.27 : Mexique — artefact « MEX+99? » retiré', !P.vue().parNom['MEX+99?']);
+for (let i = 0; i < 4 && P.vue().type !== 'monde'; i++) P.retour();
+clic('SY'); clic('SY'); charge('SY');
+test('v7.27 : Syrie — zone « UNDOF » retirée', !P.vue().parNom['UNDOF']);
+for (let i = 0; i < 4 && P.vue().type !== 'monde'; i++) P.retour();
+
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

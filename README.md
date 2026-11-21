@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21zb -->
+<!-- rebuild-pages 2026-11-21zc -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,14 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 28 sections (98 contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.27 — FINITION NIVEAU 3 : 12 pays complétés + artefacts GADM retirés (2026-11-21zc)
+
+- 12 fragments packages/n3-*.js (Corée du Sud : 38 gu des 3 villes spéciales ; Belgique : 19 communes de Bruxelles-Capitale ; Cambodge : 12 khan de Phnom Penh ; Suriname : 50 resorts des 8 districts ; Samoa : 37 sous-districts ; Tonga : 7 districts de Tongatapu ; Zanzibar : 4 districts ; Brunei : 8 mukims de Belait ; Fidji : 5 tikina de Central ; Panama : 4 corregimientos de Kuna Yala ; Guinée équatoriale : 8 districts ; Uruguay : municipio d'Ismael Cortinas).
+- Matching avec descente de chaîne GADM (enfant unique → niveau plus profond, ex. Bruxelles → communes via région/arrondissement) et garde anti-homonyme (« n.a. », enfants auto-référencés).
+- js/core/00-const.js : retrait des artefacts GADM « COL+99? », « MEX+99? » et « UNDOF » des premières subdivisions (Colombie, Mexique, Syrie).
+- Taïwan (districts absents de GADM 4.1) et Wallis « Sigave » (donnée dégénérée chez GADM) restent sans complément possible via GADM.
+- Harnais navigation : 29 sections, 109 contrôles ; apparence 11/11 ×2.
 
 ## v7.26 — NIVEAU 4 COMPLÉTÉ : 30 pays dotés de sous-zones GADM 4.1 (2026-11-21zb)
 
