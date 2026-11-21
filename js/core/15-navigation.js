@@ -207,9 +207,32 @@
     if (!enf || !enf.length) return false;
     var enfR = enf.map(function (e) {
       var occupant = vue.parNom[e.id];
-      // v7.20 : l'occupant peut être la zone uniprovinciale elle-même
-      // (identique, pas de collision à renommer) ;
-      if (!occupant || occupant.__uniprov === e.__uniprov) return e;
+      // v7.20 → v7.28 : COLLISIONS ET IDENTITÉ.
+      // (1) v7.20 : l'occupant peut être la zone UNIPROVINCIALE
+      // elle-même (identique, pas de collision à renommer) — les deux
+      // __uniprov sont alors définis ET égaux.
+      // (2) v7.28 : BUG v7.20 RÉPARÉ — la comparaison « occupant.__uniprov
+      // === e.__uniprov » entre DEUX undefined valait TOUJOURS vrai : le
+      // renommage des HOMONYMES ordinaires était court-circuité. Dès qu'UN
+      // comté du nouvel état portait un id déjà affiché (Humboldt en
+      // Californie ET au Nevada, « Washington », « Orange »…), le garde-fou
+      // « tout ou rien » voyait un chevauchement PARTIEL et rejetait TOUT
+      // l'ajout en silence — impossible de combiner plusieurs états
+      // américains ni d'ajouter les comtés d'un état à une vue qui en
+      // affichait déjà un autre. Le marqueur __origine (préfixe du parent,
+      // posé à l'ajout) distingue désormais NOTRE enfant déjà ajouté
+      // (bascule de retrait, id conservé) d'un homonyme d'un AUTRE parent
+      // (renommé « Parent/Id »).
+      if (!occupant
+        || occupant.__origine === preR
+        || (e.__uniprov !== undefined && occupant.__uniprov !== undefined
+          && occupant.__uniprov === e.__uniprov)) {
+        e.__origine = preR;
+        return e;
+      }
+      var r = { id: preR + '/' + e.id, nom: e.nom, geometry: e.geometry };
+      r.__origine = preR;
+      return r;
       return { id: preR + '/' + e.id, nom: e.nom, geometry: e.geometry };
     });
     var idsEnf = {};

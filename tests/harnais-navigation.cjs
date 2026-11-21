@@ -773,7 +773,55 @@ test('v7.27 : Mexique — artefact « MEX+99? » retiré', !P.vue().parNom['MEX+
 for (let i = 0; i < 4 && P.vue().type !== 'monde'; i++) P.retour();
 clic('SY'); clic('SY'); charge('SY');
 test('v7.27 : Syrie — zone « UNDOF » retirée', !P.vue().parNom['UNDOF']);
-for (let i = 0; i < 4 && P.vue().type !== 'monde'; i++) P.retour();
+// 30. v7.28 — ÉTATS-UNIS : SÉLECTIONS MULTIPLES aux niveaux 2 et 3.
+// Bug v7.20 : la comparaison « occupant.__uniprov === e.__uniprov » entre
+// deux undefined valait toujours vrai → le RENOMMAGE des homonymes était
+// court-circuité → dès qu'UN comté du nouvel état portait un id déjà
+// affiché (Humboldt en Californie ET au Nevada, « Washington », « Orange »…),
+// ajouterSousVue rejetait TOUT l'ajout en silence. Symptômes réels :
+// impossible de combiner plusieurs états (niveau 2), impossible d'ajouter
+// les comtés d'un état (niveau 3) quand ceux d'un autre sont déjà affichés.
+for (let i = 0; i < 30 && P.vue().type !== 'monde'; i++) P.retour();
+clic('US'); clic('US'); charge('US');
+test('v7.28 : US — vue niv1 (51 États) depuis la vue monde', P.vue().type === 'admin' && P.vue().niveau === 1 && (P.vue().features || []).length === 51);
+
+// (a) sélection multiple de N2 au Maj+clic (états)
+clicMaj('California'); clicMaj('Texas'); clicMaj('Oregon');
+test('v7.28 : US — Maj+clic ×3 → sélection multiple de N2 (3 états)',
+  (P.etat.selections || []).length === 3
+    && P.etat.selections.indexOf('California') !== -1
+    && P.etat.selections.indexOf('Texas') !== -1
+    && P.etat.selections.indexOf('Oregon') !== -1);
+clicMaj('California'); // bascule retrait
+test('v7.28 : US — Maj+clic sur un état sélectionné → retrait (bascule)',
+  (P.etat.selections || []).length === 2 && P.etat.selections.indexOf('California') === -1);
+
+// (b) descente dans un état → comtés ; les comtés d'un AUTRE état
+// rejoignent la vue au clic simple sur sa sœur (v7.19) — homonymes
+// renommés (California a un comté « Humboldt », le Nevada aussi)
+clic('California');
+const vUS3 = P.vue();
+test('v7.28 : US — clic Californie → comtés (niveau 3, 58)',
+  vUS3.type === 'admin' && vUS3.niveau === 2 && (vUS3.features || []).length === 58);
+const nbAvant = (P.vue().features || []).length;
+clic('c-Texas');
+test('v7.28 : US — clic sœur Texas → comtés du Texas AJOUTÉS (homonymes renommés, 58+N)',
+  (P.vue().features || []).length > nbAvant + 200);
+const nbApresTx = (P.vue().features || []).length;
+clic('c-Nevada');
+test('v7.28 : US — 2e ajout (Nevada, comté Humboldt homonyme) réussi sous le 1er',
+  (P.vue().features || []).length > nbApresTx + 10);
+// (c) bascule retrait : re-cliquer la sœur ajoutée retire SES comtés
+const nbAvantRetrait = (P.vue().features || []).length;
+clic('c-Nevada');
+test('v7.28 : US — re-clic sœur Nevada → retrait de ses comtés (bascule)',
+  (P.vue().features || []).length < nbAvantRetrait && P.etat.selections.indexOf('c-Nevada') === -1);
+// (d) Maj+clic sur une sœur : même ajout (v0.52)
+const nbAvantMaj = (P.vue().features || []).length;
+clicMaj('c-Oregon');
+test('v7.28 : US — Maj+clic sœur Oregon → comtés ajoutés',
+  (P.vue().features || []).length > nbAvantMaj + 10);
+for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

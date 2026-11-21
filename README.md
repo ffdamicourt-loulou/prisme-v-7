@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21zc -->
+<!-- rebuild-pages 2026-11-21zd -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -54,7 +54,14 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
 - **Étiquette Auvergne-Rhône-Alpes** : décalage +0,5° supprimé, ancre posée au
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
-- Harnais navigation : 28 sections (98 contrôles) ; apparence 11/11 ×2 thèmes.
+- Harnais navigation : 30 sections (119 contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.28 — SÉLECTIONS MULTIPLES ÉTATS-UNIS : homonymes réparés (2026-11-21zd)
+
+- **Bug v7.20 réparé** (`ajouterSousVue`, 15-navigation.js) : la comparaison « occupant.__uniprov === e.__uniprov » entre deux `undefined` valait toujours vrai → le renommage des zones HOMONYMES (v0.53) était court-circuité. Dès qu'UNE zone du parent ajouté portait un id déjà affiché (comtés « Humboldt » en Californie ET au Nevada, « Washington », « Orange »…), le garde-fou « tout ou rien » voyait un chevauchement partiel et rejetait TOUT l'ajout en silence.
+- Symptômes vécus sur la carte des États-Unis : impossible de combiner plusieurs états (niveau 2), impossible d'ajouter les comtés d'un état (niveau 3) quand ceux d'un autre étaient affichés.
+- **Correctif** : marqueur `__origine` (préfixe du parent) posé à l'ajout — l'occupant qui est NOTRE enfant déjà ajouté garde son id (bascule de retrait intacte) ; un homonyme d'un AUTRE parent est renommé « Parent/Id » comme prévu en v0.53. Cas uniprovincial (v7.20) inchangé (deux `__uniprov` définis et égaux).
+- Harnais : section 30 (États-Unis : sélection multiple d'états au Maj+clic, ajout Texas/Nevada/Oregon en cascade, bascules de retrait) — navigation 119 OK / 0 KO ; apparence 11/11 ×2.
 
 ## v7.27 — FINITION NIVEAU 3 : 12 pays complétés + artefacts GADM retirés (2026-11-21zc)
 
