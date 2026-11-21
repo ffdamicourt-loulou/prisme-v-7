@@ -14,9 +14,24 @@
     REGIONS_DERNIERES = regions;
     var nu = function (n) { return (n || '').replace(/^[cx]-/, ''); };
     var nSurv = nu(survolNom);
+    // v7.29 : LES ZONES SÉLECTIONNÉES SONT TOUJOURS CACHÉES — la règle
+    // « la zone survolée n'écrit jamais sa couleur » datait du temps où
+    // la couleur peinte d'une zone survolée était la teinte de SURVOL.
+    // Depuis v7.14, LA SÉLECTION PRIME SUR LE SURVOL : une zone de la
+    // sélection est peinte en teinte de sélection MÊME survolée. Or le
+    // Maj+clic survole forcément la zone cliquée : après un Maj+clic, le
+    // full repaint peignait la zone cliquée en teinte de sélection mais
+    // cacherRegions REFUSAIT de la cacher (présumée « couleur de survol »)
+    // → BASE_PAR_NOM gardait l'ANCIENNE teinte de REPOS ; dès que le
+    // pointeur quittait la zone, repaintSurvol la repeignait en teinte de
+    // REPOS : « les zones sélectionnées perdent leur statut ». La zone
+    // survolée n'est écartée du base QUE si elle N'EST PAS sélectionnée.
+    var selC = (typeof ensembleSelection === 'function') ? ensembleSelection() : {};
     (regions || []).forEach(function (r) {
       if (!r || !r.name || !r.itemStyle || !r.itemStyle.areaColor) return;
-      if (nu(r.name) === nSurv && nSurv !== '') return; // zone survolée : couleur ≠ repos
+      var rn = nu(r.name);
+      var estSel = !!(selC[r.name] || selC['c-' + rn] || selC[rn]);
+      if (rn === nSurv && nSurv !== '' && !estSel) return; // zone survolée non sélectionnée : couleur ≠ repos
       BASE_PAR_NOM[r.name] = r.itemStyle.areaColor;
     });
   }
@@ -27,11 +42,18 @@
     if (!carte || !REGIONS_DERNIERES) { try { majEtiquettes(); } catch (err) { } return; }
     var nu = function (n) { return (n || '').replace(/^[cx]-/, ''); };
     var a = nu(ancien), n2 = nu(nouveau);
+    // v7.29 : LA SÉLECTION PRIME SUR LE SURVOL AUSSI ICI — entrer du
+    // pointeur sur une zone SÉLECTIONNÉE ne doit PAS la repeindre en
+    // teinte de survol (règle de peinture v7.14) : sa couleur affichée
+    // reste celle du cache de base, qui depuis v7.29 contient bien la
+    // teinte de sélection.
+    var selR = (typeof ensembleSelection === 'function') ? ensembleSelection() : {};
     var ok = true;
     var regs = REGIONS_DERNIERES.map(function (r) {
       var rn = nu(String((r && r.name) || ''));
       if (rn === '' || (rn !== a && rn !== n2)) return r;
-      var c = (rn === n2) ? SURVOL_PAR_NOM[r.name] : BASE_PAR_NOM[r.name];
+      var estSel = !!(selR[(r && r.name) || ''] || selR['c-' + rn] || selR[rn]);
+      var c = (rn === n2 && !estSel) ? SURVOL_PAR_NOM[r.name] : BASE_PAR_NOM[r.name];
       if (!c) { ok = false; return r; }
       var r2 = {}; for (var k in r) r2[k] = r[k];
       r2.itemStyle = { areaColor: c, color: c,
