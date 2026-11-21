@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const zlib = require('node:zlib');
 
 const RAC = process.argv[2] || path.join(__dirname, '..');
-const CORE = ['00-const','00b-droms','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
+const CORE = ['00-const','00b-droms','00c-us-frontieres','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
   '05-sigles','06-peinture-regions','07-villes','08-etiquettes-zones','09-villes-continents',
   '10-options','11-survol-repaint','12-camera-cadrage','13-enclaves-outils',
   '14-vues-enregistrement','15-navigation','16-groupes-selection','17-demarrage'];
@@ -872,6 +872,23 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
     dVerts === 13);
   test('v7.29 : Sarpy — le triangle-fantôme est RETIRÉ (1 seul polygone)',
     sPolys === 1);
+  // 34. v7.29 — CORRECTIF 00c-survol/US : le fragment 00c-us-frontieres
+  // répare AU MOMENT de l enregistrement la version NON réparée de
+  // packages/US.js encore déployée (Douglas 12 sommets, Sarpy
+  // 2 polygones). C est le chemin réel d un navigateur fraîchement
+  // mis à jour sur un cache HTTP périmé.
+  const dAv = [[-96.454,41.39],[-96.329,41.393],[-95.94170427753453,41.39407645671943],[-95.958,41.338],[-95.87,41.309],[-95.917,41.266],[-95.924,41.208],[-95.90749381698268,41.20056059356966],[-96.308,41.181],[-96.356,41.236],[-96.362,41.297],[-96.454,41.39]];
+  const sMain = [[-96.308,41.181],[-95.89556488046168,41.19518417147568],[-95.853,41.176],[-95.876,41.167],[-95.862,41.106],[-95.882,41.065],[-95.87438118811882,41.05568811881188],[-95.906,41.063],[-96.047,41.065],[-96.212,41.009],[-96.285,41.041],[-96.307,41.07],[-96.314,41.106],[-96.308,41.181]];
+  const sTri = [[-96.308,41.181],[-95.89556,41.19518],[-95.90749,41.20056],[-96.308,41.181]];
+  const donneesAv = { id: 'US-TEST', a3: 'ZZ729', niv1: [], niv2: { Nebraska: [
+    { id: 'Douglas', nom: 'Douglas', geometry: { type: 'Polygon', coordinates: [dAv] } },
+    { id: 'Sarpy', nom: 'Sarpy', geometry: { type: 'MultiPolygon', coordinates: [sMain, sTri] } },
+  ] } };
+  try { ctx.window.__PR2_PKG_REG('US', donneesAv); } catch (eReg) { }
+  test('v7.29 : correctif 00c — Douglas PRÉ-v7.29 (12 sommets) → sommet Sarpy inséré (13)',
+    dAv.length === 13 && Math.abs(dAv[8][0] + 95.89556488046168) < 1e-9 && Math.abs(dAv[8][1] - 41.19518417147568) < 1e-9);
+  test('v7.29 : correctif 00c — Sarpy PRÉ-v7.29 (2 polygones) → triangle retiré (1)',
+    donneesAv.niv2.Nebraska[1].geometry.coordinates.length === 1);
   for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 }
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
