@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21x -->
+<!-- rebuild-pages 2026-11-21y -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,38 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.23 — DESCENTE EN UN SEUL CLIC, NIVEAU 3 CONFIRMÉ COMPLET (2026-11-21y)
+
+**Signalements** : (1) « il semble manquer des données de niveau 3, Occitanie
+ou Bretagne » ; (2) « l'ajout d'une région demande deux clics au lieu d'un ».
+
+**Diagnostic** : les données FR de niveau 3 (arrondissements) sont COMPLÈTES
+dans le package GADM (Occitanie 36, Bretagne 15… aucun département sans
+enfants). Le ressenti « deux clics » venait du mécanisme v7.17+v7.8 : le
+premier clic sur une région la SÉLECTIONNAIT (sans rien ouvrir), le second
+ouvrait une info-bulle « Afficher le niveau 3 ? », le troisième seul ouvrait
+la vue. Ce flux en trois interactions donnait aussi l'impression de données
+manquantes.
+
+**Correctifs (greffon-selection.js)** :
+- v7.17 retiré : clic simple sur une région à la vue « régions » = DESCENTE
+  IMMÉDIATE vers ses subdivisions (un seul clic, comme à tous les niveaux).
+- v7.8 retiré : l'info-bulle de confirmation `validerDescente` n'apparaît
+  plus (les données sous-zones sont déjà chargées avec le package du pays —
+  elle n'apportait aucune protection réelle). Les fonctions
+  `descenteAttente`/`confirmerDescente` restent exportées inertes.
+- L'auto-sélection de la région sous le curseur au 2e clic pays est
+  également retirée (un clic pour tout).
+- Maj+clic bascule toujours la SÉLECTION multi-N2 manuellement ; la
+  sélection N2 peinte -20 % et le multi-N2 persistant après descente sont
+  conservés ; v7.19 (clic sœur = ajout/retrait des enfants) et v7.20
+  (repli uniprovincial) inchangés.
+
+**Harnais** : sections 14 et 20 réécrites pour la nouvelle sémantique,
+nouvelle section 25 : Occitanie → Hérault puis Bretagne → Morbihan en 2
+clics simples, arrondissements présents ET peints (aucun trou blanc).
+Navigation 86/86 ; apparence 11/11 ×2.
 
 ## v7.22 — SOURCE UNIQUE GADM 4.1 aux niveaux 1/2/3, frontières communes (2026-11-21x)
 

@@ -87,26 +87,17 @@
     return { ok: true };
   }
 
-  // ---------- R2 : validation info-bulle de la descente n2→n3 ----------
-  // Le greffon pays appelle validerDescente(nom) AVANT de descendre :
-  // true → descente immédiate autorisée ; false → bloquée, l'info-bulle
-  // attend la confirmation (seul cas bloqué : clic d'une zone dans la
-  // vue du NIVEAU 1 app = régions/États, c.-à-d. la descente UTILISATEUR
-  // « niveau 2 → niveau 3 » ; l'acceptation du package « Charger ? »
-  // reste inchangée au niveau 2).
+  // ---------- R2 : validation de la descente n2→n3 ----------
+  // v7.23 : la descente se fait DÉSORMAIS en UN SEUL clic — l'info-bulle
+  // de confirmation v7.8 (« Afficher le niveau 3 ? ») est retirée : les
+  // données des sous-zones d'un pays sont déjà chargées avec le package
+  // du pays (l'écran « régions » n'existe que package chargé), la
+  // confirmation n'apportait aucune protection réelle et créait le
+  // « double clic » rapporté. validerDescente true → descente immédiate.
+  // Les fonctions descenteAttente/confirmerDescente/annulerDescente
+  // restent exportées (toujours inertes) pour compatibilité.
   function validerDescente(nom) {
-    var S = A(), V = S.vue();
-    if (V.type !== 'admin' || V.niveau !== 1) return true;
-    // garde : seulement les zones qui ONT des enfants (le package du pays
-    // est déjà chargé pour ouvrir la vue régions, ADMIN fait foi). Une zone
-    // de fin de chaîne ne déclenche PAS d'info-bulle — l'information
-    // « pas de subdivision plus fine » reste au clic simple.
-    var enfants = null;
-    try { enfants = S.enfantsDe ? S.enfantsDe(nom) : null; } catch (err) { enfants = null; }
-    if (!enfants || !enfants.length) return true;
-    enAttenteDescente = { nom: nom };
-    ouvrirBoiteValidation(nom);
-    return false;
+    return true;
   }
   function ouvrirBoiteValidation(nom) {
     if (typeof document === 'undefined' || !document.body) return;
@@ -467,25 +458,11 @@
       if (maj && S.reinitialiserVers && (!S.etat || S.etat.selection !== idP)) {
         S.reinitialiserVers(idP, 1, null, true);      // AJOUT pays supplémentaire
       } else if (S.etat && S.etat.selection === idP) {
-        // v7.17 : 2e clic — descente aux régions + SÉLECTION de la région
-        // SOUS LE CURSEUR (nouveau mécanisme : 1er clic = pays, 2e clic =
-        // régions avec sélection immédiate de la région cliquée).
-        var descendu = S.descendre(idP);
-        var pxC = null, evC = e && e.event, nC = 0;
-        while (evC && nC++ < 6) {
-          if (evC.offsetX !== undefined && evC.offsetY !== undefined) {
-            pxC = [evC.offsetX, evC.offsetY]; break;
-          }
-          evC = evC.event || evC.rawEvent || evC.originalEvent || null;
-        }
-        var fzP = (pxC && S.zoneAuPoint) ? S.zoneAuPoint(pxC) : null;
-        if (fzP) {
-          selectionnerZone(S, fzP.id);
-        } else if (pxC && !descendu) {
-          // package en cours de chargement : la vue régions n'existe pas
-          // encore — retenir le point, la descente re-tentera la sélection.
-          pendPoint = { px: pxC };
-        }
+        // v7.23 : 2e clic — descente aux régions, SANS auto-sélection
+        // de la région sous le curseur (le retour au un-clic retire
+        // l'étape « sélection » à TOUS les niveaux : la région cliquée
+        // s'ouvre désormais en un clic depuis la vue régions).
+        S.descendre(idP);
       } else {
         S.reinitialiserVers(idP, 1, null, false);      // 1er clic : sélection
       }
@@ -539,19 +516,15 @@
       if (S.majEtiquettes) S.majEtiquettes();
       return true;
     }
-    // ── v7.17 : VUE RÉGIONS (admin niveau 1) — clic simple = SÉLECTION de
-    // la région (nouveau mécanisme) : plusieurs N2 peuvent être
-    // sélectionnées d'affilée. Un SECOND clic sur une région DÉJÀ
-    // sélectionnée déclenche la descente vers ses subdivisions
-    // (info-bulle de confirmation conservée). Maj+clic bascule toujours
-    // la sélection manuellement. Aux niveaux plus profonds (départements,
-    // arrondissements), le clic simple descend comme avant.
-    if (V.type === 'admin' && V.niveau === 1 && !maj
-        && V.parNom && V.parNom[nom]
-        && (S.etat.selections || []).indexOf(nom) === -1) {
-      selectionnerZone(S, nom);
-      return true;
-    }
+    // ── v7.23 : VUE RÉGIONS (admin niveau 1) — clic simple = DESCENTE
+    // IMMÉDIATE (retour au un-clic, suppression de l'étape « sélection »
+    // v7.17 et de l'info-bulle de confirmation v7.8 : les packages pays
+    // étant chargés au premier écran du pays, les données des sous-zones
+    // sont déjà présentes — la confirmation n'apportait rien et donnait
+    // l'impression d'un « double clic » obligatoire, voire de données
+    // manquantes au niveau 3). Maj+clic bascule toujours la sélection
+    // multi-N2 manuellement ; les niveaux plus profonds descendent comme
+    // avant.
     // ── DESCENTE : validation n2→n3 d'abord, puis descente/demande
     if (!validerDescente(nom)) return true; // info-bulle ouverte : bloqué
     if (!S.descendreSous(nom)) {

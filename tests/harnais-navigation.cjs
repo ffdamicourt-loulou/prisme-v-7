@@ -69,17 +69,15 @@ let ok = 0, ko = [];
 const test = (n, c) => { if (c) ok++; else ko.push(n); console.log((c ? 'OK  ' : 'KO  ') + n); };
 
 const clic = (name) => (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name }));
+const clicMaj = (name) => (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name, event: { shiftKey: true } }));
 // v7.8 : clic zone + confirmation automatique si la validation n2→n3 s'ouvre
 const SELAjax = () => ctx.window.__PR2_SEL;
 const clicZone = (name) => {
   clic(name);
   const SEL = ctx.window.__PR2_SEL;
-  // v7.17 : au niveau des RÉGIONS (vue admin niveau 1), le 1er clic
-  // SÉLECTIONNE la zone (nouveau mécanisme) — un second clic sur la région
-  // sélectionnée déclenche la descente (info-bulle comprise).
-  const vv = P.vue();
-  if (vv && vv.type === 'admin' && vv.niveau === 1 && vv.parNom && vv.parNom[name]
-    && (P.etat.selections || []).indexOf(name) !== -1) clic(name);
+  // v7.23 : un SEUL clic descend directement — plus ni sélection
+  // préalable (v7.17) ni info-bulle à confirmer (v7.8). Le rappel de
+  // confirmation reste par inertie face aux éventuelles bulles futures.
   if (SEL && SEL.descenteAttente && SEL.descenteAttente()) SEL.confirmerDescente();
 };
 const charge = (id) => {
@@ -297,32 +295,39 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
     !!etqFusion && !!etqXP && etqFusion.label.fontSize === etqXP.label.fontSize);
   } else test('dézoom ×3,5 (vue niv>=2 atteinte)', false);
 
-// 14. v7.8 — VALIDATION n2→n3 par info-bulle (bloqué jusqu'à confirmation)
+// 14. v7.23 — DESCENTE EN UN SEUL CLIC (suppression sélection v7.17 + info-bulle v7.8)
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 clic('FR'); clic('FR'); charge('FR');
 const SEL = ctx.window.__PR2_SEL;
-clic('Auvergne-Rhône-Alpes'); // v7.17 : 1er clic = SÉLECTION, PAS de descente
-test('v7.17 : 1er clic sur une région → SÉLECTION (etat.selections), vue INCHANGÉE',
-  P.vue().niveau === 1 && (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
-  && SEL.descenteAttente() === false);
-test('v7.17 : région sélectionnée peinte PLUS SOMBRE que le fond du pays (-20 % vs -10 %)',
-  (() => { const r = (appels.regions || []).filter(x => x && x.name === 'Auvergne-Rhône-Alpes')[0];
-    return !!r && !!r.itemStyle && r.itemStyle.areaColor === P.assombris[P.parId.FR.continent]; })());
-clic('Occitanie'); // v7.17 : une 2e région rejoint la sélection (multi-N2)
-test('v7.17 : clic sur une AUTRE région → MULTI-N2 (les deux sélectionnées, vue inchangée)',
+clic('Auvergne-Rhône-Alpes');
+test('v7.23 : 1er clic sur une région → DESCENTE IMMÉDIATE (vue niv2, aucune info-bulle)',
+  P.vue().type === 'admin' && P.vue().niveau === 2
+  && P.vue().parent === 'Auvergne-Rhône-Alpes'
+  && SEL.descenteAttente() === false
+  && (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') === -1);
+clic('c-Occitanie'); // sœur : ses départements rejoignent la vue (v7.19 inchangé)
+test('v7.23 : ajout sœur « c-Occitanie » conserve v7.19 (ses départements rejoignent la vue)',
+  P.vue().type === 'admin' && P.vue().niveau === 2
+  && (P.vue().features || []).some(f => f && f.nom === 'Hérault'));
+P.retour(); // retour à la vue régions
+// retour PROPRE à la vue régions (la descente AURA reste dans la pile)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR');
+clicMaj('Auvergne-Rhône-Alpes');
+clicMaj('Occitanie');
+test('v7.23 : Maj+clic régions → MULTI-N2 conservé (les deux sélectionnées, vue inchangée)',
   P.vue().niveau === 1
   && (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
   && (P.etat.selections || []).indexOf('Occitanie') !== -1);
-clic('Auvergne-Rhône-Alpes'); // déjà sélectionnée → info-bulle de descente
-test('v7.17/v7.8 : clic sur région DÉJÀ sélectionnée → info-bulle descente (demeure bloquée)',
-  P.vue().niveau === 1 && SEL.descenteAttente() === true);
-const svSeln2 = (P.etat.selections || []).slice();
-SEL.confirmerDescente();
-test('v7.17/v7.8 : confirmation → descente, info-bulle fermée',
+test('v7.23 : région sélectionnée (Maj+clic) peinte PLUS SOMBRE que le fond du pays (-20 % vs -10 %)',
+  (() => { const r = (appels.regions || []).filter(x => x && x.name === 'Auvergne-Rhône-Alpes')[0];
+    return !!r && !!r.itemStyle && r.itemStyle.areaColor === P.assombris[P.parId.FR.continent]; })());
+clic('Occitanie'); // SEUL clic → descente immédiate, OCCITANIE déjà sélectionnée ou non
+test('v7.23 : clic simple sur une région (même sélectionnée) → descente SANS info-bulle',
   P.vue().type === 'admin' && P.vue().niveau === 2 && SEL.descenteAttente() === false);
-test('v7.17 : les AUTRES N2 RESTENT sélectionnées après la descente (multi-N2 persistant)',
-  (P.etat.selections || []).indexOf('Occitanie') !== -1
-  && P.vue().parent === 'Auvergne-Rhône-Alpes');
+test('v7.23 : les AUTRES N2 RESTENT sélectionnées après la descente (multi-N2 persistant)',
+  (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
+  && P.vue().parent === 'Occitanie');
 
 // 15. v7.8 — clic MER / ZONE VIDE : tout désélectionner, cadrage conservé
 const zAvantVide = P.etat.zoom, vueAvantVide = P.vue();
@@ -535,9 +540,9 @@ test('v7.17 : préambule — 1er clic FR → sélection (vue monde)', P.etat.sel
 clicBrut({ componentType: 'series', seriesType: 'map', name: 'FR',
   event: { offsetX: 2 * 1.44, offsetY: -2 * 43.6 } }); // curseur sur Toulouse
 charge('FR');
-test('v7.17 : 2e clic FR (curseur sur Toulouse) → vue régions + OCCITANIE sélectionnée',
+test('v7.23 : 2e clic FR (curseur sur Toulouse) → vue régions, SANS auto-sélection',
   P.vue().type === 'admin' && P.vue().niveau === 1
-  && (P.etat.selections || []).indexOf('Occitanie') !== -1);
+  && (P.etat.selections || []).length === 0);
 test('v7.17 : zoneAuPoint([pixel de Toulouse]) → Occitanie (test direct du hit-test)',
   (() => { const fz = P.zoneAuPoint([2 * 1.44, -2 * 43.6]);
     return !!fz && fz.id === 'Occitanie'; })());
@@ -626,6 +631,34 @@ test('v7.22 : descente Mayotte → 17 cantons GADM',
   P.vue().type === 'admin' && P.vue().niveau === 2
   && (P.vue().features || []).length >= 17
   && (P.vue().features || []).every(f => f && f.src !== 'ign'));
+
+// 25. v7.23 — NIVEAU 3 COMPLET, UN SEUL CLIC PAR ÉTAPE (les données
+// Occitanie/Bretagne « manquantes » du signalement n'étaient qu'un
+// artefact du double clic/info-bulle : vérifié, arrondissements présents
+// ET peints à l'écran, en 2 clics depuis la vue régions)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR');
+clic('Occitanie');
+test('v7.23 : clic Occitanie (UN clic) → vue départements (niveau 2)',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && P.vue().parent === 'Occitanie');
+clic('Hérault');
+test('v7.23 : clic Hérault (UN clic, aucune info-bulle) → arrondissements niveau 3 (Béziers, Lodève, Montpellier)',
+  P.vue().type === 'admin' && P.vue().niveau === 3 && SEL.descenteAttente() === false
+  && (P.vue().features || []).filter(f => f && ['Béziers','Lodève','Montpellier'].indexOf(f.id) !== -1).length === 3);
+const regs25 = (appels.regions || []).slice(-40).filter(r => r && r.name);
+const par25 = {}; (appels.regions || []).forEach(r => { if (r && r.name) par25[r.name] = r; });
+test('v7.23 : les 3 arrondissements de l Hérault sont TOUS peints (aucun trou blanc)',
+  (P.vue().features || []).every(f => f && par25[f.id] && par25[f.id].itemStyle
+    && par25[f.id].itemStyle.areaColor && par25[f.id].itemStyle.areaColor !== '#eaf2f8'));
+for (let i = 0; i < 6 && P.vue().niveau > 1; i++) P.retour();
+clic('Bretagne');
+clic('Morbihan');
+test('v7.23 : Bretagne → Morbihan en 2 clics simples → arrondissements niveau 3 présents et peints',
+  (() => { const p25b = {}; (appels.regions || []).forEach(r => { if (r && r.name) p25b[r.name] = r; });
+    return P.vue().type === 'admin' && P.vue().niveau === 3 && P.vue().parent === 'Morbihan'
+    && (P.vue().features || []).length >= 3
+    && (P.vue().features || []).every(f => f && p25b[f.id] && p25b[f.id].itemStyle
+      && p25b[f.id].itemStyle.areaColor && p25b[f.id].itemStyle.areaColor !== '#eaf2f8'); })());
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);
