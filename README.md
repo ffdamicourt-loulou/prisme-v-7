@@ -68,15 +68,23 @@ la même source généalogique) et paquets « alias » FR-NA / FR-SA
 doublons complets de la France (même `a3` "FRA") qui pouvaient ÉCRASER
 `ADMIN.niv2["FRA"]` par une version tronquée.
 
-- **packages/FR.js** : les 5 régions IGN sont retirées du `niv1` (la vue
-  régions de la France affiche les 13 régions métropolitaines GADM) et
-  leurs clés `niv2` supprimées. Fichier réécrit : 4,7 Mo → 2,5 Mo.
-- **packages/FR-NA.js / FR-SA.js supprimés** : paquets alias orphelins
-  (le manifest pointe déjà « FR-NA »/« FR-SA » vers `packages/FR.js`,
-  `alias:"FR"`, depuis v7.2 ; les fichiers ne servaient plus à rien).
+- **js/core/00-const.js — FILTRE `src:"ign"`** : `__PR2_PKG_REG` retire
+  toute zone `src:"ign"` du `niv1` et purge ses clés `niv2`. La vue
+  régions de la France affiche les **13 régions métropolitaines GADM**,
+  quelle que soit la source du package. C'est ce filtre qui agit sur le
+  site (paquets par `<script>` ; en mode embarqué, ADMIN est déjà
+  débarrassé de ces entrées).
+- **packages/FR-NA.js / FR-SA.js SUPPRIMÉS** : paquets alias orphelins
+  de la France (même `a3` "FRA", donc ÉCRASEMENT potentiel de
+  `ADMIN.niv2["FRA"]` par une version tronquée, contours IGN à l'appui)
+  — le manifest les redirige déjà vers `packages/FR.js` depuis v7.2.
+- Les octets IGN encore présents dans `packages/FR.js` côté dépôt sont
+  inertes : le filtre les retire avant toute utilisation.
 - Aucune autre donnée IGN dans le projet (`data/admin.json.gz`,
   `data/monde.json.gz`, autres packages : zéro `src:"ign"`).
-- Harnais : navigation 75/75, apparence 11/11 — inchangés.
+- Harnais : navigation **78/78** (section 23 : 13 régions GADM, aucune
+  zone `src:"ign"`, descentes Corse et Île-de-France OK), apparence
+  11/11.
 - DROM : la France reste dessinée avec ses territoires en vue MONDE
   (contour de `monde.json`) ; côté subdivisions, ils n'ont plus de zone.
 
