@@ -202,6 +202,35 @@
         });
       }
     } catch (errDrom) { /* repli : France sans ultrapériphériques */ }
+    // v7.25 : NIVEAU 3 MANQUANT — compléments GADM 4.1 chargés À la demande
+    // (packages/n3-<ID>-k.js, listés dans le manifest « n3 » et évalués
+    // AVANT le package). Les 17 pays dont les packages n'avaient aucune
+    // descente sous leurs premières subdivisions (Suisse, Indonésie,
+    // Philippines, Ouganda, Burkina Faso, Guinée…) reçoivent ainsi leurs
+    // zones de niveau 3 : districts, kabupaten, provinces, etc. Même schéma
+    // que les DROM v7.22 : niv2[zone] rempli seulement si vide.
+    try {
+      var n3x = window.__PR2_NIV3X && window.__PR2_NIV3X[donnees.a3];
+      if (n3x && donnees.niv1) {
+        // v7.25 : les 17 pays « sans descente » n'ont souvent PAS de
+        // niv2 du tout (packages/CH.js déclare « niv2 »: null) — le
+        // créer pour y verser les compléments GADM.
+        donnees.niv2 = donnees.niv2 || {};
+        var a3c = donnees.a3;
+        Object.keys(n3x).forEach(function (parent) {
+          var zone = null;
+          donnees.niv1.forEach(function (f) {
+            if (f && !zone && (f.nom === parent || f.id === parent)) zone = f;
+          });
+          if (!zone) return; // zone du package renommée/inexistante : silence
+          if (!donnees.niv2[zone.nom] || !donnees.niv2[zone.nom].length) {
+            donnees.niv2[zone.nom] = n3x[parent].map(function (e) {
+              return { id: e.id, nom: e.nom, geometry: e.geometry, src: 'gadm', __a3: a3c };
+            });
+          }
+        });
+      }
+    } catch (errN3) { /* repli : pays sans complément */ }
     if (donnees.niv1) ADMIN.niv1[donnees.a3] = donnees.niv1;
     if (donnees.niv2) ADMIN.niv2[donnees.a3] = donnees.niv2;
     PKG_FAIT[donnees.a3] = true;
@@ -226,12 +255,25 @@
     // clic sur une zone sans sous-niveau re-téléchargeait le package entier).
     if (PKG_FAIT[fiche.a3]) return false;
     PKG_EN_COURS[idPays] = true;
-    var s = document.createElement('script');
     // v7.3 : anti-cache — le package porte aussi l'identifiant de version.
+    // v7.25 : COMPLÉMENTS NIVEAU 3 — les fichiers « n3 » du manifest sont
+    // insérés AVANT le package, avec async=false : le navigateur les exécute
+    // dans l'ordre d'insertion, donc __PR2_NIV3X est rempli quand le package
+    // s'enregistre (__PR2_PKG_REG lit la clé du pays et injecte les zones
+    // de niveau 3). Chargement LAZY : rien ne change pour les autres pays.
     var bld = window.__PR2_VBUILD;
-    s.src = (conf.base || '') + fiche.fichier + (bld ? '?v=' + encodeURIComponent(bld) : '');
-    s.onload = function () { delete PKG_EN_COURS[idPays]; try { if (rappel) rappel(idPays); } catch (err) { } };
-    s.onerror = function () { delete PKG_EN_COURS[idPays]; };
-    document.body.appendChild(s);
+    var liste = (fiche.n3 && fiche.n3.length ? fiche.n3.slice() : []);
+    liste.push(fiche.fichier);
+    var sFin = liste.length - 1;
+    for (var iS = 0; iS < liste.length; iS++) {
+      var s = document.createElement('script');
+      s.async = false;
+      s.src = (conf.base || '') + liste[iS] + (bld ? '?v=' + encodeURIComponent(bld) : '');
+      if (iS === sFin) {
+        s.onload = function () { delete PKG_EN_COURS[idPays]; try { if (rappel) rappel(idPays); } catch (err) { } };
+        s.onerror = function () { delete PKG_EN_COURS[idPays]; };
+      }
+      document.body.appendChild(s);
+    }
     return true;
   }

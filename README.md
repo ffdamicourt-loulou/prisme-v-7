@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21z -->
+<!-- rebuild-pages 2026-11-21za -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -54,8 +54,13 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
 - **Étiquette Auvergne-Rhône-Alpes** : décalage +0,5° supprimé, ancre posée au
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
-- Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+- Harnais navigation : 28 sections (95 contrôles) ; apparence 11/11 ×2 thèmes.
 
+## v7.25 — NIVEAU 3 COMPLÉTÉ : 17 pays dotés de sous-zones GADM 4.1 (2026-11-21za)
+
+- 33 fragments packages/n3-*.js (districts suisses, kabupaten indonésiens, sous-comtés ougandais, provinces philippines, etc.) chargés paresseusement AVANT le package du pays (async=false, manifest « n3 »).
+- js/core/00-const.js : injection des compléments dans niv2 au moment de l enregistrement du package (niv2 créé si absent — « niv2 »: null chez CH…).
+- 52 pays restent sans niveau 3 (absents de GADM ou dernier niveau atteint) : voir rapport.
 ## v7.24 — PILE DE NAVIGATION : le retour saute les bascules d'ajouts (2026-11-21z)
 
 **Signalement** : des parties de la carte « disparaissent sans raison
