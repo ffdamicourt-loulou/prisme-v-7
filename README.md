@@ -398,3 +398,122 @@ Causes racines corrigées (invisibles pour les harnais à événements plats) :
    `e.event.shiftKey`/`altKey` valait TOUJOURS `undefined` : Maj et Alt ne
    marchaient QUE dans les harnais. La nouvelle fonction
    `touche(e, cle)` descend la chaîne d'enveloppes (6 niveaux max).
+2. **Clic en mer** : ECharts n'émet AUCUN événement série/geo quand on
+   clique l'océan, seulement au niveau zrender. Le clic « vide » est donc
+   branché sur `carte.getZr().on('click')` (fonction `zrClic`) : un clic
+   qui a touché une zone nommée pose un drapeau consommé par le zr, seul
+   un clic n'ayant touché AUCUNE zone désélectionne tout (vue conservée).
+3. **Double gestionnaire** : le second `carte.on('click')` « fond de
+   carte » de greffon-pays est supprimé ; le message de fin de chaîne
+   (« aucune subdivision plus fine ») est désormais persistant, géré par
+   `traiteClic` elle-même.
+Harnais navigation : 54/54 (4 nouveaux contrôles v7.10 : enveloppe nichée,
+Maj+enveloppe, drapeau de clic nommé, clic vide zrender) ; apparence 11/11 ×2.
+
+## v7.9b — correctif critique : clic de zone désélectionnait tout (2026-11-20j)
+
+Le gestionnaire « clic fond de carte » traitait TOUT événement geo comme un
+clic vide : or dans un vrai navigateur, le clic sur une RÉGION déclenche
+AUSSI un événement geo PORTANT LE NOM de la zone. Résultat réel : chaque
+clic de zone désélectionnait tout et annulait l'info-bulle de validation
+n2→n3 — sites inutilisables, tests verts car le harnais ne simule pas ce
+double événement. Correctif : « zone vide » = événement SANS NOM
+uniquement.
+
+## v7.9 — Maj+clic : l'ajout à la sélection réparé et généralisé (2026-11-20i)
+
+Le modificateur Maj n'était PLUS transmis au noyau depuis le passage en
+greffon (v7.6) : « ajouter un pays à la sélection » ne fonctionnait plus.
+
+- **Maj+clic pays en vue monde** : le pays rejoint la sélection (vue
+  combinée au niveau 1) ; le pays déjà sélectionné est conservé, les deux
+  peints en teinte sélection (-10 %) — réutilise le paramètre `conserver`
+  v0.34 de `reinitialiserVers`.
+- **Maj+clic pays extérieur (x-…) en vue pays** : les divisions du nouveau
+  pays REJOIGNENT la vue au MÊME niveau (vue combinée FR + DE : régions +
+  länder côte à côte) ; package du pays chargé à la demande si absent
+  (`chargerPackage` exporté, ajout retenté) ; repli sur la sélection
+  niveau 1 si le pays n'a pas de subdivisions à ce niveau.
+- **Maj+clic sœur (règle v0.52 restaurée)** : les enfants de la sœur
+  du niveau supérieur rejoignent la vue ; nouveau Maj+clic les retire.
+- **Maj+clic zone de la vue** : bascule dans la sélection de niveau —
+  peinte en teinte sélection (-10 %) comme la zone cliquée, et proposée
+  par la demande multi-zones « Charger les sous-zones ».
+- **Purge** : un pays retiré du groupe (panneau Alt+clic) est retiré de la
+  sélection persistée — le retour au monde ne le ressuscite pas.
+- Harnais navigation : 50 contrôles (7 nouveaux : Maj monde, peinture
+  double sélection, vue combinée FR+DE, retrait groupe avec aperçu,
+  persistance/purge au retour monde).
+
+## v7.8 — module unique de sélection/désélection (2026-11-20h)
+
+**Nouveau fichier `js/app/greffon-selection.js`** : TOUTES les règles de
+sélection/désélection vivent désormais dans un seul module (le noyau reste
+fournisseur d'état et de primitives). Règles implémentées :
+
+- **Clic mer / zone vide → TOUT désélectionner**, SANS changer la vue ni
+  le cadrage (caméra et zoom conservés).
+- **Descente n2→n3 VALIDÉE par info-bulle** (« Afficher le niveau 3 de X ? ») :
+  le clic région est bloqué jusqu'à la confirmation ; la demande de package
+  « Charger les sous-zones ? » reste inchangée au niveau 2. Les zones en
+  fin de chaîne ne déclenchent pas d'info-bulle.
+- **Alt+clic → pop-up PERSISTANTE et contextuelle** de désélection :
+  propositions par radio-boutons (zone cliquée, remonter d'un cran, retour
+  au niveau 1, désélectionner le pays, retirer un pays d'un groupe…),
+  étiquettes avec les NOMS des zones/pays concernés, **aperçu complet en
+  direct** à chaque bascule (restauration par journal d'inverses),
+  boutons Valider / Annuler, positionnée hors de la zone cliquée.
+- **Généralité** : propositions indexées sur les niveaux RÉELS de la vue —
+  la Grande-Bretagne à 4 niveaux (ou tout pays plus profond) marche sans
+  cas particulier.
+- Harnais navigation : 43 contrôles (9 nouveaux : blocage/validation n2→n3,
+  clic vide cadrage conservé, panneau Alt : options, aperçus, restauration).
+
+## v7.7 — dézoom fusion : nom du niveau supérieur + teinte sélection (2026-11-20g)
+
+- **Nom de la zone apparente** : au dézoom ×3,5 (niveaux 2+), quand les
+  subdivisions disparaissent, la tache affiche le NOM de la zone du niveau
+  supérieur (région, département…) au centre géométrique de son socle
+  (repli au point profond, coupe sur deux lignes puis sigle), en BLANC.
+- **Teinte de la tache** : couleur du PAYS SÉLECTIONNÉ à -10 % de
+  luminosité (TSL, `assombrirFacteur` × 0,90) — la tache est une SÉLECTION,
+  cohérente avec la règle v7.6 des sélections à tous les niveaux.
+- Harnais navigation : 34 contrôles (2 nouveaux sur la fusion).
+
+## v7.6 — niveaux utilisateur, sélection -10 %, cadrages 80/60 (2026-11-20f)
+
+- **Niveaux utilisateur redéfinis** : le niveau 1 est LE PAYS SEUL sélectionné
+  (contour, cadré à 80 % de la hauteur du viewport) ; le niveau 2 = régions,
+  le niveau 3 = départements/équivalent. Un clic sur un pays en vue monde le
+  SÉLECTIONNE au niveau 1 ; un SECOND clic sur le pays déjà sélectionné y
+  descend (régions). Plus jamais d'ouverture directe en niveau 2.
+- **Changement de pays** : depuis n'importe quel niveau (1, 2, 3), cliquer un
+  autre pays (ou un pays extérieur « x-… ») le sélectionne au NIVEAU 1
+  (80 % de la hauteur). Fini le retour rapide sur la sélection initiale (US).
+- **Couleur de sélection** : à TOUS les niveaux, la zone/pays sélectionné(e)
+  est peint(e) en teinte d'origine MOINS 10 % de luminosité (le survol reste
+  à -20 %) — distinction nette entre survol et sélection.
+- **Cadrages** : pays sélectionné à 80 % de la hauteur ; toutes les vues de
+  subdivisions (régions, départements, arrondissements) à 60 % de la hauteur
+  pour mieux visualiser les détails et les petites zones.
+- **Dézoom ×3,5 étendu** : en cascade à tous les sous-niveaux (départements →
+  région apparente, arrondissements → département apparent), frontières
+  internes éteintes et teinte uniforme pour éviter la tache illisible.
+- Harnais navigation étendu (33 contrôles, sémantique deux clics) ; thème
+  noir vérifié (11/11).
+
+## v7.5 — navigation, cadrages, dézoom niv3 (2026-11-20e)
+- **Pays sélectionné : TOUJOURS le niveau 1** — depuis la vue monde comme
+  depuis un niveau 2/3 d'un autre pays (l'ancienne règle « même niveau »
+  est retirée). Le greffon passe par `A.ouvrir(id, 1)`.
+- **Cadrage par niveau** : niveau 1 = 80 % de la hauteur du viewport,
+  niveaux 2/3 = 60 % (`appliquerVue`, v0.79 → v7.5).
+- **Dézoom ×3,5 en niveau 3** : la sélection reste courante mais les
+  frontières internes s'éteignent, teinte uniforme — seule la région de
+  niveau 2 apparaît (fini la tache illisible).
+- **Caméra rendue** : toute interpolation de zoom (molette) en cours est
+  ANNULÉE au changement de vue — ses geoRoam traînants ramenaient la
+  caméra sur l'ancienne sélection ½ seconde après l'ouverture du nouveau
+  pays (surtout visible sur les comtés des États-Unis).
+- Harnais : `charge()` ne rejoue plus un onload consommé (sémantique
+  navigateur) ; 31/31 navigation, 11/11 apparence ×2 thèmes.

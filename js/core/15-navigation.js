@@ -398,3 +398,203 @@
   function demanderSous(nomSub) {
     var liste = listeDemande(nomSub);
     if (!liste.length) return false;
+    if (cibleDemande) annulerDemande();
+    cibleDemande = liste;
+    var total = 0;
+    liste.forEach(function (n) { total += enfantsDe(n).length; });
+    if (typeof document !== 'undefined') {
+      var boite = document.getElementById('prisme2-demande');
+      if (boite) {
+        var bNombre = document.getElementById('prisme2-demande-nombre');
+        var bNom = document.getElementById('prisme2-demande-nom');
+        if (bNombre) bNombre.textContent = total;
+        if (bNom) bNom.textContent = liste.join(', ');
+        boite.style.display = 'block';
+      }
+    }
+    return true;
+  }
+  function validerDemande() {
+    var c = cibleDemande;
+    annulerDemande();
+    if (!c || !c.length) return false;
+    // v0.60 : chargement MULTI-ZONES — on descend dans la première zone,
+    // puis les enfants de chaque autre zone sélectionnée REJOIGNENT la vue
+    // au même niveau (ajouterSousVue sur la sœur devenue du niveau juste
+    // inférieur — même mécanisme que le Maj+clic v0.52).
+    if (!descendreSous(c[0])) return false;
+    for (var i = 1; i < c.length; i++) {
+      var nomZ = c[i];
+      var fzS = null;
+      (vue.soeurs || []).forEach(function (s) { if (s.id === nomZ) fzS = s; });
+      if (fzS && fzS.__niv === vue.niveau - 1) ajouterSousVue(fzS);
+    }
+    return true;
+  }
+  function annulerDemande() {
+    cibleDemande = null;
+    if (typeof document !== 'undefined') {
+      var boite = document.getElementById('prisme2-demande');
+      if (boite) boite.style.display = 'none';
+    }
+  }
+  function retour() {
+    if (cibleDemande) annulerDemande();
+    if (!pile.length) return;
+    var e = pile.pop();
+    // v7.24 : SAUT DE LA CHAÎNE DE BASCULES — les cadres __bascule (ajouts/
+    // retraits de sœurs, cf. ajouterSousVue) sont des états ÉPHÉMÈRES du
+    // MÊME niveau : retour ne doit pas les redonner un par un (l'utilisateur
+    // pressait retour et la carte « ne faisait rien » ou enlevait/rajoutait
+    // sœurs au hasard). On dépile toute la chaîne de bascules consécutives
+    // et l'on restaure le premier cadre de DESCENTE dessous.
+    while (e.__bascule && pile.length) e = pile.pop();
+    vue = e.vue;
+    etat.zoom = e.zoom; etat.centre = e.centre; etat.selection = e.selection;
+    etat.selections = e.selections || [];
+    appliquerVue(true);
+    etat.zoomEntree = etat.zoom;
+  }
+  // Dézoom sous l'échelle du pays (entre pays et continent) : la descente se
+  // referme et l'on RETOURNE À L'ÉTAT INITIAL du niveau monde (v0.41 : la
+  // vue monde entière est RECADRÉE comme au démarrage — l'ancien comportement
+  // conservait le zoom courant, si proche du zoom du pays qu'on croyait ne
+  // jamais revenir au monde) ; le pays quitté reste sélectionné (peint).
+  function reduireAuPays() {
+    var idPays = vue.paysId;
+    if (cibleDemande) annulerDemande();
+    var base = null;
+    while (pile.length) base = pile.pop(); // dernier dépilé = vue monde initiale
+    if (base) {
+      vue = base.vue;
+      etat.selections = [];
+      // le pays quitté reste sélectionné (peint) en vue monde
+      etat.selection = (idPays && parId[idPays]) ? idPays : null;
+      // v0.41 : VRAI retour à l'état initial du niveau monde — cadrage
+      // COMPLET du monde (zoom/centre de démarrage), quel que soit le zoom
+      // d'où l'on vient.
+      appliquerVue();
+    }
+    etat.zoomEntree = etat.zoom;
+  }
+  // v0.31 : clic sur un autre pays aux niveaux 2/3 → le NOUVEAU PAYS S'OUVRE
+  // AU MÊME NIVEAU : on descend d'abord ses régions (niveau 1), puis la zone
+  // contenant le POINT DE CLIC (ou le cœur du pays), et encore un cran si le
+  // niveau demandé est 3 — en s'arrêtant à la profondeur réellement
+  // disponible (un pays sans subdivisions reste sélectionné en vue monde).
+  function zoneSuivante(feats, pt, pays) {
+    var i;
+    if (pt) {
+      for (i = 0; i < feats.length; i++) if (pointDansGeometry(pt, feats[i].geometry)) return feats[i];
+    }
+    if (pays) {
+      var c = cpDe(pays.id, pays.geometry);
+      for (i = 0; i < feats.length; i++) if (pointDansGeometry(c, feats[i].geometry)) return feats[i];
+    }
+    var meilleur = null, aMax = -1;
+    feats.forEach(function (f) {
+      var a = aireGeo(f.geometry);
+      if (a > aMax) { aMax = a; meilleur = f; }
+    });
+    return meilleur;
+  }
+  function ouvrirAuNiveau(idPays, niveau, pt) {
+    if (!descendre(idPays)) return false; // niveau 1
+    if (niveau < 2) return true;
+    var feats = featuresNiv1(idPays);
+    if (!feats) return true;
+    var z1 = zoneSuivante(feats, pt, parId[idPays]);
+    if (!z1 || !enfantsDe(z1.nom)) return true;
+    if (!descendreSous(z1.nom)) return true; // niveau 2
+    if (niveau < 3) return true;
+    var z2 = zoneSuivante(vue.features, pt, null);
+    if (!z2 || !enfantsDe(z2.nom)) return true;
+    descendreSous(z2.nom); // niveau 3
+    return true;
+  }
+  // Règle générale (v7.6) : un clic sur le NOUVEAU PAYS, à TOUT niveau, le
+  // SÉLECTIONNE au NIVEAU 1 (le pays seul, cadré à 80 % de la hauteur) —
+  // la descente (régions, niveau 2) se fait par un second clic sur le pays
+  // déjà sélectionné. v0.34 : le 4e argument CONSERVER (Maj+clic) ajoute au
+  // lieu de remplacer.
+  function reinitialiserVers(idPays, niveau, pt, conserver) {
+    if (cibleDemande) annulerDemande();
+    var ancien = vue.type !== 'monde' ? vue.paysId : etat.selection;
+    var garder = conserver ? etat.selections.slice() : null;
+    var base = null;
+    while (pile.length) base = pile.pop(); // dernier dépilé = vue monde initiale
+    if (base) {
+      vue = base.vue; etat.zoom = base.zoom; etat.centre = base.centre;
+      etat.selection = null;
+      etat.selections = [];
+      appliquerVue(true);
+    }
+    if (!parId[idPays]) return;
+    etat.selection = idPays;
+    var restaurer = function () {
+      if (!conserver) return;
+      etat.selections = garder || [];
+      if (ancien && ancien !== idPays
+        && etat.selections.indexOf(ancien) === -1) etat.selections.push(ancien);
+    };
+    // avant la descente : la snapshot de la pile gardera les sélections, et
+    // le retour en vue monde les restaurera (l'ajout persiste)
+    restaurer();
+    // v7.6 : NIVEAUX UTILISATEUR — le niveau 1 est LE PAYS SEUL, SÉLECTIONNÉ
+    // et cadré à 80 % de la hauteur du viewport, SANS descendre dans ses
+    // régions ; le niveau 2 = régions (app n1), le niveau 3 = départements
+    // (app n2) : on ouvre jusqu'au niveau APP = niveau − 1.
+    var nivU = niveau || 1;
+    if (nivU >= 2 && ouvrirAuNiveau(idPays, nivU - 1, pt)) { restaurer(); return; }
+    // v7.13 : SÉLECTION MULTIPLE au niveau 1 — l'ENSEMBLE des pays
+    // sélectionnés est centré horizontalement, à 80 % de la hauteur du
+    // viewport ; pays seul : cadrage inchangé (centrerSur 0,80).
+    if (conserver && garder && garder.length) cadrerGroupe([idPays].concat(garder));
+    else centrerSur(parId[idPays], 0.80); // niveau 1 : le pays seul, 80 % de la hauteur
+    restaurer();
+    majEtiquettes(); // peindre la (nouvelle) sélection
+  }
+
+  // ---------- v0.37 : VUE COMBINÉE — Maj+clic AJOUTE le pays à la vue ----------
+  // « France > régions » + Maj+clic sur l'Allemagne = les DEUX pays côte à
+  // côte, leurs subdivisions du MÊME NIVEAU (régions + länder). Le clic
+  // simple sur un pays extérieur reste un RESET ; Alt+clic retire le pays
+  // ciblé du groupe ; retour ← = la vue d'avant (un seul pays).
+  function enfantZone(idPays, nomSub) {
+    var a3 = DATA.idversA3 ? DATA.idversA3[idPays] : null;
+    return a3 && ADMIN.niv2[a3] && ADMIN.niv2[a3][nomSub] ? ADMIN.niv2[a3][nomSub] : null;
+  }
+  // Tranche d'un pays au niveau demandé : niveau 1 → ses régions ; niveau ≥ 2
+  // → les subdivisions de la zone contenant le POINT DE CLIC (ou le cœur du
+  // pays), en s'arrêtant à la profondeur réellement disponible.
+  function membreDuPays(idPays, niveau, pt) {
+    var pays = parId[idPays];
+    if (!pays) return null;
+    if (!descendPossible(idPays)) return null; // v0.37 : outre-mer etc. → ajout impossible
+    var feats1 = featuresNiv1(idPays);
+    if (!feats1 || !feats1.length) return null; // pas de subdivisions → ajout impossible
+    var membre = {
+      paysId: idPays, features: feats1.slice(), soeurs: [],
+      socle: (feats1[0] && feats1[0].src === 'ign') ? (socleZones(feats1) || pays.geometry) : pays.geometry, niveau: 1, continent: pays.continent,
+    };
+    if (niveau >= 2) {
+      var z1 = zoneSuivante(feats1, pt, pays);
+      var enfants = z1 ? enfantZone(idPays, z1.id != null ? z1.id : z1.nom) : null;
+      if (z1 && enfants && enfants.length) {
+        membre = {
+          paysId: idPays, features: enfants.slice(),
+          soeurs: feats1.filter(function (f) { return f !== z1; }),
+          socle: z1.geometry, niveau: 2, continent: pays.continent,
+        };
+      }
+    }
+    return membre;
+  }
+  function membreCourant() {
+    return {
+      paysId: vue.paysId, features: vue.features.slice(),
+      soeurs: (vue.soeurs || []).slice(),
+      socle: vue.socleGeometry || (parId[vue.paysId] || {}).geometry,
+      niveau: vue.niveau, continent: vue.continent,
+    };
+  }
