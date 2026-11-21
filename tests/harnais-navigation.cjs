@@ -83,7 +83,7 @@ const clicZone = (name) => {
 const charge = (id) => {
   // v7.25 : les compléments niveau 3 (packages/n3-<ID>-k.js) sont évalués
   // AVANT le package — comme le fait le chargeur du navigateur.
-  (fs.readdirSync(path.join(RAC, 'packages')).filter(n => n.indexOf('n3-' + id + '-') === 0).sort())
+  (fs.readdirSync(path.join(RAC, 'packages')).filter(n => (n.indexOf('n3-' + id + '-') === 0 || n.indexOf('n4-' + id + '-') === 0)).sort())
     .forEach(n => vm.runInContext(fs.readFileSync(path.join(RAC, 'packages', n), 'utf8'), ctx, { filename: n }));
   vm.runInContext(fs.readFileSync(path.join(RAC, 'packages', id + '.js'), 'utf8'), ctx, { filename: 'packages/' + id + '.js' });
   // v7.5 : comme dans un vrai navigateur, le onload d un script ne tire
@@ -707,6 +707,41 @@ clic(Object.keys(P.vue().parNom)[0]);
 test('v7.25 : Ouganda — clic district → sous-comtés GADM (raccord spatial, noms différents du GADM)',
   P.vue().type === 'admin' && P.vue().niveau === 2 && (P.vue().features || []).length > 0);
 for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+
+
+// 28. v7.26 — NIVEAU 4 COMPLÉTÉ : les compléments GADM (packages/n4-<ID>-k.js,
+// manifest « n4 », chargés AVANT le package) remplissent les zones de niveau 3
+// dépourvues d'enfants.
+function vN4(id, paysNom) {
+  for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+  clic(id); clic(id); charge(id);
+  const v1 = P.vue();
+  if (v1.type !== 'admin' || v1.niveau !== 1) { test('v7.26 : ' + paysNom + ' — vue niv1', false); return; }
+  const zpays = P.vue().parNom;
+  const nomsZones = Object.keys(zpays);
+  let descendu = null, enfN4 = 0;
+  for (const nz of nomsZones) {
+    // descendre via clic puis vérifier les enfants de la zone de niveau 3
+    clic(nz);
+    if (P.vue().niveau === 2) {
+      const v3 = P.vue();
+      const nm3 = Object.keys(v3.parNom || {});
+      if (nm3.length) {
+        clic(nm3[0]);
+        if (P.vue().type === 'admin' && P.vue().niveau >= 3 && (P.vue().features || []).length) { descendu = nz; enfN4 = (P.vue().features || []).length; }
+        for (let i = 0; i < 3 && P.vue().type !== 'monde' && P.vue().parNom !== zpays; i++) P.retour();
+      }
+    } else break;
+    for (let i = 0; i < 3 && P.vue().type !== 'monde' && P.vue().parNom !== zpays; i++) P.retour();
+    if (descendu) break;
+  }
+  test('v7.26 : ' + paysNom + ' — descente au niveau 4 (complément GADM) via « ' + descendu + ' »',
+    !!descendu && enfN4 > 0);
+}
+vN4('SN', 'Sénégal');
+vN4('PE', 'Pérou');
+vN4('LU', 'Luxembourg');
+for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

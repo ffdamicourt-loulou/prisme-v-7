@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21za -->
+<!-- rebuild-pages 2026-11-21zb -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -54,7 +54,15 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
 - **Étiquette Auvergne-Rhône-Alpes** : décalage +0,5° supprimé, ancre posée au
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
-- Harnais navigation : 28 sections (95 contrôles) ; apparence 11/11 ×2 thèmes.
+- Harnais navigation : 28 sections (98 contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.26 — NIVEAU 4 COMPLÉTÉ : 30 pays dotés de sous-zones GADM 4.1 (2026-11-21zb)
+
+- 212 fragments packages/n4-*.js (districts vietnamiens 9 472, sous-districts thaïlandais 4 247, freguesias portugaises 3 969, communes burundaises 2 302, paroisses britanniques 2 182, blocs indiens 2 182, etc.) chargés paresseusement AVANT les n3 et le package (manifest « n4 », même mécanisme async=false que v7.25).
+- js/core/00-const.js : deuxième injection (window.__PR2_NIV4X) fusionnée aux enfants de niveau 3 existants — les zones déjà dotées d'enfants natifs ne sont PAS doublées, les compléments ajoutent {id, nom, geometry, src:'gadm', __a3}.
+- Matching par nom normalisé + repli spatial centroïde (Douglas-Peucker eps 0.0008–0.005, coords 3 décimales).
+- Récoltes maigres pour RU (90/2321 raïons), Canada (8/76), Allemagne (18/38), Pologne (65/380), Soudan (25/188) : noms GADM non appariés. ~62 des 93 pays à niveau 4 partiel sans complément possible (niveau GADM final déjà atteint : USA, Japon, Mexique, Algérie, etc.).
+- Harnais navigation : 28 sections, 98 contrôles ; section GB vérifiée manuellement (Angleterre → comtés → districts → 28 zones niveau 4).
 
 ## v7.25 — NIVEAU 3 COMPLÉTÉ : 17 pays dotés de sous-zones GADM 4.1 (2026-11-21za)
 

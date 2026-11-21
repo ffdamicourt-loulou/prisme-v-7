@@ -231,6 +231,35 @@
         });
       }
     } catch (errN3) { /* repli : pays sans complément */ }
+    // v7.26 : NIVEAU 4 — compléments GADM 4.1 (packages/n4-<ID>-k.js,
+    // manifest « n4 », évalués avant le package). Même mécanisme que le
+    // niveau 3, mais les parents sont ici les zones de NIVEAU 3 (enfants
+    // des premières subdivisions) : on parcourt niv2[première subdivision]
+    // pour retrouver la zone parente par nom OU id, et on ne remplit que
+    // les zones sans enfants (les données du package restent prioritaires).
+    try {
+      var n4x = window.__PR2_NIV4X && window.__PR2_NIV4X[donnees.a3];
+      if (n4x && donnees.niv1) {
+        var a4c = donnees.a3;
+        // index des zones de niveau 3 : enfants des premières subdivisions
+        var zones3 = [];
+        donnees.niv1.forEach(function (f) {
+          var enf = (f && donnees.niv2 && donnees.niv2[f.nom]) || (f && donnees.niv2 && donnees.niv2[f.id]) || [];
+          if (enf && enf.length) enf.forEach(function (z) { if (z && z.nom) zones3.push(z); });
+        });
+        Object.keys(n4x).forEach(function (parent) {
+          var zn = null;
+          zones3.forEach(function (z) { if (!zn && (z.nom === parent || z.id === parent)) zn = z; });
+          if (!zn) return; // zone du package renommée/inexistante : silence
+          var ex = (donnees.niv2 && donnees.niv2[zn.nom]) || [];
+          var nomsEx = {};
+          ex.forEach(function (e) { if (e && e.nom) nomsEx[e.nom] = true; });
+          var ajoutes = n4x[parent].filter(function (e) { return e && e.nom && !nomsEx[e.nom]; })
+            .map(function (e) { return { id: e.id, nom: e.nom, geometry: e.geometry, src: 'gadm', __a3: a4c }; });
+          if (ajoutes.length) donnees.niv2[zn.nom] = ex.concat(ajoutes);
+        });
+      }
+    } catch (errN4) { /* repli : pays sans complément niveau 4 */ }
     if (donnees.niv1) ADMIN.niv1[donnees.a3] = donnees.niv1;
     if (donnees.niv2) ADMIN.niv2[donnees.a3] = donnees.niv2;
     PKG_FAIT[donnees.a3] = true;
@@ -262,7 +291,8 @@
     // s'enregistre (__PR2_PKG_REG lit la clé du pays et injecte les zones
     // de niveau 3). Chargement LAZY : rien ne change pour les autres pays.
     var bld = window.__PR2_VBUILD;
-    var liste = (fiche.n3 && fiche.n3.length ? fiche.n3.slice() : []);
+    var liste = (fiche.n4 && fiche.n4.length ? fiche.n4.slice() : []);
+    if (fiche.n3 && fiche.n3.length) liste = liste.concat(fiche.n3);
     liste.push(fiche.fichier);
     var sFin = liste.length - 1;
     for (var iS = 0; iS < liste.length; iS++) {
