@@ -56,6 +56,14 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 30 sections (119 contrôles) ; apparence 11/11 ×2 thèmes.
 
+## Outil — AUDIT GÉOMÉTRIQUE DES PACKAGES (point 6 du plan de robustesse, 2026-11-22zb)
+
+`tests/audit-frontieres.cjs` : contrôle qualité PUR NODE sans dépendance, exécuté sur les 490 fichiers de `packages/` (~97 000 zones). Usage : `node tests/audit-frontieres.cjs [--DETAILS]` (exit 1 si anomalie, donc appelable en CI locale à chaque génération de package).
+
+Règles (au niveau ZONE, agrégation des polygones) : **D1** polygone-frag suspect (aire < 5 % de la zone ET allongement périmètre²/(4π·aire) > 25, une île compacte n est pas signalée — la rustine-triangle Sarpy : 1,88 % du comté, allongement 46, est bien retrouvée) ; **D2** anneau dégénéré (< 4 sommets) ; **D3** aire nulle ; **D4** sommets consécutifs dupliqués ; **D5** zone sans géométrie ; **D6** fichier qui ne s évalue pas. Convention tolérée et comptée : anneaux non refermés (1 201).
+
+Premiers résultats : packages PRINCIPAUX — 302/490 fichiers sains, 1 043 anomalies surtout D1 (heuristic à trier : Northwest Angle, vrais shards) + **4 zones fantômes sans géométrie** (Hampshire/Bournemouth, Cornouailles/Isles of Scilly, Haifa/Hadera, Chita/Chita) ; compléments n3/n4 (GADM simplifié à 3 décimales) — ~16 000 micro-défauts de simplification (anneaux dégénérés, aires nulles), invisibles à l échelle de rendu mais réels.
+
 ## v7.29 — FRANCHIR LES FRONTIÈRES DES HOMONYMES : trois réparations États-Unis (2026-11-22za)
 
 - **Frontière Sarpy/Douglas (Nebraska) réparée** (js/core/00c-us-frontieres.js) : le bord sud du comté Douglas était une ligne droite de 35 km alors que Sarpy portait un sommet intermédiaire (−95,8956 ; 41,1952) → fuseau blanc d environ 1,2 km. packages/US.js (2,86 Mo) étant trop volumineux pour être repoussé tel quel, la réparation passe par un nouveau fragment du cœur qui intercepte l enregistrement du package US et corrige les données au vol : le sommet est inséré dans l anneau Douglas (12 → 13 sommets) et le polygone-triangle « rustine » ajouté antérieurement à Sarpy est retiré (1 seul polygone). Chaîne partagée désormais identique des deux côtés. Correctif IDEMPOTENT (ne rien faire si le package est déjà réparé).
