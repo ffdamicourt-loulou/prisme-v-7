@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21zd -->
+<!-- rebuild-pages 2026-11-22zc -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -54,7 +54,18 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
 - **Étiquette Auvergne-Rhône-Alpes** : décalage +0,5° supprimé, ancre posée au
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
-- Harnais navigation : 30 sections (119 contrôles) ; apparence 11/11 ×2 thèmes.
+- Harnais navigation : 35 sections (136 contrôles) ; apparence 11/11 ×2 thèmes ; fuzz 1 440 actions seedées.
+
+## v7.30 — PLAN DE ROBUSTESSE DES SÉLECTIONS : 6→1→2→3→4→5→7 (2026-11-22zc)
+
+- **Point 1 — Clefs de sélection QUALIFIÉES « 2:a3¤parent¤nom »** : chaque zone enregistrée reçoit ses ancres d identité (`__a3`, `__parent` à l enregistrement du package, 00-const.js) ; une zone sélectionnée est désignée par son CHEMIN (ex. `2:USA¤Texas¤Washington` = le comté Washington du TEXAS), jamais plus par son nom seul. Le comté Washington du Texas ne peut plus être confondu avec l ÉTAT Washington ni avec le comté Washington de l Iowa. Résolution contre la vue courante (`zoneDeCleSel`), repli `c-id` pour les zones sans ancres (monde, niveaux GADM 4+).
+- **Point 2 — MACHINE À ÉTATS de la sélection** (nouveau fragment 00d-selection-etats.js) : passerelle unique `selEnvoyer / selAjouter / selRetirer / selVider` pour TOUTES les mutations (cœur 15/16 + greffons pays/sélection). Copie PROPRE des tableaux, version `etat.selVersion` incrémentée, JOURNAL des mutations (op, avant/après, vue) exposé au harnais. Découverte au passage : le cadrage multi-pays v7.13 ne marchait que par un ALIASING accidentel (le push de `restaurer` mutait le tableau `garder` capturé) — la règle est désormais EXPLICITE (cadrage de l état vivant).
+- **Point 3 — Repeindre DEPUIS l état, jamais depuis un cache daté** (11-survol-repaint.js) : le cache de survol capture la version de sélection au moment du paint ; si la machine à états a muté depuis, `repaintSurvol` se dégrade en repaint complet au lieu de repeindre une zone fraîchement sélectionnée avec une teinte périmée.
+- **Point 4 — INVARIANTS après chaque interaction** (harnais) : I1 `selVersion` monotone ; I2 journal non vide dès la première mutation ; I3 toute clef qualifiée JUSTIFIÉE (résolue dans la vue ou zone existante en ADMIN vivant, sinon FANTÔME) ; I4 toute sélection legacy est un pays ou une zone AFFICHÉE.
+- **Point 5 — FUZZ de navigation** (`tests/fuzz-navigation.cjs`) : marches aléatoires seedées (PRNG mulberry32, reproductibles) sur FR/DE/IT/US — clics pays, descentes, Maj+clic, retours, clics vides ; chaque action doit passer les invariants sans exception. Premier run : il a TROUVÉ une vraie faille v7.29 : la garde de descente testait un simple CONTACT de bboxes et ignorait les SŒURS (pas de géométrie parente) → on pouvait enchaîner des descentes par nom homonyme jusqu à des vues de « niveau 25 ». Correctifs : garde de CONTENANCE (fraction de centroïdes des enfants dans la bbox parent ≥ 0,6 ; convention ±360° respectée) + la zone cliquée est trouvée dans la vue OU ses sœurs, sinon REFUS. 1 440/1 440 actions OK.
+- **Point 7 — UI** : info-bulle du fil d ARIANE décrivant le chemin qualifié de chaque zone sélectionnée (« États-Unis > Texas > Washington ») + BADGE « couverture partielle » quand les données du pays ne couvrent pas toutes ses premières subdivisions (mesuré à l enregistrement, `window.__PR2_COUVERTURE`).
+- Harnais : section 35 (étampage, clefs Texas/Washington état vs comté, fantôme éliminé, journal tracé) + tests v7.23/v7.28 réécrits pour les clefs qualifiées — navigation **136 OK / 0 KO** ; apparence 11/11 ×2 ; fuzz 1 440 actions OK.
+- (Point 6 — audit géométrique : livré v7.29zb, voir section AUDIT ci-dessous.)
 
 ## Outil — AUDIT GÉOMÉTRIQUE DES PACKAGES (point 6 du plan de robustesse, 2026-11-22zb)
 

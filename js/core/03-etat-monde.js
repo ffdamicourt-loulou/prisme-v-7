@@ -29,7 +29,11 @@
   var CENTRES_CALCULES = null; // v0.80 : centres horizontaux pondérés par aire, calculés une fois
 
   var etat = { zoom: 1, centre: [11, 22], selection: null, selections: [], zoomEntree: 1,
-    selectionZone: null }; // v0.58 : zone sélectionnée par clic simple dans la vue admin
+    selectionZone: null, selVersion: 0 }; // v0.58 : zone sélectionnée par clic simple dans la vue admin
+  // v7.30 : selVersion — VERSION DE LA MACHINE À ÉTATS de sélection
+  // (cf. 00d-selection-etats.js) : incrémentée à CHAQUE mutation. Le cache
+  // de survol (11-survol-repaint) s'invalide sur écart : repeindre toujours
+  // depuis etat, jamais depuis un cache daté.
   var zoomMoletteRef = null; // v0.52 : fonction zoom molette, posée par demarrer()
   var carte = null, delaiEtiquettes = null, conteneurCarte = null;
   var apresDemarrageFns = []; // v0.63 : greffons à brancher une fois la carte créée
@@ -47,10 +51,49 @@
   // repeint. Sélectionner autre chose = VRAI RESET visuel : l'ancien
   // repaint en teinte de base, rien ne peut réapparaître. selectedMode est
   // coupé : ECharts ne mémorise plus rien.
+  // v7.30 : SÉLECTION QUALIFIÉE « 2:a3¤parent¤nom » (séparateur U+00A4 ¤).
+  // Une zone désignée par sa clef QUALIFIÉE ne peut plus être confondue
+  // avec un homonyme d'un autre niveau ou d'un autre parent : le comté
+  // Washington du Texas (2:USA¤Texas¤Washington) n'est plus l'État de
+  // Washington (2:USA¤¤Washington) ni le comté Washington de l'Iowa.
+  // cleSel(fz) : clef d'une zone de la vue ; repli 'c-'+id pour les zones
+  // sans ancres (pays du monde, zones profondes non étampées).
+  function cleSel(fz) {
+    if (!fz) return null;
+    var nom = (fz.nom != null ? fz.nom : fz.id) || '';
+    if (!nom) return null;
+    if (fz.__a3) return '2:' + fz.__a3 + '\u00A4' + (fz.__parent || '') + '\u00A4' + nom;
+    return 'c-' + fz.id;
+  }
+  // zoneDeCleSel(k) : résout une clef qualifiée contre la VUE COURANTE
+  // (features + sœurs) — la clef désigne la zone AFFICHABLE qu'elle peint.
+  function zoneDeCleSel(n) {
+    if (typeof n !== 'string' || n.slice(0, 2) !== '2:') return null;
+    var parties = n.slice(2).split('\u00A4');
+    var fs = (typeof vue !== 'undefined' && vue && vue.features) ? vue.features : [];
+    var sw = (typeof vue !== 'undefined' && vue && vue.soeurs) ? vue.soeurs : [];
+    for (var k = 0; k < fs.length + sw.length; k++) {
+      var f = k < fs.length ? fs[k] : sw[k - fs.length];
+      if (f && f.__a3 === parties[0] && (f.__parent || '') === parties[1]
+        && ((f.nom != null && f.nom === parties[2]) || f.id === parties[2])) return f;
+    }
+    return null;
+  }
   function ensembleSelection() {
     var s = {};
     if (etat.selection) s[etat.selection] = 1;
-    for (var i = 0; i < etat.selections.length; i++) s[etat.selections[i]] = 1;
+    for (var i = 0; i < etat.selections.length; i++) {
+      var n = etat.selections[i];
+      // v7.30 : les clefs QUALIFIÉES « 2:a3¤parent¤nom » sont résolues
+      // contre la vue : la peinture marque la zone affichée (id) ET son
+      // entrée 'c-' de compatibilité (les peintres cherchent les deux).
+      // Entrées LEGACY (pays, 'c-x', noms) : acceptées telles quelles.
+      if (typeof n === 'string' && n.slice(0, 2) === '2:') {
+        var fq = zoneDeCleSel(n);
+        if (fq) { s[fq.id] = 1; s['c-' + fq.id] = 1; s[n] = 1; }
+        else s[n] = 1; // sélection persistante hors vue (restaurée au retour)
+      } else s[n] = 1;
+    }
     return s;
   }
 

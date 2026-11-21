@@ -19,6 +19,10 @@ html, body { margin: 0; height: 100%; background: #0c0c0c; font-family: "Segoe U
   border: 1px solid #cdd8e2; border-radius: 6px; }
 #prisme2-fil .prisme2-fil-retour { cursor: pointer; color: #0155a7; font-weight: 600; margin-right: 8px; }
 #prisme2-fil .prisme2-fil-retour:hover { text-decoration: underline; }
+/* v7.30 : badge « couverture partielle » (données incomplètes du package) + tooltip du chemin qualifié de la sélection */
+#prisme2-fil .prisme2-badge-partiel { display: inline-block; margin-right: 8px; padding: 1px 7px;
+  font-size: 11px; font-weight: 600; color: #7a4d00; background: #fff3d6;
+  border: 1px solid #e7c26a; border-radius: 9px; cursor: help; }
 
 #prisme2-demande { position: fixed; top: 42%; left: 50%; transform: translate(-50%, -50%);
   z-index: 20; display: none; background: #ffffff; border: 1px solid #cdd8e2; border-radius: 8px;

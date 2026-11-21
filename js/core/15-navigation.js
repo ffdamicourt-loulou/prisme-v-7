@@ -82,7 +82,7 @@
     };
     feats.forEach(function (f) { vue.parNom[f.id] = f; });
     etat.selection = null;
-    etat.selections = [];
+    selVider('descente'); // v7.30 : machine à états
     appliquerVue();
     etat.zoomEntree = etat.zoom;
     // v7.17 : si un 2e clic pays attendait le package, la vue régions
@@ -96,12 +96,19 @@
     var idPays = (vue.parPays && vue.parPays[nomSub]) || vue.paysId;
     var a3 = DATA.idversA3 ? DATA.idversA3[idPays] : null;
     var enfants = a3 && ADMIN.niv2[a3] && ADMIN.niv2[a3][nomSub];
-    // v7.29 : GARDE D'APPARTENANCE (homonymes inter-niveaux, cf.
-    // enfantsDe) — le comté « Washington » du Texas ne peut pas
-    // « descendre » dans les comtés de l'ÉTAT Washington : la descente
-    // exige que les enfants recouvrent la zone cliquée.
-    if (enfants && enfants.length
-      && !enfantsDansZone({ geometry: (vue.features.filter(function (f) { return f.id === nomSub; })[0] || {}).geometry }, enfants)) {
+    // v7.30 : la garde doit connaître la géométrie de la zone CLIQUÉE, y
+    // compris si c'est une SŒUR (la zone appartient à la vue par nom mais
+    // ne figure pas dans vue.features) : sans elle, la garde retombait
+    // sur le repli nominal et la descente par NOM pouvait enchaîner des
+    // niveaux sans fin (le fuzzer a produit des vues de niveau 25 —
+    // cf. tests/fuzz-navigation.cjs). Si la zone cliquée est introuvable
+    // dans la vue ET ses sœurs : REFUS (clic sur rien de concret).
+    function featCliquee(nom) {
+      var f = vue.features.filter(function (z) { return z.id === nom; })[0]
+        || (vue.soeurs || []).filter(function (z) { return z.id === nom; })[0];
+      return f || null;
+    }
+    if (enfants && enfants.length && !enfantsDansZone({ geometry: (featCliquee(nomSub) || {}).geometry }, enfants)) {
       enfants = null;
     }
     // v0.80 : PACKAGE à la demande — sous-zones absentes mais package
@@ -261,10 +268,15 @@
     var nouvelles;
     if (present) {
       nouvelles = vue.features.filter(function (f) { return !idsEnf[f.id]; });
-      etat.selections = etat.selections.filter(function (n) { return n !== 'c-' + fz.id; });
+      // v7.30 : bascule de retrait par CLEF QUALIFIÉE (et leg « c- » de
+      // compatibilité) — le retrait retire bien LA zone ciblée, jamais un
+      // homonyme d'un autre parent.
+      selEnvoyer('bascule-retrait', (etat.selections || []).filter(function (n) { return n !== cleSel(fz) && n !== 'c-' + fz.id; }));
     } else {
       nouvelles = vue.features.concat(enfR);
-      if (etat.selections.indexOf('c-' + fz.id) === -1) etat.selections.push('c-' + fz.id);
+      // v7.30 : ajout par CLEF QUALIFIÉE « 2:a3¤parent¤nom » : deux
+      // homonymes de parents différents ne partagent plus leur entrée.
+      selAjouter(cleSel(fz) || ('c-' + fz.id), 'bascule-ajout');
     }
     // v0.54 : FRONTIÈRES DES ENFANTS AJOUTÉS — la sœur « c- » dont les
     // enfants rejoignent la vue est MASQUÉE de la carte enregistrée
@@ -346,14 +358,7 @@
   function enfantsDansZone(zoneFeat, enfants) {
     try {
       var bz = bboxGeo(zoneFeat.geometry, [999, 999, -999, -999]);
-      var be = [999, 999, -999, -999];
-      var n = 0;
-      for (var i = 0; i < enfants.length && n < 50; i++) {
-        var gj = enfants[i] && enfants[i].geometry;
-        if (!gj) continue;
-        be = bboxGeo(gj, be); n++;
-      }
-      if (!n) return true; // pas de géométrie : ne pas bloquer (repli nominal)
+      if (!bz || bz[0] > bz[2]) return true; // pas de géométrie : ne pas bloquer (repli nominal)
       // v7.29b : CONVENTION DE LONGITUDE (±180 contre 0-360) — Samoa,
       // Fidji, Tonga : la source du package et le complément GADM (n3)
       // peuvent coder l'antiméridien de deux façons (le point est le
@@ -361,12 +366,40 @@
       // comparer : la garde ne doit refuser que les recouvrements
       // ABSENTS (billes à des centaines de km), jamais un artifice
       // de longitude.
-      var cx = (bz[0] + bz[2]) / 2, ce = (be[0] + be[2]) / 2;
-      if (cx - ce > 180) { be[0] += 360; be[2] += 360; }
-      else if (ce - cx > 180) { be[0] -= 360; be[2] -= 360; }
-      var inter = Math.max(0, Math.min(bz[2], be[2]) - Math.max(bz[0], be[0]))
-        * Math.max(0, Math.min(bz[3], be[3]) - Math.max(bz[1], be[1]));
-      return inter > 0;
+      var cx = (bz[0] + bz[2]) / 2;
+      var n = 0, dedans = 0;
+      for (var i = 0; i < enfants.length && n < 50; i++) {
+        var gj = enfants[i] && enfants[i].geometry;
+        if (!gj || !gj.coordinates) continue;
+        // CENTROÏDE approximatif de l enfant (moyenne d un échantillon de
+        // sommets) : les enfants légitimes TAPISSENT leur parent, leurs
+        // centroïdes tombent donc DANS la bbox du parent.
+        var anneaux = (gj.type === 'Polygon') ? [gj.coordinates[0]] : gj.coordinates.map(function (p) { return p && p[0]; });
+        var sx = 0, sy = 0, sn = 0;
+        anneaux.forEach(function (r) {
+          if (!r) return;
+          for (var k = 0; k < r.length && sn < 40; k += Math.max(1, Math.floor(r.length / 20))) {
+            sx += r[k][0]; sy += r[k][1]; sn++;
+          }
+        });
+        if (!sn) continue;
+        var qx = sx / sn, qy = sy / sn;
+        // convention de longitude : rapprocher le centroïde de ±360°
+        while (qx - cx > 180) qx -= 360;
+        while (cx - qx > 180) qx += 360;
+        n++;
+        if (qx >= bz[0] - 0.05 && qx <= bz[2] + 0.05 && qy >= bz[1] - 0.05 && qy <= bz[3] + 0.05) dedans++;
+      }
+      if (!n) return true; // aucune géométrie exploitable : repli nominal
+      // v7.30 : CONTENANCE, pas seulement contact — la garde v7.29 (simple
+      // intersection de bboxes) laissait passer les homonymes INTRA-pays
+      // de niveaux différents : cliquer la commune « Karlsruhe » (niveau 4)
+      // trouvait les communes du KREIS « Karlsruhe » (niveau 3) et la
+      // descente bouclait jusqu'à des vues de niveau 9, 14, 25 (générateur
+      // de zones sans ancres, clefs de repli « c- » et de faux ensembles).
+      // Désormais les enfants doivent être en grande partie DANS la zone
+      // cliquée : fraction de centroïdes dans la bbox parent ≥ 0,6.
+      return (dedans / n) >= 0.6;
     } catch (err) { return true; } // en cas de doute : comportement historique
   }
   // ---------- Niveau le plus détaillé : chargement à la demande ----------
@@ -381,10 +414,21 @@
   // (règle validée : un clic sur une sélection de niveau N propose le
   // niveau N+1 pour l'ensemble des zones sélectionnées de niveau N).
   function listeDemande(nomSub) {
+    // v7.30 : les entrées peuvent être des CLEFS QUALIFIÉES « 2:a3¤parent¤nom »
+    // (zones Maj+sélectionnées) : on les résout contre la vue courante pour
+    // retrouver la zone affichable visée — un homonyme d'un autre niveau ne
+    // pollue plus jamais la demande.
+    function idAffichable(n) {
+      if (typeof n === 'string' && n.slice(0, 2) === '2:') {
+        var fq = zoneDeCleSel(n);
+        return fq ? fq.id : null; // hors vue : ignorée (persistante, non affichée)
+      }
+      return n && n.slice(0, 2) === 'c-' ? n.slice(2) : n;
+    }
     var liste = [nomSub];
     (etat.selections || []).forEach(function (n) {
-      var id = n && n.slice(0, 2) === 'c-' ? n.slice(2) : n; // sœurs « c- »
-      if (liste.indexOf(id) === -1 && liste.indexOf(n) === -1) liste.push(id);
+      var id = idAffichable(n); // sœurs « c- » et clefs qualifiées
+      if (id && liste.indexOf(id) === -1 && liste.indexOf(n) === -1) liste.push(id);
     });
     return liste.filter(function (n) {
       // v7.17 : la proposition ne couvre que les zones de la VUE COURANTE —
@@ -451,7 +495,8 @@
     while (e.__bascule && pile.length) e = pile.pop();
     vue = e.vue;
     etat.zoom = e.zoom; etat.centre = e.centre; etat.selection = e.selection;
-    etat.selections = e.selections || [];
+    // v7.30 : restauration VIA LA MACHINE À ÉTATS (copie propre + version)
+    selEnvoyer('retour', e.selections || []);
     appliquerVue(true);
     etat.zoomEntree = etat.zoom;
   }
@@ -467,7 +512,7 @@
     while (pile.length) base = pile.pop(); // dernier dépilé = vue monde initiale
     if (base) {
       vue = base.vue;
-      etat.selections = [];
+      selVider('reduire-monde'); // v7.30 : machine à états
       // le pays quitté reste sélectionné (peint) en vue monde
       etat.selection = (idPays && parId[idPays]) ? idPays : null;
       // v0.41 : VRAI retour à l'état initial du niveau monde — cadrage
@@ -526,16 +571,19 @@
     if (base) {
       vue = base.vue; etat.zoom = base.zoom; etat.centre = base.centre;
       etat.selection = null;
-      etat.selections = [];
+      selVider('reinit-monde'); // v7.30 : machine à états
       appliquerVue(true);
     }
     if (!parId[idPays]) return;
     etat.selection = idPays;
     var restaurer = function () {
       if (!conserver) return;
-      etat.selections = garder || [];
-      if (ancien && ancien !== idPays
-        && etat.selections.indexOf(ancien) === -1) etat.selections.push(ancien);
+      // v7.30 : restauration VIA LA MACHINE À ÉTATS (copie propre :
+      // l ancien code assignait le RÉFÉRENCE « garder » puis poussait
+      // dedans — aliasing dont dépendait le cadrage v7.13 par accident).
+      var arr = (garder || []).slice();
+      if (ancien && ancien !== idPays && arr.indexOf(ancien) === -1) arr.push(ancien);
+      selEnvoyer('reinit-restaurer', arr);
     };
     // avant la descente : la snapshot de la pile gardera les sélections, et
     // le retour en vue monde les restaurera (l'ajout persiste)
@@ -549,7 +597,16 @@
     // v7.13 : SÉLECTION MULTIPLE au niveau 1 — l'ENSEMBLE des pays
     // sélectionnés est centré horizontalement, à 80 % de la hauteur du
     // viewport ; pays seul : cadrage inchangé (centrerSur 0,80).
-    if (conserver && garder && garder.length) cadrerGroupe([idPays].concat(garder));
+    // v7.30 : AVANT, ce cadrage marchait par ALIASING accidentel : le
+    // push de restaurer() mutait le tableau « garder » capturé (même
+    // référence), rendant garder.length non nul. La machine à états
+    // (00d) copie proprement les tableaux — l accident a disparu. La
+    // règle est désormais EXPLICITE : on cadre l ensemble des pays
+    // sélectionnés DANS L'ÉTAT VIVANT (après restauration).
+    var grpSel = conserver ? (etat.selections || []).filter(function (x) {
+      return typeof x !== 'string' || x.slice(0, 2) !== '2:'; // les zones qualifiées ne sont pas des pays
+    }) : [];
+    if (grpSel.length) cadrerGroupe([idPays].concat(grpSel));
     else centrerSur(parId[idPays], 0.80); // niveau 1 : le pays seul, 80 % de la hauteur
     restaurer();
     majEtiquettes(); // peindre la (nouvelle) sélection

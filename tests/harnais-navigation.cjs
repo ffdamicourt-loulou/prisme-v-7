@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const zlib = require('node:zlib');
 
 const RAC = process.argv[2] || path.join(__dirname, '..');
-const CORE = ['00-const','00b-droms','00c-us-frontieres','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
+const CORE = ['00-const','00b-droms','00c-us-frontieres','00d-selection-etats','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
   '05-sigles','06-peinture-regions','07-villes','08-etiquettes-zones','09-villes-continents',
   '10-options','11-survol-repaint','12-camera-cadrage','13-enclaves-outils',
   '14-vues-enregistrement','15-navigation','16-groupes-selection','17-demarrage'];
@@ -66,7 +66,59 @@ vm.runInContext(appCore + '\n' + comprehension + '\n' + greffon + '\n' + greffon
 
 const P = ctx.window.__PR2;
 let ok = 0, ko = [];
-const test = (n, c) => { if (c) ok++; else ko.push(n); console.log((c ? 'OK  ' : 'KO  ') + n); };
+// v7.30 (plan point 4) : INVARIANTS DE SÉLECTION, vérifiés après CHAQUE
+// interaction (chaque appel à test() suit une interaction simulée) :
+//   I1 selVersion MONOTONE (jamais de retour arrière de la machine à états) ;
+//   I2 journal NON VIDE dès la première mutation (chaque mutation tracée) ;
+//   I3 toute clef qualifiée '2:' de etat.selections est JUSTIFIÉE :
+//      (a) résolue dans la vue courante (affichable) ou (b) sélection
+//      persistante légitime existant dans ADMIN (restaurée au retour) ;
+//   I4 toute sélection non qualifiée est un PAYS du référentiel parId,
+//      ou une zone AFFICHÉE de la vue (clef legacy des zones sans ancres).
+// NB : ligne débutant par « INV » => comptée KO comme les autres tests.
+let SELV_MAX = (P.etat && P.etat.selVersion) || 0;
+function invariantsSel(label) {
+  const e = P.etat; if (!e || typeof P.selJournal !== 'function') return null;
+  const v = e.selVersion || 0;
+  if (v < SELV_MAX) return 'INV [' + label + '] selVersion NON monotone (' + v + ' < ' + SELV_MAX + ')';
+  SELV_MAX = v;
+  const j = P.selJournal();
+  if (v > 0 && (!j || !j.length)) return 'INV [' + label + '] journal VIDE après mutation (v' + v + ')';
+  const sels = e.selections || [];
+  for (let i = 0; i < sels.length; i++) {
+    const c = sels[i];
+    if (typeof c === 'string' && c.slice(0, 2) === '2:') {
+      const m = /^2:([A-Z0-9]{3})¤([^¤]*)¤(.+)$/.exec(c);
+      if (!m) return 'INV [' + label + '] clef malformée : ' + c;
+      const a3 = m[1], parent = m[2] === '' ? null : m[2], nom = m[3];
+      if (P.zoneDeCleSel(c)) continue; // (a) résolue dans la vue : affichable
+      // (b) hors vue : la zone doit exister dans ADMIN (vivante : rempli au
+      // chargement des packages) — sinon c'est un FANTÔME d'homonyme.
+      const ADM = ctx.window.__PR2_ADMIN || {};
+      if (!ADM.niv2 || !ADM.niv2[a3]) return 'INV [' + label + '] pays inconnu dans la clef : ' + c;
+      const n2 = (ADM.niv2[a3]) || {};
+      if (parent === null) { if (!n2[nom]) return 'INV [' + label + '] zone N2 inconnue : ' + c; }
+      else {
+        const enfants = n2[parent]; // tableau d'enfants (zone n3)
+        if (!Array.isArray(enfants) || !enfants.some(function (z) { return z && (z.nom || z.name) === nom; }))
+          return 'INV [' + label + '] zone N3 inconnue (' + c + ') — fantôme ?';
+      }
+    } else if (!P.parId[c]) {
+      // I4 : clef LEGACY JUSTIFIÉE si la zone est AFFICHÉE (features ou
+      // sœurs) : repli prévu des zones sans ancres. FANTÔME sinon.
+      const vn = String(c).replace(/^c-/, '');
+      const disp = (P.vue() && (P.vue().features || []).concat(P.vue().soeurs || []) || [])
+        .some(function (f) { return f && ((f.nom != null && f.nom === vn) || f.id === vn); });
+      if (!disp) return 'INV [' + label + '] sélection FANTÔME (zone non affichée) : ' + String(c);
+    }
+  }
+  return null;
+}
+const test = (n, c) => {
+  const inv = invariantsSel(n);
+  if (c && !inv) ok++; else ko.push(n);
+  console.log(((c && !inv) ? 'OK  ' : 'KO  ') + n + (inv ? '  —  ' + inv : ''));
+};
 
 const clic = (name) => (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name }));
 const clicMaj = (name) => (appels.events.click || []).forEach(f => f({ componentType: 'series', seriesType: 'map', name, event: { shiftKey: true } }));
@@ -321,8 +373,9 @@ clicMaj('Auvergne-Rhône-Alpes');
 clicMaj('Occitanie');
 test('v7.23 : Maj+clic régions → MULTI-N2 conservé (les deux sélectionnées, vue inchangée)',
   P.vue().niveau === 1
-  && (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
-  && (P.etat.selections || []).indexOf('Occitanie') !== -1);
+  // v7.30 : les zones sont désignées par leurs CLEFS QUALIFIÉES « 2:a3¤¤nom »
+  && (P.etat.selections || []).indexOf('2:FRA\u00A4\u00A4Auvergne-Rhône-Alpes') !== -1
+  && (P.etat.selections || []).indexOf('2:FRA\u00A4\u00A4Occitanie') !== -1);
 test('v7.23 : région sélectionnée (Maj+clic) peinte PLUS SOMBRE que le fond du pays (-20 % vs -10 %)',
   (() => { const r = (appels.regions || []).filter(x => x && x.name === 'Auvergne-Rhône-Alpes')[0];
     return !!r && !!r.itemStyle && r.itemStyle.areaColor === P.assombris[P.parId.FR.continent]; })());
@@ -330,7 +383,7 @@ clic('Occitanie'); // SEUL clic → descente immédiate, OCCITANIE déjà sélec
 test('v7.23 : clic simple sur une région (même sélectionnée) → descente SANS info-bulle',
   P.vue().type === 'admin' && P.vue().niveau === 2 && SEL.descenteAttente() === false);
 test('v7.23 : les AUTRES N2 RESTENT sélectionnées après la descente (multi-N2 persistant)',
-  (P.etat.selections || []).indexOf('Auvergne-Rhône-Alpes') !== -1
+  (P.etat.selections || []).indexOf('2:FRA\u00A4\u00A4Auvergne-Rhône-Alpes') !== -1
   && P.vue().parent === 'Occitanie');
 
 // 15. v7.8 — clic MER / ZONE VIDE : tout désélectionner, cadrage conservé
@@ -789,12 +842,12 @@ test('v7.28 : US — vue niv1 (51 États) depuis la vue monde', P.vue().type ===
 clicMaj('California'); clicMaj('Texas'); clicMaj('Oregon');
 test('v7.28 : US — Maj+clic ×3 → sélection multiple de N2 (3 états)',
   (P.etat.selections || []).length === 3
-    && P.etat.selections.indexOf('California') !== -1
-    && P.etat.selections.indexOf('Texas') !== -1
-    && P.etat.selections.indexOf('Oregon') !== -1);
+    && P.etat.selections.indexOf('2:USA\u00A4\u00A4California') !== -1
+    && P.etat.selections.indexOf('2:USA\u00A4\u00A4Texas') !== -1
+    && P.etat.selections.indexOf('2:USA\u00A4\u00A4Oregon') !== -1);
 clicMaj('California'); // bascule retrait
 test('v7.28 : US — Maj+clic sur un état sélectionné → retrait (bascule)',
-  (P.etat.selections || []).length === 2 && P.etat.selections.indexOf('California') === -1);
+  (P.etat.selections || []).length === 2 && P.etat.selections.indexOf('2:USA\u00A4\u00A4California') === -1);
 
 // (b) descente dans un état → comtés ; les comtés d'un AUTRE état
 // rejoignent la vue au clic simple sur sa sœur (v7.19) — homonymes
@@ -815,7 +868,8 @@ test('v7.28 : US — 2e ajout (Nevada, comté Humboldt homonyme) réussi sous le
 const nbAvantRetrait = (P.vue().features || []).length;
 clic('c-Nevada');
 test('v7.28 : US — re-clic sœur Nevada → retrait de ses comtés (bascule)',
-  (P.vue().features || []).length < nbAvantRetrait && P.etat.selections.indexOf('c-Nevada') === -1);
+  (P.vue().features || []).length < nbAvantRetrait
+  && P.etat.selections.indexOf('c-Nevada') === -1 && P.etat.selections.indexOf('2:USA\u00A4\u00A4Nevada') === -1);
 // (d) Maj+clic sur une sœur : même ajout (v0.52)
 const nbAvantMaj = (P.vue().features || []).length;
 clicMaj('c-Oregon');
@@ -889,6 +943,46 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
     dAv.length === 13 && Math.abs(dAv[8][0] + 95.89556488046168) < 1e-9 && Math.abs(dAv[8][1] - 41.19518417147568) < 1e-9);
   test('v7.29 : correctif 00c — Sarpy PRÉ-v7.29 (2 polygones) → triangle retiré (1)',
     donneesAv.niv2.Nebraska[1].geometry.coordinates.length === 1);
+  for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+}
+
+// 35. v7.30 — SÉLECTION QUALIFIÉE « 2:a3¤parent¤nom » : les HOMONYMES
+// entre niveaux (comté Washington du TEXAS vs ÉTAT Washington) ne
+// partagent plus leur entrée de sélection ; le retour ne peint jamais
+// l'homonyme de l'autre niveau (FANTÔME ÉLIMINÉ).
+{
+  for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+  clic('US'); clic('US'); charge('US');
+  test('v7.30 : étampage des comtés (ex. Texas) — __a3 et __parent posés à l enregistrement',
+    (() => { const f = (P.vue().features || []).filter(x => x && x.id === 'Texas')[0];
+      const enf = f && P.enfantsDe && P.enfantsDe('Texas');
+      return !!enf && enf.length > 200 && enf.every(function (z) { return z && z.__a3 === 'USA' && z.__parent === 'Texas'; }); })());
+  clic('Texas');
+  test('v7.30 : descente Texas → comtés (niveau 3)', P.vue().type === 'admin' && P.vue().niveau === 2 && P.vue().parent === 'Texas');
+  clicMaj('Washington'); // le COMTÉ Washington du TEXAS
+  test('v7.30 : Maj+clic comté Washington (Texas) → clef qualifiée avec parent 2:USA¤Texas¤Washington',
+    (P.etat.selections || []).indexOf('2:USA\u00A4Texas\u00A4Washington') !== -1);
+  // retrait par bascule, puis re-ajout pour la suite
+  clicMaj('Washington');
+  test('v7.30 : re-Maj+clic → la clef qualifiée est retirée',
+    (P.etat.selections || []).indexOf('2:USA\u00A4Texas\u00A4Washington') === -1);
+  clicMaj('Washington'); // re-ajout : la sélection doit survivre au retour
+  P.retour();
+  test('v7.30 : retour UNIQUE → vue états (Washington = l ÉTAT, sans __parent)',
+    (() => { const v = P.vue(); return v.type === 'admin' && v.niveau === 1
+      && (v.features || []).some(function (f) { return f && f.id === 'Washington' && !f.__parent; }); })());
+  test('v7.30 : FANTÔME ÉLIMINÉ — la clef du COMTÉ ne peint pas l ÉTAT Washington',
+    (() => { const ens = P.ensembleSelection();
+      return ens['Washington'] === undefined && ens['c-Washington'] === undefined; })());
+  test('v7.30 : après retour, plus AUCUNE trace de Washington (le comté cliqué sous la descente appartient au cadre dépassé)',
+    (P.etat.selections || []).every(function (x) { return typeof x !== 'string' || x.indexOf('Washington') === -1; }));
+  test('v7.30 journal : machine à états — chaque mutation est tracée (op, version)',
+    (() => { const j = P.selJournal(); return j.length > 0
+      && j.every(function (x) { return x && x.op && typeof x.v === 'number' && x.v >= 1
+        && x.avant != null && x.apres != null; }); })());
+  clicMaj('Washington'); // l ÉTAT Washington, en vue états
+  test('v7.30 : Maj+clic l ÉTAT Washington → clef qualifiée SANS parent 2:USA¤¤Washington',
+    (P.etat.selections || []).indexOf('2:USA\u00A4\u00A4Washington') !== -1);
   for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 }
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));

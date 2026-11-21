@@ -248,6 +248,14 @@
     zoomMolette: function () { return zoomMoletteRef ? zoomMoletteRef.apply(null, arguments) : false; },
     carte: function () { return carte; },
     effacerSurvol: effacerSurvol, // v7.12 : éteindre le survol collé au clic
+    // v7.30 : Sélection qualifiée — clef « 2:a3¤parent¤nom » (cleSel),
+    // résolution contre la vue courante (zoneDeCleSel), re-peint depuis
+    // l état (ensembleSelection) : exportés au HARNAIS pour les invariants.
+    cleSel: cleSel, zoneDeCleSel: zoneDeCleSel, ensembleSelection: ensembleSelection,
+    // v7.30 (point 2) : machine à états — passerelle unique des mutations
+    // de sélection (cœur + greffons), journal + version pour le harnais.
+    selEnvoyer: selEnvoyer, selAjouter: selAjouter, selRetirer: selRetirer, selVider: selVider,
+    selJournal: function () { return SEL_JOURNAL; },
     majEtiquettes: majEtiquettes, centrerSur: centrerSur, ajusterSur: ajusterSur,
     boiteEnsemble: boiteEnsemble, enfantsDe: enfantsDe, ouvrirAuNiveau: ouvrirAuNiveau,
     reinitialiserVers: reinitialiserVers, ajouterSousVue: ajouterSousVue,

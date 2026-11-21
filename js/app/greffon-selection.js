@@ -44,7 +44,10 @@
   }
   function restaurerEtat(s) {
     var S = A(), e = S.etat;
-    e.selection = s.selection; e.selections = (s.selections || []).slice();
+    e.selection = s.selection;
+    // v7.30 : restauration VIA LA MACHINE À ÉTATS (copie propre + version)
+    if (typeof S.selEnvoyer === 'function') S.selEnvoyer('restaurer-etat', (s.selections || []).slice());
+    else e.selections = (s.selections || []).slice();
     e.selectionZone = s.selectionZone;
     if (S.majEtiquettes) S.majEtiquettes(); // repeint sans toucher la caméra
   }
@@ -81,7 +84,8 @@
     annulerDescente();          // clic en mer : la validation en attente se referme aussi
     if (!S || !S.etat) return { ok: false, raison: 'noyau absent' };
     S.etat.selection = null;
-    S.etat.selections = [];
+    if (typeof S.selVider === 'function') S.selVider('clic-vide'); // v7.30
+    else S.etat.selections = [];
     S.etat.selectionZone = null;
     if (S.majEtiquettes) S.majEtiquettes(); // REPEINT la carte, caméra intacte
     return { ok: true };
@@ -143,9 +147,20 @@
     var S = A(), V = S.vue(), e = S.etat, opts = [];
     opts.push({ label: 'Conserver en l\u2019état actuel', type: 'rien', appliquer: function () { } });
     if (V.type === 'monde') {
+      // v7.30 : les CLEFS QUALIFIÉES « 2:a3¤parent¤nom » (zones) ne sont
+      // pas des PAYS : le panneau monde ne propose que les pays ; les
+      // mutations passent par LA MACHINE À ÉTATS (journal + version).
       var selPays = [];
       if (e.selection) selPays.push(e.selection);
-      (e.selections || []).forEach(function (id) { if (selPays.indexOf(id) === -1) selPays.push(id); });
+      (e.selections || []).forEach(function (id) {
+        if (typeof id === 'string' && id.slice(0, 2) === '2:') return; // zone qualifiée : pas un pays
+        if (selPays.indexOf(id) === -1) selPays.push(id);
+      });
+      var selViderIci = function (op) {
+        e.selection = null;
+        if (typeof S.selVider === 'function') S.selVider(op);
+        else e.selections = [];
+      };
       // v7.13 : si le clic porte sur UN PAYS DE LA SÉLECTION, proposer
       // UNIQUEMENT ce pays (désélection ciblée) — plus « tout » ; la
       // liste complète ne reste que pour un Alt+clic SANS pays ciblé.
@@ -156,13 +171,14 @@
           type: 'etat',
           appliquer: function () {
             if (e.selection === cSel) e.selection = null;
-            e.selections = (e.selections || []).filter(function (x) { return x !== cSel; });
+            if (typeof S.selRetirer === 'function') S.selRetirer(cSel, 'deselect-pays');
+            else e.selections = (e.selections || []).filter(function (x) { return x !== cSel; });
           }
         });
         if (selPays.length > 1) opts.push({
           label: 'Tout désélectionner (' + selPays.length + ' pays)',
           type: 'etat',
-          appliquer: function () { e.selection = null; e.selections = []; }
+          appliquer: function () { selViderIci('tout-deselect'); }
         });
         return opts;
       }
@@ -172,20 +188,23 @@
           type: 'etat',
           appliquer: function () {
             if (e.selection === id) e.selection = null;
-            e.selections = (e.selections || []).filter(function (x) { return x !== id; });
+            if (typeof S.selRetirer === 'function') S.selRetirer(id, 'deselect-pays');
+            else e.selections = (e.selections || []).filter(function (x) { return x !== id; });
           }
         });
       });
       if (selPays.length) opts.push({
         label: 'Tout désélectionner (' + selPays.length + ' pays)',
         type: 'etat',
-        appliquer: function () { e.selection = null; e.selections = []; }
+        appliquer: function () { selViderIci('tout-deselect'); }
       });
       return opts;
     }
     // ---- vue admin : pays courant (et groupe éventuel) ----
     var paysIds = (V.paysIds && V.paysIds.length) ? V.paysIds : [V.paysId];
-    var multi = paysIds.length > 1 || (e.selections || []).length > 0;
+    // v7.30 : le drapeau multi ne compte que les PAYS (les zones qualifiées
+    // gérées par la vue admin n'y figurent plus).
+    var multi = paysIds.length > 1 || (e.selections || []).some(function (x) { return typeof x !== 'string' || x.slice(0, 2) !== '2:'; });
     var nU = niveauUtilisateur();
     if (nU >= 3 && cible) {
       opts.push({
@@ -229,7 +248,9 @@
           ch.forEach(function (z) { S.descendreSous(z); });
         } });
         while (S.vue().type !== 'monde') S.retour();
-        e.selection = null; e.selections = []; e.selectionZone = null;
+        e.selection = null; e.selectionZone = null;
+        if (typeof S.selVider === 'function') S.selVider('retour-monde'); // v7.30
+        else e.selections = [];
         if (S.definirSelection) { try { S.definirSelection([]); } catch (err) { } }
       }
     });
@@ -394,7 +415,8 @@
     var selZ = (S.etat.selections || []).slice();
     if (selZ.indexOf(idZone) !== -1) return false;
     selZ.push(idZone);
-    S.etat.selections = selZ;
+    if (typeof S.selEnvoyer === 'function') S.selEnvoyer('clic-zone', selZ); // v7.30
+    else S.etat.selections = selZ;
     if (S.effacerSurvol) S.effacerSurvol();
     if (S.majEtiquettes) S.majEtiquettes();
     return true;
@@ -481,7 +503,9 @@
       return true;
     }
     // ── MAJ+SŒUR (v0.52) : les enfants de la sœur rejoignent la vue
-    if (maj && S.ajouterSousVue && V.soeurs) {
+    // v7.30 : PRÉCÉDENCE ZONE DE LA VUE — un nom qui est AUSSI celui d'une
+    // zone de la vue désigne la ZONE (jamais la sœur homonyme).
+    if (maj && S.ajouterSousVue && V.soeurs && !(V.parNom && V.parNom[nom])) {
       var fzS = null;
       (V.soeurs || []).forEach(function (f) {
         if (!fzS && (f.id === nom || f.nom === nom || ('c-' + f.id) === nom)) fzS = f;
@@ -508,11 +532,18 @@
         && S.ajouterSousVue(fzC)) return true;
     }
     // ── MAJ+ZONE DE LA VUE : bascule dans la sélection de niveau
+    // v7.30 : la zone est désignée par sa CLEF QUALIFIÉE « 2:a3¤parent¤nom »
+    // (S.cleSel) — deux homonymes ne partagent plus leur entrée ; repli nom
+    // pour les zones sans ancres. Mutation VIA LA MACHINE À ÉTATS.
     if (maj && S.etat && V.parNom && V.parNom[nom]) {
+      var fzQ = V.parNom[nom];
+      var cleQ = (typeof S.cleSel === 'function') ? S.cleSel(fzQ) : null;
+      if (!cleQ) cleQ = nom;
       var selZ = (S.etat.selections || []).slice();
-      var posZ = selZ.indexOf(nom);
-      if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(nom);
-      S.etat.selections = selZ;
+      var posZ = selZ.indexOf(cleQ);
+      if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(cleQ);
+      if (typeof S.selEnvoyer === 'function') S.selEnvoyer('maj-zone', selZ);
+      else S.etat.selections = selZ;
       if (S.majEtiquettes) S.majEtiquettes();
       return true;
     }

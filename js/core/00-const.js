@@ -273,6 +273,43 @@
     } catch (errN4) { /* repli : pays sans complément niveau 4 */ }
     if (donnees.niv1) ADMIN.niv1[donnees.a3] = donnees.niv1;
     if (donnees.niv2) ADMIN.niv2[donnees.a3] = donnees.niv2;
+    // v7.30 : IDENTITÉ QUALIFIÉE — chaque zone enregistrée reçoit ses
+    // ancres d'identité : __a3 (ISO3 du pays) et __parent (clé du parent
+    // sous laquelle elle est rangée dans ADMIN.niv2). Les clefs de
+    // sélection qualifiées « 2:a3¤parent¤nom » (cf. cleSel, 03-etat-monde)
+    // distinguent enfin les HOMONYMES entre niveaux et entre parents :
+    // le comté Jackson du TEXAS (2:USA¤Texas¤Jackson) ne peut plus être
+    // confondu avec celui de l OKLAHOMA ni avec l état Washington quand
+    // on clique le comté Washington du Texas. Idempotent : une zone
+    // déjà étampée garde ses ancres.
+    if (donnees.niv1) donnees.niv1.forEach(function (z) {
+      if (z && !z.__a3) z.__a3 = donnees.a3;
+    });
+    if (donnees.niv2) Object.keys(donnees.niv2).forEach(function (parent) {
+      var arrN2 = donnees.niv2[parent];
+      if (!arrN2 || !arrN2.forEach) return;
+      arrN2.forEach(function (z) {
+        if (z) { if (!z.__a3) z.__a3 = donnees.a3; z.__parent = parent; }
+      });
+    });
+    // v7.30 (point 7) : COUVERTURE DU PAYS — à l'enregistrement, on mesure
+    // combien de premières subdivisions (niveau 2) possèdent des enfants
+    // (niveau 3 disponible). window.__PR2_COUVERTURE[a3] alimente le BADGE
+    // « couverture partielle » du fil d'Ariane : l'utilisateur voit qu'il
+    // descend dans un pays dont certaines zones n'ont pas de subdivisions
+    // (données incomplètes), au lieu de croire à un bug de clic.
+    try {
+      window.__PR2_COUVERTURE = window.__PR2_COUVERTURE || {};
+      if (donnees.niv1 && donnees.niv1.length) {
+        var nbN2 = donnees.niv1.length, nbAvec = 0;
+        donnees.niv1.forEach(function (z) {
+          var enf = z && (donnees.niv2 && donnees.niv2[z.nom || z.id]);
+          if (enf && enf.length) nbAvec++;
+        });
+        window.__PR2_COUVERTURE[donnees.a3] = { n2: nbN2, avec: nbAvec,
+          partiel: nbAvec < nbN2 };
+      }
+    } catch (errCouv) { }
     PKG_FAIT[donnees.a3] = true;
     delete PKG_EN_COURS[idPays];
     // v0.210 : DÉDUPLICATION PAR a3 — un alias (FR-NA, FR-SA, ES-002,

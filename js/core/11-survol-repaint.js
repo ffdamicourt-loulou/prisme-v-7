@@ -6,12 +6,24 @@
   var REGIONS_DERNIERES = null;
   var BASE_PAR_NOM = {};
   var SURVOL_PAR_NOM = {};
+  // v7.30 : LE CACHE DE SURVOL EST VERSIONNÉ PAR LA SÉLECTION — BASE_PAR_NOM
+  // capture la teinte de chaque zone à l'instant du dernier paint complet.
+  // Si la sélection change SANS repaint complet (mutation par la machine à
+  // états 00d : selEnvoyer/selAjouter/selRetirer/selVider), le cache est
+  // PÉRIMÉ : une teinte de sélection y manque encore. repaintSurvol ne doit
+  // JAMAIS repeindre depuis un cache périmé : il se dégrade en repaint
+  // complet (majEtiquettes, qui recache à la version courante). Règle :
+  // « repeindre toujours depuis etat, jamais depuis un cache daté ».
+  var SELV_BASE = 0;
   // v0.80e : cache commun (démarrage + majEtiquettes). La zone COURAMMENT
   // survolée n'écrit JAMAIS sa couleur dans BASE_PAR_NOM : son entrée peinte
   // est la couleur de SURVOL, pas de repos (sinon le premier survol, qui
   // passait par le repaint complet, empoisonnait le cache pour toujours).
   function cacherRegions(regions) {
     REGIONS_DERNIERES = regions;
+    // v7.30 : version de la machine à états au moment du cache — tout
+    // écart détecté dans repaintSurvol invalide le cache (full repaint).
+    SELV_BASE = (etat && etat.selVersion) || 0;
     var nu = function (n) { return (n || '').replace(/^[cx]-/, ''); };
     var nSurv = nu(survolNom);
     // v7.29 : LES ZONES SÉLECTIONNÉES SONT TOUJOURS CACHÉES — la règle
@@ -40,6 +52,16 @@
   // l'assombrissement est instantané, même sur la carte du monde complète.
   function repaintSurvol(ancien, nouveau) {
     if (!carte || !REGIONS_DERNIERES) { try { majEtiquettes(); } catch (err) { } return; }
+    // v7.30 : CACHE PÉRIMÉ ? Si la machine à états a muté la sélection
+    // depuis le dernier paint complet, BASE_PAR_NOM est daté : repeindre
+    // depuis lui repeindrait une zone fraîchement sélectionnée en sa
+    // vieilles teinte de repos (bug « les sélections se perdent », cause
+    // n°2). On SE DÉGRADE en repaint complet, qui repeint depuis etat et
+    // recache à la version courante — jamais depuis un cache daté.
+    if (((etat && etat.selVersion) || 0) !== SELV_BASE) {
+      try { majEtiquettes(); } catch (err) { }
+      return;
+    }
     var nu = function (n) { return (n || '').replace(/^[cx]-/, ''); };
     var a = nu(ancien), n2 = nu(nouveau);
     // v7.29 : LA SÉLECTION PRIME SUR LE SURVOL AUSSI ICI — entrer du

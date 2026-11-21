@@ -193,7 +193,11 @@
       }
       // v7.9 : Maj+clic sur une SŒUR du niveau supérieur (règle v0.52) —
       // ses enfants REJOIGNENT la vue au niveau courant, bascule pour retirer.
-      if (e.event && e.event.shiftKey && A.ajouterSousVue && V.soeurs) {
+      // v7.30 : PRÉCÉDENCE ZONE DE LA VUE — si le nom est AUSSI celui d'une
+      // zone de la vue, c'est la zone de la vue qui prime (jamais la sœur
+      // homonyme) : le Maj+clic ne doit pas dépendre de l'ordre des blocs.
+      if (e.event && e.event.shiftKey && A.ajouterSousVue && V.soeurs
+        && !(V.parNom && V.parNom[e.name])) {
         var fzS = null;
         (V.soeurs || []).forEach(function (f) {
           if (!fzS && (f.id === e.name || f.nom === e.name || ('c-' + f.id) === e.name)) fzS = f;
@@ -201,13 +205,22 @@
         if (fzS) { if (A.ajouterSousVue(fzS)) return; }
       }
       // v7.9 : Maj+clic sur une ZONE DE LA VUE : bascule la zone dans la
-      // sélection de niveau (etat.selections) — peinte en séletion et
+      // sélection de niveau (etat.selections) — peinte en sélection et
       // proposée par la demande multi-zones « Charger ».
+      // v7.30 : la zone est désignée par sa CLEF QUALIFIÉE
+      // « 2:a3¤parent¤nom » (A.cleSel) — deux homonymes de parents ou de
+      // niveaux différents ne partagent plus leur entrée ; repli nom pour
+      // les zones sans ancres. Mutation VIA LA MACHINE À ÉTATS (journal,
+      // version, copie propre).
       if (e.event && e.event.shiftKey && A.etat && V.parNom && V.parNom[e.name]) {
+        var fzZ = V.parNom[e.name];
+        var cleZone = (typeof A.cleSel === 'function') ? A.cleSel(fzZ) : null;
+        if (!cleZone) cleZone = e.name;
         var selZ = (A.etat.selections || []).slice();
-        var posZ = selZ.indexOf(e.name);
-        if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(e.name);
-        A.etat.selections = selZ;
+        var posZ = selZ.indexOf(cleZone);
+        if (posZ !== -1) selZ.splice(posZ, 1); else selZ.push(cleZone);
+        if (typeof A.selEnvoyer === 'function') A.selEnvoyer('maj-zone', selZ);
+        else A.etat.selections = selZ;
         if (window.__PR2_SEL && window.__PR2_SEL.validerTout === undefined) { }
         if (A.majEtiquettes) A.majEtiquettes();
         return;

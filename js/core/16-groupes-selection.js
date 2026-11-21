@@ -79,7 +79,7 @@
 
     };
     etat.selection = null;
-    etat.selections = [];
+    selVider('groupe-ouvrir'); // v7.30 : machine à états (l'ouverture d'un groupe repart d'une sélection vide)
     appliquerVue();
     etat.zoomEntree = etat.zoom;
     // Persistance au retour en vue monde : la snapshot du bas (monde) garde
@@ -151,7 +151,7 @@
   function definirSelection(liste) {
     var l = Object.prototype.toString.call(liste) === '[object Array]' ? liste.filter(Boolean) : [];
     etat.selection = l.length ? l[0] : null;
-    etat.selections = l.length > 1 ? l.slice(1) : [];
+    selEnvoyer('definir', l.length > 1 ? l.slice(1) : []); // v7.30 : machine à états
     etat.selectionZone = null;
     if (etat.selection && vue.type !== 'monde') {
       var zs = listeVue();
@@ -184,6 +184,56 @@
     retourBtn.onclick = retour;
     var ici = document.createElement('span');
     ici.innerHTML = (vue.niveau === 1 ? MAJ(vue.parent) : vue.parent) + (vue.niveau >= 2 ? ' &mdash; ' + (vue.features.length) + ' divisions' : '');
+    // v7.30 (point 7) : INFO-BULLE DU CHEMIN — la sélection multiple
+    // (zones Maj+clic, clefs qualifiées « 2:a3¤parent¤nom ») est décrite
+    // par son chemin qualifié : « USA > Texas > Washington ». L'uti-
+    // lisateur voit EXACTEMENT quel Washington (le comté du Texas, pas
+    // l'état) est sélectionné — plus d'ambiguïté d'homonymes à l'écran.
+    var selTextes = [];
+    var a3Nom = null;
+    (etat.selections || []).forEach(function (n) {
+      if (typeof n !== 'string' || n.slice(0, 2) !== '2:') return;
+      var parties = n.slice(2).split('\u00A4');
+      if (parties.length !== 3) return;
+      // dénomination du pays : a3 → id (DATA.idversA3) → parId[id].nom
+      if (!a3Nom) {
+        a3Nom = {};
+        try {
+          Object.keys(DATA.idversA3 || {}).forEach(function (id2) {
+            var a3 = DATA.idversA3[id2];
+            if (!a3Nom[a3] && parId[id2] && parId[id2].nom) a3Nom[a3] = parId[id2].nom;
+          });
+        } catch (errN) { }
+      }
+      selTextes.push([(a3Nom[parties[0]] || parties[0]), parties[1], parties[2]]
+        .filter(function (x) { return x != null && x !== ''; }).join(' > '));
+    });
+    var infos = [];
+    if (selTextes.length) infos.push('Sélection : ' + selTextes.join(' ; '));
+    // v7.30 (point 7) : BADGE « COUVERTURE PARTIELLE » — si le package du
+    // pays courant ne fournit pas de subdivisions sous toutes ses premières
+    // subdivisions (mesuré à l'enregistrement, window.__PR2_COUVERTURE),
+    // l'utilisateur en est AVERTI au lieu de croire à un bug de clic.
+    try {
+      var a3C = DATA.idversA3 ? DATA.idversA3[vue.paysId] : null;
+      var couv = a3C && window.__PR2_COUVERTURE ? window.__PR2_COUVERTURE[a3C] : null;
+      if (couv && couv.partiel) {
+        var badge = document.createElement('span');
+        badge.className = 'prisme2-badge-partiel';
+        badge.innerHTML = 'couverture partielle';
+        badge.title = 'Données incomplètes : ' + couv.avec + ' subdivision(s) sur '
+          + couv.n2 + ' possèdent des subdivisions plus fines ici.';
+        fil.appendChild(retourBtn);
+        fil.appendChild(badge);
+        fil.appendChild(ici);
+        return;
+      }
+    } catch (errBadge) { }
+    if (infos.length) {
+      var bulle = infos.join('\n');
+      ici.title = bulle;
+      try { retourBtn.title = bulle; } catch (errT) { }
+    }
     fil.appendChild(retourBtn);
     fil.appendChild(ici);
   }
