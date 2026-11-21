@@ -81,6 +81,10 @@ const clicZone = (name) => {
   if (SEL && SEL.descenteAttente && SEL.descenteAttente()) SEL.confirmerDescente();
 };
 const charge = (id) => {
+  // v7.25 : les compléments niveau 3 (packages/n3-<ID>-k.js) sont évalués
+  // AVANT le package — comme le fait le chargeur du navigateur.
+  (fs.readdirSync(path.join(RAC, 'packages')).filter(n => n.indexOf('n3-' + id + '-') === 0).sort())
+    .forEach(n => vm.runInContext(fs.readFileSync(path.join(RAC, 'packages', n), 'utf8'), ctx, { filename: n }));
   vm.runInContext(fs.readFileSync(path.join(RAC, 'packages', id + '.js'), 'utf8'), ctx, { filename: 'packages/' + id + '.js' });
   // v7.5 : comme dans un vrai navigateur, le onload d un script ne tire
   // QU UNE FOI — relancer un rappel déjà consommé réempilait des vues.
@@ -679,6 +683,30 @@ test('v7.24 : UNE pression retour saute TOUTE la chaîne de bascules ET la desce
 P.retour();
 test('v7.24 : retour suivant → vue monde (pile cohérente)',
   P.vue().type === 'monde');
+
+// 27. v7.25 — NIVEAU 3 COMPLÉTÉ POUR LES PAYS « SANS DESCENTE » : les
+// compléments GADM (packages/n3-<ID>-k.js, manifest « n3 », chargés AVANT
+// le package) remplissent niv2 des zones auparavant sans enfants.
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('CH'); clic('CH'); charge('CH');
+test('v7.25 : Suisse — vue cantons apres chargement (niv1)', P.vue().type === 'admin' && P.vue().niveau === 1 && Object.keys(P.vue().parNom).length >= 26);
+clic('Bern');
+test('v7.25 : Suisse — clic canton « Bern » → DESCENTE vers ses districts (niveau 3, complément GADM)',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && (P.vue().features || []).length >= 5
+  && (P.vue().features || []).every(f => !f || f.src !== 'ign'));
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('CH'); clic('CH'); charge('CH');
+clic(Object.keys(P.vue().parNom)[0]);
+const vCH2 = P.vue();
+test('v7.25 : Suisse — n importe quel canton descend (complément complet)',
+  vCH2.type === 'admin' && vCH2.niveau === 2 && (vCH2.features || []).length > 0);
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
+clic('UG'); clic('UG'); charge('UG');
+test('v7.25 : Ouganda — vue districts chargee', P.vue().type === 'admin' && P.vue().niveau === 1);
+clic(Object.keys(P.vue().parNom)[0]);
+test('v7.25 : Ouganda — clic district → sous-comtés GADM (raccord spatial, noms différents du GADM)',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && (P.vue().features || []).length > 0);
+for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);
