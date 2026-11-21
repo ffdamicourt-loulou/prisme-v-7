@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21w -->
+<!-- rebuild-pages 2026-11-21x -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,35 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.22 — SOURCE UNIQUE GADM 4.1 aux niveaux 1/2/3, frontières communes (2026-11-21x)
+
+**Objectif** : zéro donnée IGN nulle part, une SEULE source (GADM 4.1,
+celle des autres pays) pour les trois niveaux français, et des frontières
+communes en un seul tracé (imbrication parfaite).
+
+- **Nouveau fragment `js/core/00b-droms.js`** : les 5 régions
+  ultrapériphériques (Guadeloupe, Martinique, Guyane française,
+  La Réunion, Mayotte) reconstruites depuis les données officielles
+  **GADM 4.1** (`gadm41_GLP/MTQ/GUF/REU/MYT`, niveaux 0 et 1) — la même
+  source généalogique que le reste de la France. Le niveau 0 est
+  l'UNION EXACTE des unités de niveau 1 (arrondissements, cantons) :
+  frontière commune partagée en UN SEUL tracé, pavage sans trou ni
+  doublon — les unités deviennent les subdivisions de niveau 2 de
+  chaque région (Guadeloupe → Basse-Terre/Pointe-à-Pitre, Martinique →
+  4 arrondissements, Guyane → Cayenne/Saint-Laurent-du-Maroni,
+  La Réunion → 4 unités, Mayotte → 17 cantons).
+- **00-const.js** : après le filtre anti-IGN (v7.21), `__PR2_PKG_REG`
+  réinjecte ces régions GADM dans `niv1`/`niv2` AVANT l'affectation à
+  ADMIN — la France affiche 18 régions toutes `src:"gadm"`, aucun
+  `src:"ign"`, quel que soit le contenu (inerte) de `packages/FR.js`.
+- **Ordre de chargement** : le fragment est ajouté juste après
+  `00-const` dans `js/app/demarrage.js` (et dans les deux harnais).
+- Frontières : la règle du socle v0.69 s'applique désormais uniformément
+  (feats[0] = Auvergne-Rhône-Alpes, gadm) ; socle-union vs contour du
+  pays ne peuvent plus « doubler » un trait côtier de source étrangère.
+- Harnais : navigation **82/82** (section 24 : ultrapériphériques
+  GADM, descentes, ajout de sœurs entre DROM), apparence 11/11.
 
 ## v7.21 — suppression de TOUTES les données IGN (2026-11-21w)
 

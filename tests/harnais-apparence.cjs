@@ -8,7 +8,7 @@ const zlib = require('node:zlib');
 
 const RAC = process.argv[2] || path.join(__dirname, '..');
 const CSS = process.argv[3] || path.join(RAC, 'css', 'theme.css');
-const CORE = ['00-const','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
+const CORE = ['00-const','00b-droms','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
   '05-sigles','06-peinture-regions','07-villes','08-etiquettes-zones','09-villes-continents',
   '10-options','11-survol-repaint','12-camera-cadrage','13-enclaves-outils',
   '14-vues-enregistrement','15-navigation','16-groupes-selection','17-demarrage'];

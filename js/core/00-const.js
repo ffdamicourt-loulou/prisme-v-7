@@ -178,6 +178,30 @@
         if (donnees.niv2) ignIds.forEach(function (id) { delete donnees.niv2[id]; });
       }
     }
+    // v7.22 : RÉGIONS ULTRAPÉRIPHÉRIQUES GADM 4.1 — remplacement définitif
+    // des contours IGN supprimés. Les 5 territoires (Guadeloupe,
+    // Martinique, Guyane française, La Réunion, Mayotte) viennent du
+    // fragment 00b-droms.js : SOURCE UNIQUE GADM 4.1, la même que le
+    // reste de la France et des autres pays. Le niveau 0 y est l'UNION
+    // EXACTE des unités de niveau 1 (frontières communes en UN SEUL
+    // tracé, imbrication parfaite) ; ses unités deviennent les
+    // subdivisions de niveau 2 de la région. Ajout APRÈS les régions
+    // métropolitaines (feats[0] reste 'Auvergne-Rhône-Alpes', src gadm,
+    // pour la règle du socle v0.69) et AVANT l'affectation à ADMIN.
+    try {
+      var droms = window.__PR2_DROMS && window.__PR2_DROMS[donnees.a3];
+      if (droms && donnees.niv1) {
+        droms.forEach(function (d) {
+          var dejaLa = donnees.niv1.some(function (f) { return f && f.id === d.id; });
+          if (dejaLa) return; // niv1 déjà régénéré proprement
+          donnees.niv1.push({ id: d.id, nom: d.nom, geometry: d.geometry,
+            __cp: d.__cp, etq: d.etq, src: 'gadm', __a3: donnees.a3 });
+          if (donnees.niv2) donnees.niv2[d.id] = d.enfants.map(function (e) {
+            return { id: e.id, nom: e.nom, geometry: e.geometry, src: 'gadm', __a3: donnees.a3 };
+          });
+        });
+      }
+    } catch (errDrom) { /* repli : France sans ultrapériphériques */ }
     if (donnees.niv1) ADMIN.niv1[donnees.a3] = donnees.niv1;
     if (donnees.niv2) ADMIN.niv2[donnees.a3] = donnees.niv2;
     PKG_FAIT[donnees.a3] = true;

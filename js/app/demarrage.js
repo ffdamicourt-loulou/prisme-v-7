@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   var CORE = [
-    '00-const', '01-styles-couleurs', '02-geo-ancres', '03-etat-monde',
+    '00-const', '00b-droms', '01-styles-couleurs', '02-geo-ancres', '03-etat-monde',
     '04-frontieres', '05-sigles', '06-peinture-regions', '07-villes',
     '08-etiquettes-zones', '09-villes-continents', '10-options',
     '11-survol-repaint', '12-camera-cadrage', '13-enclaves-outils',

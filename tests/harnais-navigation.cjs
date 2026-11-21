@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const zlib = require('node:zlib');
 
 const RAC = process.argv[2] || path.join(__dirname, '..');
-const CORE = ['00-const','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
+const CORE = ['00-const','00b-droms','01-styles-couleurs','02-geo-ancres','03-etat-monde','04-frontieres',
   '05-sigles','06-peinture-regions','07-villes','08-etiquettes-zones','09-villes-continents',
   '10-options','11-survol-repaint','12-camera-cadrage','13-enclaves-outils',
   '14-vues-enregistrement','15-navigation','16-groupes-selection','17-demarrage'];
@@ -584,11 +584,10 @@ for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 SEL.clicVide();
 clic('FR'); clic('FR'); charge('FR');
 const v721 = P.vue();
-test('v7.21 : 13 régions GADM, AUCUNE zone src "ign" dans la vue FR',
+test('v7.21/v7.22 : 18 régions (13 métropole + 5 ultrapériphériques GADM), AUCUNE zone src "ign"',
   v721.type === 'admin' && v721.niveau === 1
-  && Object.keys(v721.parNom).length === 13
+  && Object.keys(v721.parNom).length === 18
   && !(v721.features || []).some(f => f && f.src === 'ign')
-  && !v721.parNom['Guadeloupe'] && !v721.parNom['Mayotte']
   && v721.parNom['Île-de-France'] && v721.parNom['Corse']);
 clicZone('Corse'); // était citée dans le bug des zones blanches
 test('v7.21 : descente Corse → 2 départements, aucune zone blanche en filière',
@@ -599,6 +598,34 @@ clicZone('Île-de-France');
 test('v7.21 : descente Île-de-France → 8 départements (info-bulle « aucune subdivision » réglée côté données)',
   P.vue().type === 'admin' && P.vue().niveau === 2
   && (P.vue().features || []).filter(f => f && ['Essonne','Hauts-de-Seine','Paris','Seine-et-Marne','Seine-Saint-Denis','Val-d\'Oise','Val-de-Marne','Yvelines'].indexOf(f.id) !== -1).length === 8);
+
+// 24. v7.22 — SOURCE UNIQUE GADM AUX TROIS NIVEAUX : les ultrapériphériques
+// sont DE RETOUR, contour GADM 4.1 (gadm41_{GLP,MTQ,GUF,REU,MYT}), avec
+// leurs unités de niveau 1 GADM comme subdivisions (arrondissements,
+// cantons) — le niveau 0 est l'union exacte des unités : frontière
+// commune en un seul tracé, imbrication parfaite.
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR');
+const dromVerif = P.vue();
+test('v7.22 : les 5 régions ultrapériphériques sont GADM (src gadm partout, zéro ign)',
+  dromVerif.type === 'admin' && dromVerif.niveau === 1
+  && ['Guadeloupe','Martinique','Guyane française','La Réunion','Mayotte'].every(n =>
+    dromVerif.parNom[n] && dromVerif.parNom[n].src === 'gadm')
+  && (dromVerif.features || []).every(f => !f || f.src !== 'ign'));
+clicZone('Guadeloupe');
+test('v7.22 : descente Guadeloupe → 2 arrondissements GADM (Basse-Terre, Pointe-à-Pitre)',
+  P.vue().type === 'admin' && P.vue().niveau === 2
+  && (P.vue().features || []).filter(f => f && (f.id === 'Basse-Terre' || f.id === 'Pointe-à-Pitre')).length === 2
+  && (P.vue().features || []).every(f => !f || f.src !== 'ign'));
+clic('c-La Réunion');
+test('v7.22 : ajout sœur « c-La Réunion » → ses 4 unités rejoignent la vue (même source, pavage exact)',
+  (P.vue().features || []).filter(f => f && ['Saint-Benoît','Saint-Denis','Saint-Paul','Saint-Pierre'].indexOf(f.id) !== -1).length === 4);
+P.retour(); P.retour();
+clicZone('Mayotte');
+test('v7.22 : descente Mayotte → 17 cantons GADM',
+  P.vue().type === 'admin' && P.vue().niveau === 2
+  && (P.vue().features || []).length >= 17
+  && (P.vue().features || []).every(f => f && f.src !== 'ign'));
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);
