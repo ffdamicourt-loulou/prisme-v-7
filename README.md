@@ -36,7 +36,7 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-21y -->
+<!-- rebuild-pages 2026-11-21z -->
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`
@@ -55,6 +55,34 @@ Harnais navigation : 4 contrôles de régression ajoutés (22/22).
   centroïde d'aire via `CORRECTIONS_CP` (02-geo-ancres.js) — table générale
   des corrections d'étiquettes, prioritaire sur les `__cp` des packages.
 - Harnais navigation : 27/27 (5 nouveaux contrôles) ; apparence 11/11 ×2 thèmes.
+
+## v7.24 — PILE DE NAVIGATION : le retour saute les bascules d'ajouts (2026-11-21z)
+
+**Signalement** : des parties de la carte « disparaissent sans raison
+claire » ; piste utilisateur : une sélection aux niveaux 2 et 3 en même
+temps produit un bug.
+
+**Diagnostic** : chaque ajout/retrait de sœur (clic sur une région voisine
+d'une vue départements, mécanisme v7.19) empilait une vue dans la pile de
+navigation. Les actions en chaîne (ajout, retrait, ré-ajout…) créaient
+des vues combinées persistantes (noms de carte du type
+« prisme2-FR-Corse+HautsdeFrance~HautsdeFrance++… » qui s'allongent
+indéfiniment), et le bouton retour ne dépilait qu'UNE bascule : la vue ne
+changeait quasiment pas (retrait d'un ajout), changeait « sans raison
+claire », ou laissait l'utilisateur coincé dans des états mixtes — la
+carte affichait alors plusieurs régions à des niveaux différents.
+La peinture elle-même est saine (vérifié : chaque nom de carte enregistré
+reçoit bien une entrée peinte, combinée et dézoomée comprises).
+
+**Correctifs (15-navigation.js)** :
+- les cadres empilés par `ajouterSousVue` sont marqués `__bascule` ;
+- `retour()` saute toute chaîne de cadres `__bascule` consécutifs et
+  restaure la dernière vraie étape de DESCENTE : une seule pression
+  ramène à la vue parente, quel que soit le nombre d'ajouts/retraits.
+
+**Harnais** : nouvelle section 26 (chaîne de bascules Corse/HdF :
+1 pression retour → vue régions, puis monde) ; section 24 adaptée à la
+nouvelle sémantique. Navigation 90/90 ; apparence 11/11 ×2.
 
 ## v7.23 — DESCENTE EN UN SEUL CLIC, NIVEAU 3 CONFIRMÉ COMPLET (2026-11-21y)
 

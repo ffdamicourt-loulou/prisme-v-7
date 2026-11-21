@@ -222,7 +222,11 @@
     vue.features.forEach(function (f) { if (idsEnf[f.id]) nbPresents++; });
     if (nbPresents !== 0 && nbPresents !== enfR.length) return false;
     var present = nbPresents === enfR.length;
-    pile.push({ vue: vue, zoom: etat.zoom, centre: etat.centre, selection: etat.selection, selections: etat.selections.slice() });
+    // v7.24 : CADRE DE BASCULE — un ajout/retrait de sœur ne crée PAS un
+    // cran de « retour » : ces cadres sont sautés par retour() (sinon
+    // chaque bascule rendait le retour muet ou changeait la vue « sans
+    // raison claire » : la pile ne doit dépiler que les descentes).
+    pile.push({ vue: vue, zoom: etat.zoom, centre: etat.centre, selection: etat.selection, selections: etat.selections.slice(), __bascule: true });
     var nouvelles;
     if (present) {
       nouvelles = vue.features.filter(function (f) { return !idsEnf[f.id]; });
@@ -342,6 +346,13 @@
     if (cibleDemande) annulerDemande();
     if (!pile.length) return;
     var e = pile.pop();
+    // v7.24 : SAUT DE LA CHAÎNE DE BASCULES — les cadres __bascule (ajouts/
+    // retraits de sœurs, cf. ajouterSousVue) sont des états ÉPHÉMÈRES du
+    // MÊME niveau : retour ne doit pas les redonner un par un (l'utilisateur
+    // pressait retour et la carte « ne faisait rien » ou enlevait/rajoutait
+    // sœurs au hasard). On dépile toute la chaîne de bascules consécutives
+    // et l'on restaure le premier cadre de DESCENTE dessous.
+    while (e.__bascule && pile.length) e = pile.pop();
     vue = e.vue;
     etat.zoom = e.zoom; etat.centre = e.centre; etat.selection = e.selection;
     etat.selections = e.selections || [];

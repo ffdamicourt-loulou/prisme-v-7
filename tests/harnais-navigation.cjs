@@ -625,7 +625,9 @@ test('v7.22 : descente Guadeloupe → 2 arrondissements GADM (Basse-Terre, Point
 clic('c-La Réunion');
 test('v7.22 : ajout sœur « c-La Réunion » → ses 4 unités rejoignent la vue (même source, pavage exact)',
   (P.vue().features || []).filter(f => f && ['Saint-Benoît','Saint-Denis','Saint-Paul','Saint-Pierre'].indexOf(f.id) !== -1).length === 4);
-P.retour(); P.retour();
+P.retour(); // v7.24 : UNE seule pression saute la chaîne de bascules → vue régions
+test('v7.24 : après bascules (ajout sœur), UNE pression retour → vue régions (Guadeloupe reste peinte)',
+  P.vue().type === 'admin' && P.vue().niveau === 1);
 clicZone('Mayotte');
 test('v7.22 : descente Mayotte → 17 cantons GADM',
   P.vue().type === 'admin' && P.vue().niveau === 2
@@ -659,6 +661,24 @@ test('v7.23 : Bretagne → Morbihan en 2 clics simples → arrondissements nivea
     && (P.vue().features || []).length >= 3
     && (P.vue().features || []).every(f => f && p25b[f.id] && p25b[f.id].itemStyle
       && p25b[f.id].itemStyle.areaColor && p25b[f.id].itemStyle.areaColor !== '#eaf2f8'); })());
+
+// 26. v7.24 — CHAÎNE DE BASCULES : le retour saute les ajouts/retraits,
+// pas les descentes (bug « retour muet / vue qui change sans raison »)
+for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+clic('FR'); clic('FR'); charge('FR');
+clic('Corse');
+clic('c-Hauts-de-France'); // ajout sœur (cadre __bascule)
+clic('c-Hauts-de-France'); // retrait (cadre __bascule)
+clic('c-Hauts-de-France'); // ré-ajout (cadre __bascule)
+test('v7.24 : 3 bascules → vue combinée (7 features : Corse + HdF)',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && (P.vue().features || []).length === 7);
+P.retour();
+test('v7.24 : UNE pression retour saute TOUTE la chaîne de bascules ET la descente → vue RÉGIONS',
+  P.vue().type === 'admin' && P.vue().niveau === 1
+  && P.vue().nomMap.indexOf('+') === -1 && P.vue().nomMap.indexOf('~') === -1);
+P.retour();
+test('v7.24 : retour suivant → vue monde (pile cohérente)',
+  P.vue().type === 'monde');
 
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);
