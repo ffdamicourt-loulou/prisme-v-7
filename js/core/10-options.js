@@ -56,6 +56,10 @@
           // toute façon la projection du geo pendant le zoom/pan animé).
           id: 'frontieres', type: 'lines', coordinateSystem: 'geo', geoIndex: 0,
           animation: false,
+          // v7.36 : PAS DE RENDU PROGRESSIF — le rendu par troncs d'ECharts
+          // relançait son balayage à CHAQUE repaint (survol, zoom) : les
+          // frontières se redessinaient visiblement (Europe, Angleterre).
+          progressive: 0, progressiveThreshold: 1e9,
           polyline: true, silent: true, z: 4,
           lineStyle: { color: THEME.contour, width: TRAIT_NIVEAUX, opacity: 1 },
           tooltip: { show: false },
@@ -72,6 +76,7 @@
           // pays (v0.22). Ailleurs : data vide, trait par zone inchangé.
           id: 'frontieres-zones', type: 'lines', coordinateSystem: 'geo', geoIndex: 0,
           animation: false,
+          progressive: 0, progressiveThreshold: 1e9, // v7.36 : cf. couche « frontieres »
           polyline: true, silent: true, z: 4,
           lineStyle: { color: THEME.contour, width: TRAIT_NIVEAUX, opacity: 1 },
           tooltip: { show: false },

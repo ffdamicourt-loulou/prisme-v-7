@@ -87,7 +87,14 @@
     try { carte.setOption({ geo: { regions: regs } }); } catch (err) { try { majEtiquettes(); } catch (err2) { } }
     // thème : le texte de la zone survolée passe en texteSurvol, textes sinon
     try {
-      if (ETQ_SORTIE && ETQ_SORTIE.length) {
+      // v7.36 : en VUES ADMIN, les étiquettes de zones, sœurs et EXTÉRIEURS
+      // sont toutes BLANCHES en repos COMME en survol/sélection (cf.
+      // donneesNomsZones) : réexpédier les données d'étiquettes à CHAQUE
+      // entrée/sortie de survol ne changeait AUCUNE couleur et forçait un
+      // re-rendu complet du niveau (« au Portugal/England, toutes les
+      // frontières se redessinent à chaque sortie de zone »). Vue monde
+      // inchangée : c'est là que le texte survolé change de teinte.
+      if (ETQ_SORTIE && ETQ_SORTIE.length && vue && vue.type === 'monde') {
         // v7.4 : aux NIVEAUX 1/2/3 (vues admin), les états SURVOLÉ et
         // SÉLECTIONNÉ conservent les textes en BLANC : la peinture de ces
         // états est la teinte assombrie du continent, le blanc y est

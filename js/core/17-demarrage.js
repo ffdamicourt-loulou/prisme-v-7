@@ -168,12 +168,15 @@
       etat.zoom = nz; etat.centre = [cx, cy];
       var ox = (typeof px === 'number') ? px : carte.getWidth() / 2;
       var oy = (typeof py === 'number') ? py : carte.getHeight() / 2;
-      // v0.80e : ZOOM ANIMÉ — interpoler le cran (180 ms, ease-out) au lieu
-      // du saut sec, et ne repeindre les étiquettes qu'à la fin. L'ÉTAT
-      // reste posé SYNCHRONONE (contrat harnais/greffons : etat.zoom/centre
-      // exacts dès le cran) : seule la VITESSE du rendu change.
-      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
-        && demarrerZoomAnime(nz, [cx, cy], ox, oy)) return true;
+      // v7.36 : ZOOM INSTANT — l'interpolation v0.80e envoyait un geoRoam
+      // PAR FRAME : chaque frame était un rendu complet (carte + couches de
+      // frontières), et sur les machines où un rendu dépasse la durée d'une
+      // frame, le canvas restait vidé sur son fond sombre ENTRE le scale
+      // de départ et celui d'arrivée (« écran noir à chaque zoom/dézoom,
+      // bug majeur »). Un cran = UN geoRoam, un seul rendu ; les étiquettes
+      // suivent dans la même image (majEtiquettes ci-dessous).
+      // demarrerZoomAnime/pasZoomAnime restent définis (ANNULER_ZOOM_ANIM
+      // continue d'annuler leur état) mais ne sont plus invoqués.
       try {
         carte.dispatchAction({ type: 'geoRoam', componentType: 'geo', geoIndex: 0,
           zoom: f, originX: ox, originY: oy });

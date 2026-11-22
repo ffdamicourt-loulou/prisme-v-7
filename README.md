@@ -36,7 +36,54 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zh -->
+<!-- rebuild-pages 2026-11-22zi -->
+
+## v7.36 — ZOOM INSTANT, SURVOL ALLÉGÉ, MICRO-ZONES LISIBLES, DÉCALAGE BERLIN/BRANDENBOURG ( 2026-11-22zi )
+
+**Bug majeur « écran noir à chaque zoom/dézoom »** : l'animation de zoom
+(180 ms) envoyait un geoRoam PAR FRAME — chaque frame était un rendu
+complet (carte + couches de frontières) ; quand un rendu dépasse la durée
+d'une frame, le canvas restait vidé sur son fond sombre ENTRE le scale de
+départ et celui d'arrivée. Le zoom est désormais INSTANT : un cran = un
+geoRoam, un seul rendu, les étiquettes suivent dans la même image
+(17-demarrage.js).
+
+**Frontières qui se redessinent au survol (Angleterre, Portugal…)** :
+le rendu par troncs (progressif) d'ECharts relançait son balayage à CHAQUE
+repaint ; les couches « frontieres » et « frontieres-zones » passent en
+`progressive: 0` (10-options.js). Et en vues admin, le survol
+réexpédiait les données d'étiquettes (aucune couleur ne changeait,
+coût d'un re-rendu complet) — ce renvoi est désormais réservé à la vue monde
+(11-survol-repaint.js).
+
+**Frontières des micro-zones (Sarre, Brême, concelhos portugais)** : la
+tolérance de déduplication fixe (0,002°) pouvait avaler des arêtes
+RÉELLES plus courtes qu'elle : l'eps est plafonné à 30 % de l'arête la
+plus courte des deux candidates (04-frontieres.js).
+
+**Étiquettes des micro-zones (Ciudad Real, Portugal niveau 3, IDF…)** :
+quand le nom ENTIER ne tient pas au niveau, la zone affiche SEULEMENT son
+ABRÉVIATION à la PLUS GRANDE taille (≤ 18 px, plancher 6 px) qui tient
+ENTIÈREMENT dans la zone (centre, puis point profond épinglé) ; si aucune
+taille ≥ 6 px ne tient : abréviation à 6 px en dernier recours
+(08-etiquettes-zones.js). La taille uniforme du niveau est conservée
+partout où elle tient.
+
+**Berlin/Brandenburg** : l'ancre de Brandebourg tombait contre
+« Ber. » — « Brandenburg » descend de 0,45° (DECAL_NOMS, appliqué même à
+l'ancre épinglée du point profond).
+
+**Sélection multiple de zones** : la fonte/extinction des étiquettes au
+dézoom (≤ 0,4 × cadrage d'entrée) ne s'applique plus aux zones PRÉSENTES
+DANS LA SÉLECTION (elles gardent leur nom abrégé à tous les zooms —
+« les noms de zone, même abrégés, ne s'affichent pas ») ; elle reste
+entière pour la sélection d'un pays seul (08-etiquettes-zones.js).
+
+**Harnais** : section 41 (zoom instant sans frame rAF, Brandebourg décalé
+et boîtes disjointes, abréviations PT/ES qui tiennent dans leur zone,
+multi-sélection FR avec étiquettes au dézoom) — 180 OK / 0 KO,
+apparence 11 OK / 0 KO, fuzz 1440/1440, audit stable (17308 anomalies
+historiques).
 
 ## v7.35 — ZONE MK « AERODROM » CORRIGÉE + PLAFOND 18 px DES NOMS ( 2026-11-22zh )
 

@@ -111,7 +111,10 @@
     // plaçait le nom trop au nord. La correction d'ancre CORRECTIONS_CP du
     // noyau (02-geo-ancres.js) pose désormais l'étiquette au centroïde
     // d'aire, au centre vertical du territoire, sans décalage.
-    var DECAL_NOMS = { };
+    // v7.36 : DÉCALAGE MANUEL — Berlin (« Ber. ») et « Brandenburg » se
+    // chevauchaient à l'échelle des Länder (l'ancre de Brandenburg tombe
+    // près de Berlin) : Brandebourg descend vers le bas ([0, -0.45°]).
+    var DECAL_NOMS = { 'Brandenburg': [0, -0.45] };
     var sigles = siglesVue(t, pxLon, pxLat);
     ETQ_PX = [pxLon, pxLat];
     // v0.96 : plus de boîtes de villes (affichage des villes supprimé v0.91,
@@ -206,8 +209,22 @@
     // v0.96 : DISPARITION PROGRESSIVE D UNE SÉLECTION — à −60 % du cadrage
     // d entrée les étiquettes de ZONES s éteignent : il ne reste que l ID
     // du/des PAYS de la SÉLECTION, centré sur la géométrie du pays.
-    var selFondue = vue.type !== 'monde' && enSelection && zCour <= zEntree * 0.4;
+    // v7.36 : la FONTE des étiquettes ne vise que la SÉLECTION D'UN PAYS
+    // SEUL (placer son ID au centre). En SÉLECTION MULTIPLE de zones
+    // (niveau 3 FR/ES…), elle éteignait TOUS les noms du niveau : les
+    // zones étudiées perdaient leurs étiquettes, abréviations comprises
+    // (« les noms de zone, même abrégés, ne s'affichent pas »).
+    var selFondue = vue.type !== 'monde' && enSelection
+      && !((etat.selections || []).length) && zCour <= zEntree * 0.4;
     var cacheN23 = vue.type !== 'monde' && nivVue >= 2 && zCour <= zEntree * 0.4;
+    // v7.36 : une zone PRÉSENTE DANS LA SÉLECTION garde SON étiquette à
+    // tous les zooms (fondue et extinction incluses) : la sélecteur
+    // clique précisément les zones qu'il étudie.
+    var selRz = (typeof ensembleSelection === 'function') ? ensembleSelection() : {};
+    var estZoneSel = function (nomz, idz) {
+      var n0 = String(idz || '').replace(/^c-/, '');
+      return !!(selRz[nomz] || selRz['c-' + nomz] || selRz[n0] || selRz['c-' + n0]);
+    };
     // v0.95 : DÉZOOM → taille PROPORTIONNELLE : chaque label d une vue admin
     // est multiplié par zoom/zoomEntrée sous le cadrage d entrée (plancher
     // 6 px). Et N1/N2 gagnent un BONUS LINÉAIRE de zoom, +3 px au zoom
@@ -219,15 +236,18 @@
     var sortie = items.map(function (it) {
       var id = it[0], nom = it[1], geometry = it[2], continent = it[3], estPays = it[4];
       var decalage = (!estPays && DECAL_NOMS[nom]) || null; // v0.97
-      if (selFondue && !estPays && id.indexOf('c-') !== 0) return null; // v0.96/v0.97 : zones éteintes, place à l ID pays ; les régions voisines restent
+      if (selFondue && !estPays && id.indexOf('c-') !== 0 && !estZoneSel(nom, id)) return null; // v0.96/v0.97/v7.36 : zones éteintes SAUF sélectionnées
       var cp = cpDe(id.replace(/^c-/, ''), geometry);
-      if (decalage) cp = [cp[0] + decalage[0], cp[1] + decalage[1]]; // v0.97
       // v0.98 : ancre épinglée — si le premier calcul (au cadrage d entrée)
       // a posé l étiquette au POINT PROFOND, on REPREND cette position à
       // tous les zooms : plus aucun déplacement en fonction du zoom.
       var cleA = id.replace(/^c-/, '');
       var ancreFixe = (!estPays && ANCRAGE_map[cleA]) || null;
       if (ancreFixe) cp = [ancreFixe[0], ancreFixe[1]];
+      // v7.36 : le DÉCALAGE manuel s'applique EN DERNIER, même à l'ancre
+      // épinglée (sinon l'ancre du point profond annulait le décalage de
+      // Berlin/Brandenburg dès le premier cadrage où le nom entier tient).
+      if (decalage) cp = [cp[0] + decalage[0], cp[1] + decalage[1]]; // v0.97/v7.36
       var complet = estPays ? MAJ(nom) : nom;
       var nomEntier = faitTient(complet, id, t, pxLon, pxLat);
       var defaut = estPays ? id.replace(/^x-/, '') : (sigles[nom] || abrev(nom));
@@ -309,7 +329,7 @@
         // v0.97 : les SOEURS (les régions voisines du niveau supérieur,
         // id « c- ») RESTENT affichées même à dézoom −60 % : seules les
         // étiquettes du niveau courant disparaissent.
-        if (cacheN23 && id.indexOf('c-') !== 0) return null;
+        if (cacheN23 && id.indexOf('c-') !== 0 && !estZoneSel(nom, id)) return null; // v7.36 : sélectionnées exceptées
         // v0.93/94 : nom entier AU F UNIFORME du niveau, priorité au nom
         // ENTIER. En n2/n3 le niveau affiche 1 px PLUS GRAND que le F commun
         // v0.93 (F+1, plafonné au plafond du zoom) ; si une zone ne tient pas
@@ -368,7 +388,27 @@
             var Funi = plafondZ + bonusRond;
             rz = essaieNomZ(Funi);
             if (rz) { texte = rz.texte; F = rz.F; lignes = rz.lignes; cp = rz.cp; }
-            else { texte = defaut; F = Funi; } // abréviation à la taille du niveau
+            else {
+              // v7.36 : MICRO-ZONES (Ciudad Real, concelhos portugais…) —
+              // le nom ENTIER ne tient pas au F du niveau : on affiche
+              // SEULEMENT l ABRÉVIATION, à la PLUS GRANDE taille ≤ F du
+              // niveau (plafond 18, plancher 6 px) qui TIENT ENTIÈREMENT
+              // dans la zone (centre, puis point profond épinglé). Aucune
+              // taille ne tient : abréviation à 6 px, dernier recours.
+              texte = defaut;
+              var Ftrouve = 0, altA = null;
+              for (var Fa = Math.min(Funi, 18); Fa >= 6; Fa -= 1) {
+                var dA = demiBoitePx(defaut, Fa);
+                if (tientDansZone(geometry, cp, dA[0] / pxLon, dA[1] / pxLat)) { Ftrouve = Fa; break; }
+                if (!ancreFixe && !ANCRAGE_map[cleA]) {
+                  if (!altA) altA = altDe(geometry);
+                  if (altA && tientDansZone(geometry, altA, dA[0] / pxLon, dA[1] / pxLat)) {
+                    ANCRAGE_map[cleA] = [altA[0], altA[1]]; cp = altA; Ftrouve = Fa; break;
+                  }
+                }
+              }
+              F = Ftrouve > 0 ? Ftrouve : 6; // dernier recours : abréviation à 6 px
+            } // abréviation à la taille qui tient dans la zone
           } else {
             var bonusBase = nivVue >= 3 ? 3 : (nivVue >= 2 ? 1 : 0);
             var cibleZ = Math.min(Math.max(Math.round(Fcommun * 1.44), Fcommun + bonusBase) + bonusRond, plafondZ + bonusRond); // v0.100 : +20 % encore

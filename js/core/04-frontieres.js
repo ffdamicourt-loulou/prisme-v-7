@@ -174,7 +174,22 @@
     }
     function dejaTrace(a, b) {
       var trouve = false;
-      function verif(seg) { if (!trouve && segProche(a, b, seg[0], seg[1], EPS)) trouve = true; }
+      // v7.36 : EPS ADAPTATIF — la tolérance FIXE 0,002° (~220 m) pouvait
+      // « avaler » des arêtes réelles plus courtes qu'elle (micro-zones :
+      // Sarre, Brême, concelhos portugais…) : deux arêtes voisines mais
+      // DISTINCTES de moins de 0,002° n'existent plus comme doublons, il
+      // manquait un trait. La tolérance est maintenant plafonnée à 30 %
+      // de l'arête la plus courte des DEUX : les longues arêtes partagées
+      // (simplifications divergentes de deux sources) restent dédupliquées.
+      var lab = Math.abs(a[0] - b[0]) * Math.cos(a[1] * Math.PI / 180) + Math.abs(a[1] - b[1]);
+      function verif(seg) {
+        if (trouve) return;
+        var lseg = Math.abs(seg[0][0] - seg[1][0]) * Math.cos(seg[0][1] * Math.PI / 180)
+          + Math.abs(seg[0][1] - seg[1][1]);
+        var eps = Math.min(EPS, 0.30 * Math.min(lab, lseg));
+        if (eps <= 0 || !isFinite(eps)) eps = 1e-7;
+        if (segProche(a, b, seg[0], seg[1], eps)) trouve = true;
+      }
       auVoisinage(a, verif);
       if (!trouve) auVoisinage(b, verif);
       return trouve;
