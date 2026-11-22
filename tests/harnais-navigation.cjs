@@ -985,5 +985,66 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
     (P.etat.selections || []).indexOf('2:USA\u00A4\u00A4Washington') !== -1);
   for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 }
+
+// 36. v7.31 — AJOUT PAR PROFONDEUR ADMIN (bug « il faut cliquer 2 fois »)
+// en France : l'étiquette __niv des sœurs reconduites après bascules /
+// retours est PÉRIMABLE — le clic simple sur un département voisin
+// tombait dans le repli de descente et affichait « aucune subdivision
+// plus fine disponible » sans rien ajouter. La profondeur ADMIN
+// (remontée des __parent) remplace la garde ; une sœur PLUS HAUTE
+// (région au milieu d'arrondissements) apporte ses DESCENDANTS au
+// niveau de la vue (règle utilisateur : l'ajout se fait « au niveau de
+// détail des zones déjà enregistrées »).
+{
+  while (P.vue().type !== 'monde') P.retour();
+  charge('FR');
+  clic('FR'); clic('FR');                     // régions
+  clic('Occitanie');                          // départements (niveau 2)
+  clic('Hérault');                            // arrondissements (niveau 3)
+  test('v7.31 : cadre — vue arrondissements de l Hérault (3 zones, niveau 3)',
+    (() => { const v = P.vue(); return v.type === 'admin' && v.niveau === 3
+      && v.parent === 'Hérault' && (v.features || []).length === 3; })());
+  const v36 = P.vue();
+  const gard36 = (v36.soeurs || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
+  test('v7.31 : la sœur Gard existe au contexte avec étiquette __niv',
+    !!gard36 && gard36.__niv === 2);
+  gard36.__niv = 99;                          // ÉTIQUETTE PÉRIMÉE (simulation)
+  info.textContent = '';
+  clic('c-Gard');
+  test('v7.31 : __niv périmé → le clic simple AJOUTE quand même les arrondissements (profondeur ADMIN), sans message trompeur',
+    (() => { const v = P.vue();
+      return v.niveau === 3 && (v.features || []).length === 6
+        && (info.textContent || '').indexOf('aucune subdivision') === -1; })());
+  const gardMasque = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
+  test('v7.31 : la sœur ajoutée est masquée (ses zones sont affichées)',
+    !!gardMasque && gardMasque.__masquee === true);
+  // sœur PLUS HAUTE : la RÉGION Bretagne au milieu des arrondissements
+  const nAv36 = (P.vue().features || []).length;
+  const bzh36 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne'; })[0];
+  test('v7.31 : la RÉGION Bretagne est bien une sœur de niveau supérieur (gap de profondeur)',
+    !!bzh36 && bzh36.__niv === 1);
+  info.textContent = '';
+  clic('c-Bretagne');
+  test('v7.31 : sœur PLUS HAUTE → ses ARRONDISSEMENTS rejoignent la vue au niveau courant (ajout en chaîne « au niveau de détail déjà enregistré »)',
+    (() => { const v = P.vue();
+      return v.niveau === 3 && (v.features || []).length > nAv36 + 10
+        && (info.textContent || '').indexOf('aucune subdivision') === -1; })());
+  clic('c-Bretagne');
+  test('v7.31 : bascule de retrait de l ajout en chaîne (re-clic retire les arrondissements bretons)',
+    (P.vue().features || []).length === nAv36); // retour au compte d'avant le gap
+  // typo __masque : le masque est LEVÉ au recalage d'une nouvelle descente
+  while (P.vue().type !== 'monde') P.retour();
+  clic('FR'); clic('FR'); clic('Occitanie');
+  test('v7.31 : retour au niveau départements après recalage',
+    P.vue().niveau === 2);
+  const gard37 = (P.vue().features || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
+  test('v7.31 : Gard redevient une zone de la VUE (le masque de bascule ne filtre que les sœurs)',
+    !!gard37);
+  clic('Aude');
+  const gardAv38 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Gard' && !f.__masquee; })[0];
+  test('v7.31 : au contexte d une nouvelle descente, Gard est affichable (masque levé par le recalage — typo __masque réparée)',
+    !!gardAv38);
+  for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+}
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

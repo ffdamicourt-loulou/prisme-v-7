@@ -36,7 +36,36 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zc -->
+<!-- rebuild-pages 2026-11-22zd -->
+
+## v7.31 — AJOUT AU NIVEAU DE DÉTAIL DES ZONES ENREGISTRÉES ( bug « il faut cliquer 2 fois » en France, 2026-11-22zd )
+ SIGNALEMENT UTILISATEUR : en France, avec une sélection de niveau 4
+ (arrondissements), le clic simple sur un département voisin pour ajouter
+ ses arrondissements échouait parfois au PREMIER clic (« aucune
+ subdivision plus fine disponible ») et réussissait au second.
+ CAUSES RACINES (3) :
+ 1. **Garde `__niv` périmable** (bloc v7.19 de greffon-selection) : les
+    sœurs reconduites après bascules/retours gardent l'étiquette de la
+    vue qui les a créées ; quand elle ne correspond plus à
+    `niveau de la vue - 1`, le clic tombait dans le repli de descente
+    (échec + message trompeur) au lieu d'ajouter. Reproduit, corrigé,
+    verrouillé par harnais (`__niv` volontairement corrompu à 99).
+ 2. **Profondeur ADMIN** (nouveau, 15-navigation) : `profondeurZone` /
+    `descendantsAuNiveau` — remontée déterministe des `__parent` depuis
+    `ADMIN.niv2`. L'ajout se décide désormais par la PROFONDEUR, jamais
+    par l'étiquette : une sœur PLUS HAUTE (ex. région au milieu
+    d'arrondissements) apporte ses DESCENDANTS AU NIVEAU DE LA VUE
+    (règle utilisateur : « l'ajout se fait au niveau de détail de la ou
+    des zones déjà enregistrées ») ; bascule de retrait identique.
+ 3. **Chevauchement partiel** : `ajouterSousVue` ajoutait désormais les
+    MANQUANTS au lieu de refuser en silence (l'ancien `return false`
+    muet laissait le clic sans effet).
+ BONUS : typo `delete f.__masque` → `delete f.__masquee` dans
+ `descendreSous` : le masque de bascule d'une sœur est maintenant
+ réellement LEVÉ au recalage d'une nouvelle descente (l'ancien code
+ supprimait une propriété inexistante : NO-OP).
+ Harnais : 11 contrôles v7.31 (146 au total, 0 KO) ; fuzz étendu (1440
+ actions, corruption aléatoire des `__niv`) ; apparence 11/11 ×2.
 
 ## v7.3 — anti-cache (2026-11-20c)
 Les chargements (core, app, données, manifest, packages) portent `?v=<version>`

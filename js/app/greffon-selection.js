@@ -521,6 +521,13 @@
     // subdivision plus fine disponible ». La sœur doit être du niveau
     // immédiatement supérieur (__niv = niveau de la vue - 1) et avoir des
     // enfants ; un nouveau clic les RETIRE (bascule, comme au Maj+clic).
+    // v7.31 : PLUS DE GARDE __niv — l'étiquette est PÉRIMABLE (les sœurs
+    // reconduites après bascules/retours gardent celle de l'ancienne
+    // vue : le clic simple tombait alors dans le repli de descente,
+    // affichait « aucune subdivision plus fine » et il fallait cliquer
+    // DEUX fois). Le CŒUR (ajouterSousVue) décide seul via la PROFONDEUR
+    // ADMIN : descendants ajoutés au niveau de la vue, quel que soit le
+    // niveau réel de la sœur.
     if (!maj && S.ajouterSousVue && V.soeurs
         && (!V.parNom || !V.parNom[nom])) {
       var fzC = null;
@@ -528,8 +535,7 @@
         if (!fzC && (f.nom === nom || ('c-' + f.id) === nom
           || (f.id === nom && String(nom).slice(0, 2) !== 'c-'))) fzC = f;
       });
-      if (fzC && (fzC.__niv === undefined || fzC.__niv === V.niveau - 1)
-        && S.ajouterSousVue(fzC)) return true;
+      if (fzC && S.ajouterSousVue(fzC)) return true;
     }
     // ── MAJ+ZONE DE LA VUE : bascule dans la sélection de niveau
     // v7.30 : la zone est désignée par sa CLEF QUALIFIÉE « 2:a3¤parent¤nom »

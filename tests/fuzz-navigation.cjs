@@ -194,7 +194,14 @@ for (let g = 0; g < NB_GRAINES; g++) {
       else {
         const z = zones[Math.floor(gen() * zones.length)];
         if (r < 0.4) action = { desc: 'clic zone ' + z, run: () => clicZone(z) };
-        else if (r < 0.65) action = { desc: 'clic simple ' + z, run: () => clic(z) };
+        else if (r < 0.65) action = { desc: 'clic simple ' + z, run: () => {
+          // v7.31 : ÉTIQUETTES PÉRIMÉES — après bascules/retours, les
+          // sœurs reconduites gardent le __niv de l'ancienne vue ; on force
+          // ce vieillissement ici (1 clic sur 3 environ) : l'ajout doit se
+          // faire par PROFONDEUR ADMIN, jamais par l'étiquette.
+          if (gen() < 0.35) (P.vue().soeurs || []).forEach(function (f) { if (f && f.__niv !== undefined) f.__niv = 99; });
+          clic(z);
+        } };
         else if (r < 0.85) action = { desc: 'Maj+clic zone ' + z, run: () => clicMaj(z) };
         else action = { desc: 'retour depuis ' + z, run: () => P.retour() };
       }

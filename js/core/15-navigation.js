@@ -126,15 +126,19 @@
     // v0.52 : les sœurs issues des features du niveau courant sont
     // ÉTIQUETÉES par leur niveau (__niv) — le Maj+clic sait si une sœur
     // est du niveau juste inférieur (ses enfants sont au niveau courant).
+    // v7.31 : le masque de bascule (__masquee) est LEVÉ ici au recalage —
+    // l'ancien « delete f.__masque » (typo, sans « e » final) était un
+    // NO-OP : une sœur masquée restait invisible après retour + nouvelle
+    // descente, alors qu'elle devait réapparaître au contexte.
     var soeurs = vue.features.filter(function (f) {
       if (f.id === nomSub) return false;
-      if (!vue.parPays || vue.parPays[f.id] === idPays) { f.__niv = vue.niveau; delete f.__masque; f.__pays = idPays; return true; }
+      if (!vue.parPays || vue.parPays[f.id] === idPays) { f.__niv = vue.niveau; delete f.__masquee; f.__pays = idPays; return true; }
       return false;
     }).concat(vue.soeurs || []);
     var autresPays = [];
     if (vue.parPays) {
       soeurs = soeurs.concat(vue.features.filter(function (f) {
-        if (vue.parPays[f.id] !== idPays) { f.__niv = vue.niveau; delete f.__masque; f.__pays = vue.parPays[f.id]; return true; }
+        if (vue.parPays[f.id] !== idPays) { f.__niv = vue.niveau; delete f.__masquee; f.__pays = vue.parPays[f.id]; return true; }
         return false;
       }));
       vue.features.forEach(function (f) {
@@ -190,6 +194,53 @@
   // de Lancaster s'affichent dans la même vue (la sœur reste peinte en
   // sélection, comme en v0.31). Un nouveau Maj+clic les RETIRE (bascule) ;
   // rien ne disparaît : la sœur reste affichée comme contexte.
+  // ── v7.31 : PROFONDEUR ADMIN (source de vérité des niveaux) ──────────
+  // L'étiquette __niv des sœurs est positionnelle et PÉRIMABLE (les sœurs
+  // reconduites gardent l'étiquette de la vue qui les a créées). La
+  // profondeur ADMIN (remontée des __parent jusqu'à une région, niveau 1)
+  // est déterministe et insensible au vieillissement : départements = 2,
+  // arrondissements = 3, communes = 4, etc.
+  var PROF_IDX = {};
+  function indexParentsA3(a3) {
+    if (PROF_IDX[a3]) return PROF_IDX[a3];
+    var idx = {};
+    var n2 = (ADMIN.niv2 || {})[a3] || {};
+    Object.keys(n2).forEach(function (cle) {
+      (n2[cle] || []).forEach(function (z) {
+        if (z && z.nom && idx[z.nom] === undefined) idx[z.nom] = cle;
+      });
+    });
+    PROF_IDX[a3] = idx;
+    return idx;
+  }
+  function profondeurZone(a3, nom) {
+    if (!nom) return 0;
+    var idx = indexParentsA3(a3);
+    var d = 1, garde = {};
+    var n = nom;
+    while (idx[n] !== undefined && !garde[n]) { garde[n] = 1; d++; n = idx[n]; }
+    return d;
+  }
+  // Descendants de fz EXACTEMENT au niveau `niveau` (celui de la vue) :
+  // descente chaînée dans ADMIN.niv2. Retour [] si une marche manque ou si
+  // la sœur est déjà PLUS PROFONDE que le niveau demandé.
+  function descendantsAuNiveau(a3, fz, niveau) {
+    if (!fz || !niveau) return [];
+    var prof = profondeurZone(a3, fz.nom || fz.name);
+    if (prof >= niveau) return [];
+    var cour = [fz];
+    for (var i = prof; i < niveau; i++) {
+      var suiv = [];
+      for (var j = 0; j < cour.length; j++) {
+        var lst = (ADMIN.niv2[a3] || {})[cour[j].nom || cour[j].name] || [];
+        for (var k = 0; k < lst.length; k++) suiv.push(lst[k]);
+      }
+      if (!suiv.length) return [];
+      cour = suiv;
+    }
+    return cour;
+  }
+
   function ajouterSousVue(fz) {
     var idPays = (vue.parPays && vue.parPays[fz.nom]) || vue.paysId;
     var a3 = DATA.idversA3 ? DATA.idversA3[idPays] : null;
@@ -206,8 +257,26 @@
     // affiché (étiquettes, tooltip) est inchangé.
     var preR = String(fz.id).replace(/[^A-Za-z0-9]/g, '');
     var enf = a3 && ADMIN.niv2[a3] && ADMIN.niv2[a3][fz.nom];
+    // v7.31 : AJOUT « AU NIVEAU DE DÉTAIL DES ZONES ENREGISTRÉES » — la
+    // sœur rejoint la vue par ses DESCENDANTS AU NIVEAU COURANT, quel que
+    // soit son propre niveau : une sœur PLUS HAUTE (région au milieu
+    // d'arrondissements d'un département) apporte TOUS ses descendants de
+    // ce niveau-là ; une sœur de niveau juste inférieur apporte ses
+    // enfants directs (comportement v0.52/v7.19 inchangé). La profondeur
+    // ADMIN remplace l'étiquette __niv (périmable : reconduite après
+    // bascules et retours, elle laissait le clic sans effet et affichait
+    // le message trompeur « aucune subdivision plus fine disponible »).
+    if (enf && enf.length && vue.niveau) {
+      var profS41 = (a3 && fz.nom) ? profondeurZone(a3, fz.nom) : 0;
+      if (profS41 && profS41 + 1 !== vue.niveau) {
+        var desc41 = descendantsAuNiveau(a3, fz, vue.niveau);
+        if (desc41 && desc41.length) enf = desc41;
+      }
+    }
     if ((!enf || !enf.length)
-      && (fz.__niv === undefined || fz.__niv === vue.niveau - 1)) {
+      && (fz.__niv === undefined || fz.__niv === vue.niveau - 1
+        // v7.31 : profondeur ADMIN en secours (étiquette __niv périmable)
+        || (a3 && fz.nom && profondeurZone(a3, fz.nom) + 1 === vue.niveau))) {
       // v7.20 : COMMUNAUTÉ UNIPROVINCIALE (Espagne : Madrid, Murcia,
       // Asturias, Cantabria, Navarra, La Rioja, Baleares, Ceuta,
       // Melilla…) — la sœur n'a PAS de subdivisions dans les données :
@@ -255,11 +324,15 @@
     // garde-fou : les enfants sont soit TOUS déjà affichés (bascule retrait),
     // soit AUCUN (ajout) ; un chevauchement partiel résiduel ne devrait
     // plus se produire (les collisions sont renommées ci-dessus) →
-    // repli sur la bascule classique de sélection.
+    // v7.31 : PLUS DE REFUS MUET — le partiel ajoute les MANQUANTS
+    // seulement (l'ancien « return false » silencieux laissait le clic
+    // sans effet et le repli de descente affichait « aucune subdivision
+    // plus fine disponible » ; l'utilisateur devait cliquer 2 fois).
     var nbPresents = 0;
     vue.features.forEach(function (f) { if (idsEnf[f.id]) nbPresents++; });
-    if (nbPresents !== 0 && nbPresents !== enfR.length) return false;
     var present = nbPresents === enfR.length;
+    var ajout = present ? [] : enfR.filter(function (e) { return !vue.parNom[e.id]; });
+    if (!present && !ajout.length) present = true; // tous présents (ids renommés) → retrait
     // v7.24 : CADRE DE BASCULE — un ajout/retrait de sœur ne crée PAS un
     // cran de « retour » : ces cadres sont sautés par retour() (sinon
     // chaque bascule rendait le retour muet ou changeait la vue « sans
@@ -273,7 +346,7 @@
       // homonyme d'un autre parent.
       selEnvoyer('bascule-retrait', (etat.selections || []).filter(function (n) { return n !== cleSel(fz) && n !== 'c-' + fz.id; }));
     } else {
-      nouvelles = vue.features.concat(enfR);
+      nouvelles = vue.features.concat(ajout.length ? ajout : enfR); // v7.31 : partiel → manquants
       // v7.30 : ajout par CLEF QUALIFIÉE « 2:a3¤parent¤nom » : deux
       // homonymes de parents différents ne partagent plus leur entrée.
       selAjouter(cleSel(fz) || ('c-' + fz.id), 'bascule-ajout');
