@@ -14,7 +14,11 @@
         trigger: 'item',
         formatter: function (params) {
           var d = params.data;
-          if (params.name === 'socle') return '';
+          // v7.38 : TOUT nom de socle ('socle', 'socle@FR', 'socle@FR~1'…)
+          // est masqué — l'info-bule « socle@FR 1 » vue sur l'Aude et les
+          // Pyrénées-Orientales (région socle héritée recouvrant tout le
+          // pays sous les départements) ne s'affiche plus.
+          if (typeof params.name === 'string' && params.name.slice(0, 6) === 'socle') return '';
           if (vue.type !== 'monde') {
             if (d && d.pop) return '<b>' + d.nom + '</b><br>' + d.pop.toLocaleString('fr-FR') + ' hab.';
             if (d && d.exterieur) return '<b>' + MAJ(d.nom) + '</b>';

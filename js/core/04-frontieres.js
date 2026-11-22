@@ -148,12 +148,11 @@
       && distancePtSegment(a2, a1, b1) < eps && distancePtSegment(b2, a1, b1) < eps;
   }
   function frontiereUniqueZone() {
-    if (vue.type !== 'admin' || (vue.niveau || 1) < 2) return false;
-    var conts = [vue.continent];
-    (vue.paysIds || []).forEach(function (pid) {
-      if (parId[pid]) conts.push(parId[pid].continent);
-    });
-    return conts.some(function (c) { return c === 150 || c === '150'; });
+    // v7.38 : CARTE DÉFINITIVE — le filet unique s'applique désormais à
+    // TOUTES les vues admin (TOUT niveau, TOUT continent), plus seulement
+    // à l'Europe de niveau app ≥ 2 : chaque arête est tracée UNE seule
+    // fois, partout dans le monde.
+    return vue.type === 'admin';
   }
   function donneesFrontieresZones() {
     if (!frontiereUniqueZone()) return [];
@@ -199,8 +198,35 @@
       if (grille[ka]) grille[ka].push([a, b]); else grille[ka] = [[a, b]];
       if (kb !== ka) { if (grille[kb]) grille[kb].push([a, b]); else grille[kb] = [[a, b]]; }
     }
+    // v7.38 : PASSE EXACTE AVANT LE BALAYAGE FLOU — les sources HOMOGÈNES
+    // (comtés US, régions…) partagent EXACTEMENT leurs sommets : un
+    // dictionnaire à clé canonique (extrémités triées) élimine ces
+    // doublons en O(1), sans toucher à la grille. Le balayage flou
+    // (dejaTrace, eps adaptatif) ne traite plus que les cas inter-sources.
+    var vusExact = {};
+    function cleExacte(a, b) {
+      return (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1]))
+        ? a[0] + ',' + a[1] + '|' + b[0] + ',' + b[1]
+        : b[0] + ',' + b[1] + '|' + a[0] + ',' + a[1];
+    }
     var res = [];
-    function ajouterGeom(g) {
+    // v7.38 : TRAITS NIVEAU-AU-DESSUS « COLLÉS » AU PARENT — une zone
+    // voisine de niveau AU-DESSUS (région/canton/État voisin) redessinait
+    // avec SA source la frontière qu'elle partage avec le PARENT, pendant
+    // que les zones enfants la retraçaient avec LA LEUR (IGN vs GADM,
+    // canton vs district…) : DEUX traits proches mais différents
+    // (Lucerne, Aude/Pyrénées-Orientales, côtes ouest & sud…). Une arête
+    // de sœur qui ÉPOUSE le contour du parent (les DEUX extrémités à
+    // moins de HUG ° d'un point du contour parent) n'est PLUS émise : le
+    // trait reste celui, unique, des zones enfants. Les arêtes de sœurs
+    // LOIN du parent (leurs autres frontières) sont inchangées.
+    var HUG = 0.05;
+    var idxParent = vue.socleGeometry ? indexContourHote([vue.socleGeometry]) : null;
+    function colleeAuParent(a, b) {
+      if (!idxParent) return false;
+      return idxParent.dist(a) < HUG && idxParent.dist(b) < HUG;
+    }
+    function ajouterGeom(g, estSoeur) {
       if (!g) return;
       var polys = g.type === 'Polygon' ? [g.coordinates]
         : (g.type === 'MultiPolygon' ? g.coordinates : []);
@@ -209,22 +235,25 @@
           var cour = null;
           for (var i = 0; i + 1 < ring.length; i++) {
             var a = ring[i], b = ring[i + 1];
-            if (dejaTrace(a, b)) { // arête du VOISIN déjà tracée UNE fois
+            if (vusExact[cleExacte(a, b)]
+              || (estSoeur && idxParent && colleeAuParent(a, b))
+              || dejaTrace(a, b)) { // arête déjà tracée UNE fois (ou doublon du parent)
               if (cour && cour.length >= 2) res.push({ coords: cour });
               cour = null;
               continue;
             }
             if (!cour) cour = [a];
             cour.push(b);
+            vusExact[cleExacte(a, b)] = 1;
             tracer(a, b);
           }
           if (cour && cour.length >= 2) res.push({ coords: cour });
         });
       });
     }
-    (vue.features || []).forEach(function (f) { ajouterGeom(f && f.geometry); });
+    (vue.features || []).forEach(function (f) { ajouterGeom(f && f.geometry, false); });
     (vue.soeurs || []).forEach(function (f) {
-      if (f && f.geometry && !f.__masquee) ajouterGeom(f.geometry);
+      if (f && f.geometry && !f.__masquee) ajouterGeom(f.geometry, true);
     });
     cacheFrontieresZones = { cle: cle, res: res };
     return res;

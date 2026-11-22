@@ -1175,16 +1175,18 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
       } });
     test('v7.34 : aucune arête exacte en double (' + vues39.size + ' uniques, ' + doublons + ' doublons)',
       doublons === 0);
-    // HORS EUROPE : trait par zone INCHANGÉ (comtés US) — couche vide.
+    // HORS EUROPE (comtés US) — v7.38 : le filet unique est désormais
+    // MONDIAL (tout niveau, tout continent) : les comtés cèdent leur
+    // bordure propre (0 px) et la couche « frontieres-zones » est ÉMISE.
     while (P.vue().type !== 'monde') P.retour();
     clic('US'); clic('US'); charge('US'); clic('California'); // comtés (niv 2, Amérique)
     const vUS39 = P.vue();
     if (vUS39.niveau === 2) {
       const zonesUS = (appels.regions || []).filter(r => r && r.name
         && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
-      test('v7.34 : hors Europe (comtés US) — bordure propre conservée (0,6 px) et couche VIDE',
-        zonesUS.length > 0 && zonesUS.every(r => r.itemStyle.borderWidth === 0.6)
-        && appels.frontZones && appels.frontZones.data.length === 0);
+      test('v7.38 : MONDIAL — comtés US sans bordure propre (0 px) et couche ÉMISE',
+        zonesUS.length > 0 && zonesUS.every(r => r.itemStyle.borderWidth === 0)
+        && appels.frontZones && appels.frontZones.data.length > 0);
     }
     while (P.vue().type !== 'monde') P.retour();
   } else test('v7.34 (vue départements atteinte)', false);

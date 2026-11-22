@@ -36,7 +36,67 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zj -->
+<!-- rebuild-pages 2026-11-22zk -->
+
+## v7.38 — CARTE DÉFINITIVE : FILET UNIQUE MONDIAL, TRAITS COLLÉS-AU-PARENT SUPPRIMÉS, PROTOCOLE D'AUDIT DE COHÉRENCE ( 2026-11-22zk )
+
+Objectif : en finir avec les corrections au fil des découvertes. Un PROTOCOLE
+measure-first (tests/audit-coherence.cjs) mesure quatre familles de défauts sur
+un panel mondial, puis les correctifs s'attaquent aux causes racines :
+
+- **M1 « deux traces différentes dessinées »** : DEUX traits proches mais non
+  confondus dans la couche émise (Hausdorff 0,0008–0,06°). AVANT correctif :
+  255 paires en Nouvelle-Aquitaine, 164 en Occitanie, 26 en Bretagne, 6 à
+  Zürich, 25 à Bern, 15 en Basse-Autriche… CAUSE : chaque zone voisine de
+  niveau AU-DESSUS (région française, canton suisse, État US) redessinait la
+  frontière qu'elle partage avec le PARENT avec SA source (IGN vs GADM,
+  canton vs district) : deux traits de 0,006–0,01° d'écart — Lucerne, l'Aude,
+  les Pyrénées-Orientales, les « frontières maritimes » ouest/sud.
+- **M2 « doubles inter-couches »** : segments mondiaux égarés près du trait
+  des zones (0 paires partout : déjà réglé par le filtre hôte v0.57).
+- **M3 « socle-fantôme »** : l'info-bulle « socle@FR 1 » (fond du pays
+  hérité, recouvrant tout sous les départements) s'affichait sur l'Aude et
+  les Pyrénées-Orientales. MASQUAGE : toute info-bulle de nom « socle… »
+  est vide (10-options).
+- **M4 « lamelles »** : couverture du parent par l'union des enfants ;
+  comptée aux niveaux ≥ 2 (au niveau 1 une faible couverture est
+  structurelle : Groenland danois, eaux canadiennes — pas un défaut de rendu).
+
+### Correctifs (causes racines)
+
+1. **TRAITS COLLÉS-AU-PARENT RETIRÉS (04-frontieres)** : une arête de zone
+   voisine (sœur) dont les DEUX extrémités épousent le contour du parent
+   (< 0,05°) n'est PLUS émise : le trait reste celui, unique, des zones
+   enfants (une seule source, une seule ligne). Les arêtes des sœurs LOIN
+   du parent (leurs autres frontières) sont inchangées, les enclaves
+   (Berlin dans le Brandebourg…) conservent leur contour.
+2. **FILET UNIQUE MONDIAL** : la couche « frontieres-zones » (une frontière
+   par paire de zones, eps adaptatif) s'applique désormais à TOUTES les
+   vues admin — tout niveau, TOUT continent (plus seulement l'Europe de
+   niveau 3) : plus de bordures propres par zone nulle part, un seul filet
+   partout (comtés US inclus, borderWidth 0).
+3. **PASSE EXACTE O(1)** : les sources homogènes partagent exactement leurs
+   sommets ; un dictionnaire à clé canonique retire ces doublons avant le
+   balayage flou (perf émission).
+4. **Info-bulles socle masquées** (10-options).
+
+### Résultats mesurés (après correctifs)
+
+- audit-coherence : **48 vues analysées, 0 défaut** (FR régions + Occitanie,
+  Nouvelle-Aquitaine, Bretagne ; CH Lucerne/Zürich/Bern ; DE, IT, ES, PT, AT ;
+  cascade PL/CZ/NL/BE/SE/RO/DK/HU/SK/HR/SI/IE/GR/BG/LU… ; US Californie,
+  CA, MX, BR, AR, JP, CN, IN, AU, ZA, MA, TR, RU, NO, FI, EE, LV, LT) :
+  zéro paire M1 dans la couche émise, zéro M2, zéro étiquette socle.
+- harnais-navigation : 201 OK / 0 KO ; fuzz : 1 440 OK (désormais en
+  2 segments : `node tests/fuzz-navigation.cjs . 1 6 120` puis `. 7 6 120`) ;
+  apparence 11 OK ; audit-frontieres inchangé (stock historique).
+
+### Sécurité de l'audit (comment vérifier à l'avenir)
+
+`node tests/audit-coherence.cjs` doit se terminer par « 0 défauts de
+cohérence ». Il mesure ce que l'ÉCRAN dessine (couche émise), pas les
+données sources : une source différente entre deux niveaux est tolérée
+TANT QU'elle ne produit qu'UN trait visible.
 
 ## v7.37 — FRONTIÈRES NIVEAU 3 RESTAURÉES : RETRAIT DE « progressive: 0 » + TESTS SUISSE/BA... ( 2026-11-22zj )
 
