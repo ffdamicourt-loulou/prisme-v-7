@@ -187,8 +187,14 @@
       return {
         name: p.id,
         itemStyle: { areaColor: base, color: base,
-          borderColor: dezoomN3 ? base : THEME.contour,
-          borderWidth: dezoomN3 ? 0 : epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
+          // v7.32 : ÉPAISSEUR UNIFORME À TOUT ZOOM — l'ancienne règle
+          // « dézoom ×3,5 → borderWidth 0 » (fusion v7.7) faisait
+          // DISPARAÎTRE les frontières internes au dézoom ; l'utilisateur
+          // demande que le filet garde TOUJOURS l'épaisseur générale
+          // (epTrait) et la couleur du contour. La teinte uniforme et
+          // l'étiquette du niveau supérieur (tache) sont conservées.
+          borderColor: THEME.contour,
+          borderWidth: epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
         emphasis: { disabled: true,
           itemStyle: { areaColor: survol, color: survol, borderColor: THEME.contour, borderWidth: epSurv },
           label: { show: false },
@@ -351,14 +357,20 @@
   function donneesCarte() {
     var out = listeVue().map(function (p) {
       if (vue.type === 'monde') return { name: p.id, nom: p.nom, continent: p.continent, capitale: p.capital };
-      return { name: p.id, nom: p.nom, subdivision: vue.type, parent: vue.parent };
+      // v7.32 : parent RÉEL de la zone (listeVue expose __parent en
+      // secours de vue.parent) — l'infobulle des zones ajoutées par
+      // bascule attribuait TOUTES les zones de la vue au parent de la vue.
+      return { name: p.id, nom: p.nom, subdivision: vue.type,
+        parent: (p.parent != null ? p.parent : vue.parent) };
     });
     // infobulles des subdivisions sœurs (leur nom seul) et des pays
     // extérieurs (leur nom seul)
     if (vue.type !== 'monde') {
       if (vue.soeurs) vue.soeurs.forEach(function (f) {
         if (f.__masquee) return; // v7.16 : pas de donnée carte pour une sœur masquée
-        out.push({ name: 'c-' + f.id, nom: f.nom, contexte: true });
+        // v7.32 : parent réel de la sœur pour l'infobulle
+        out.push({ name: 'c-' + f.id, nom: f.nom, contexte: true,
+          parent: (f.__parent != null ? f.__parent : undefined) });
       });
       DATA.pays.forEach(function (p) {
         if (p.id !== vue.paysId && !(vue.paysIds && vue.paysIds.indexOf(p.id) !== -1)) {

@@ -25,7 +25,7 @@ const fauxEcharts = {
   registerMap: (nom) => { (appels.maps = appels.maps || []).push(nom); },
   init: () => ({
     setOption: (o) => { appels.setOption = (appels.setOption || 0) + 1;
-      if (o && o.series) (o.series || []).forEach(sr => { if (sr && sr.id === 'noms-zones') appels.etiquettes = sr.data || []; });
+      if (o && o.series) (o.series || []).forEach(sr => { if (sr && sr.id === 'noms-zones') appels.etiquettes = sr.data || []; if (sr && sr.type === 'map') appels.carteData = sr.data || []; });
       if (o && o.geo) { if (o.geo.zoom != null) appels.geoZoom = { zoom: o.geo.zoom, center: o.geo.center }; if (o.geo.regions) appels.regions = o.geo.regions; } },
     getOption: () => ({}),
     on: (ev, fn) => { (appels.events[ev] = appels.events[ev] || []).push(fn); },
@@ -333,8 +333,9 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
   // v7.7 : la tache = couleur du pays -10 % (TSL) et porte le NOM de la
   // zone du niveau supérieur (vue.parent), en blanc au centre du socle.
   const etqFusion = (appels.etiquettes || []).filter(t => t && t.etqId === 'fusion-' + vAvant.parent)[0];
-  test('dézoom ×3,5 : tache = teinte Sélection -10 % (TSL, P.selectionnes)',
-    zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0)
+  test('dézoom ×3,5 : tache = teinte Sélection -10 % (TSL, P.selectionnes)', // v7.32 : frontières TOUJOURS épaisses
+    zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0.6
+      && r.itemStyle.borderColor === '#ffffff')
     && zones.every(r => r.itemStyle.areaColor === zones[0].itemStyle.areaColor)
     && zones.every(r => r.itemStyle.areaColor === P.selectionnes[P.parId.FR.continent]));
   test('dézoom ×3,5 : nom du niveau supérieur (« ' + vAvant.parent + ' ») affiché sur la tache (blanc)',
@@ -1045,6 +1046,52 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
   test('v7.31 : au contexte d une nouvelle descente, Gard est affichable (masque levé par le recalage — typo __masque réparée)',
     !!gardAv38);
   for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+}
+
+// 37. v7.32 — PARENT RÉEL DANS L'INFOBULLE + SOCLE DES ZONES AJOUTÉES
+{
+  // Vue Loiret (niveau 3, arrondissements) puis bascule sœur Cher :
+  // avant v7.32, les arrondissements de CHER s'affichaient « Loiret »
+  // (parent de la VUE) dans l'infobulle — le bug « arrondissements de
+  // Paris affichés comme appartenant au Loiret ».
+  for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+  clic('FR'); clic('FR'); charge('FR');
+  clicZone('Centre-Val de Loire'); clic('Loiret');
+  const v37 = P.vue();
+  if (v37.niveau === 3 && (v37.features || []).length >= 3) {
+    test('v7.32 : vue Loiret au niveau 3 (arrondissements) atteinte',
+      v37.parent === 'Loiret');
+    // les arrondissements DU Loiret affichent leur vrai parent (« Loiret »)
+    const av37 = (appels.carteData || []).filter(d => d && d.parent != null
+      && !d.contexte && String(d.name || '').indexOf('c-') !== 0);
+    test('v7.32 : infobulles des arrondissements du Loiret → parent « Loiret »',
+      av37.length === (v37.features || []).length
+      && av37.every(d => d.parent === 'Loiret'));
+    clic('c-Cher'); // bascule : AJOUTE les arrondissements du Cher
+    const v37b = P.vue();
+    test('v7.32 : les arrondissements du Cher rejoignent la vue Loiret',
+      (v37b.features || []).length > (v37.features || []).length);
+    // parent RÉEL : les arrondissements du Cher doivent dire « Cher »,
+    // PAS « Loiret » (avant v7.32 : parent de la vue pour TOUTES les zones).
+    const arrCher = (appels.carteData || []).filter(d => d && d.parent === 'Cher');
+    const arrLot = (appels.carteData || []).filter(d => d && d.parent === 'Loiret');
+    test('v7.32 : infobulle d un arrondissement du Cher → parent « Cher » (PAS « Loiret »)',
+      arrCher.length > 0 && arrLot.length === (v37.features || []).length);
+    // une sœur département non consommée garde son parent réel (la région)
+    const cdIndre = (appels.carteData || []).filter(d => d && d.name === 'c-Indre')[0];
+    test('v7.32 : infobulle de la sœur « Indre » → parent « Centre-Val de Loire »',
+      !!cdIndre && cdIndre.parent === 'Centre-Val de Loire');
+    // SOCLE de la zone ajoutée : la géométrie du Cher comble les
+    // interstices de simplification (plus de « zones blanches »).
+    const socles37 = (v37b.soclesHerites || []);
+    test('v7.32 : socle hérité de la zone ajoutée (Cher) enregistré',
+      socles37.length > 0 && socles37.some(s => s && s.geometry));
+    // retrait de la bascule : retour au compte initial
+    clic('c-Cher');
+    test('v7.32 : retrait de la bascule Cher (retour au compte initial)',
+      (P.vue().features || []).length === (v37.features || []).length);
+  } else test('v7.32 : vue Loiret (niveau 3) atteinte', false);
+  for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 }
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

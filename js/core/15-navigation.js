@@ -286,7 +286,8 @@
       // l'objet est reconstruit à chaque appel) ; avant, le clic sur
       // « c-Madrid » depuis une vue provinces échouait et affichait
       // « aucune subdivision plus fine disponible ».
-      enf = [{ id: fz.id, nom: fz.nom, geometry: fz.geometry, __cp: fz.__cp, __uniprov: fz.id }];
+      enf = [{ id: fz.id, nom: fz.nom, geometry: fz.geometry, __cp: fz.__cp,
+        __uniprov: fz.id, __parent: fz.__parent, __a3: fz.__a3 }];
     }
     if (!enf || !enf.length) return false;
     var enfR = enf.map(function (e) {
@@ -314,7 +315,11 @@
         e.__origine = preR;
         return e;
       }
-      var r = { id: preR + '/' + e.id, nom: e.nom, geometry: e.geometry };
+      // v7.32 : le renommé CONSERVE ses ancres d'identité (__a3, __parent)
+      // — l'infobulle d'un homonyme renommé reste exacte (parent réel,
+      // pas le parent de la vue).
+      var r = { id: preR + '/' + e.id, nom: e.nom, geometry: e.geometry,
+        __parent: e.__parent, __a3: e.__a3 };
       r.__origine = preR;
       return r;
       return { id: preR + '/' + e.id, nom: e.nom, geometry: e.geometry };
@@ -364,16 +369,31 @@
     else fz.__masquee = true;
     var autresPays2 = (vue.paysIds || []).filter(function (pid) { return pid !== idPays; });
     var soclesAutres2 = (vue.socles || []).filter(function (s) { return s.paysId !== idPays; });
+    // v7.32 : SOCLE DE LA ZONE AJOUTÉE — vue.socleGeometry ne couvre que la
+    // chaîne de descente courante : les zones ajoutées par bascule laissaient
+    // leurs interstices de simplification VISIBLES (trous blancs aux
+    // frontières avec le reste de la vue, surtout au niveau 4). La géométrie
+    // de la sœur rejoint les socles hérités : peinte dessous, elle ne
+    // recouvre rien (les zones sont dessinées après) et COMBLE les
+    // interstices de ses propres zones. Les socles hérités de la chaîne
+    // (précédemment perdus à chaque bascule) sont également reconduits.
+    var heritesBas = (vue.soclesHerites || []).slice();
+    if (!present && fz.geometry) {
+      var dejaBas = heritesBas.some(function (s) { return s.geometry === fz.geometry; });
+      if (!dejaBas) heritesBas.push({ paysId: idPays + '~bascul-' + preR, geometry: fz.geometry, continent: vue.continent });
+    }
     enfR.forEach(function (e) { e.__pays = idPays; });
     var soeurs = vue.soeurs || [];
     var nomMap = vue.nomMap + (present ? '~' : '+') + String(fz.id).replace(/[^A-Za-z0-9]/g, '');
     enregistrerVue(nomMap, nouvelles, idPays, vue.socleGeometry, soeurs,
-      autresPays2.length ? { exclus: autresPays2, socles: soclesAutres2 } : null);
+      (autresPays2.length || heritesBas.length)
+        ? { exclus: autresPays2, socles: soclesAutres2.concat(heritesBas) } : null);
     var nVue = {
       type: 'admin', niveau: vue.niveau, nomMap: nomMap, features: nouvelles,
       continent: vue.continent, parent: vue.parent, paysId: idPays,
       paysIds: vue.paysIds, socles: vue.socles,
       soeurs: soeurs, socleGeometry: vue.socleGeometry,
+      soclesHerites: heritesBas.length ? heritesBas : undefined,
       parPays: vue.parPays, membres: vue.membres,
       boites: {}, sections: {}, parNom: {},
     };

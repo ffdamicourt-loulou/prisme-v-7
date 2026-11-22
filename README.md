@@ -36,7 +36,44 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zd -->
+<!-- rebuild-pages 2026-11-22ze -->
+
+## v7.32 — PARENTS RÉELS DANS L'INFOBULLE, SOCLE DES ZONES AJOUTÉES, FILET UNIFORME AU DÉZOOM ( 2026-11-22ze )
+ SIGNALEMENT UTILISATEUR : ① « les arrondissements de Paris sont
+ affichés comme appartenant au Loiret — il en est de même pour TOUTES les
+ zones de niveau 4 » ; ② « il y a des zones blanches aux frontières
+ entre zones de niveau 4 » ; ③ « à un certain niveau de dézoom les
+ lignes de frontières deviennent plus fines alors qu'elles doivent
+ toujours garder l'épaisseur générale ».
+ ① CAUSE : donneesCarte() (06-peinture-regions.js) attribuait
+ `parent: vue.parent` à TOUTES les zones de la vue. Après une bascule
+ (arrondissements du Cher ajoutés dans une vue Loiret par exemple),
+ l'infobulle ECharts affichait donc le parent de la VUE pour chaque
+ zone, pas sa vraie appartenance. CORRECTIF : listeVue() (03-etat-monde)
+ expose désormais `parent` = ancre __parent réelle de la zone (secours
+ vue.parent) ; donneesCarte() et les sœurs « c- » utilisent cette
+ appartenance réelle ; les copies renommées (homonymes v7.28) et les
+ uniprovinces (05/15-navigation) CONSERVENT leurs ancres __parent/__a3.
+ L'infobulle d'un arrondissement du Cher basculé dans une vue Loiret
+ dit bien « Cher », et les arrondissements du Loiret « Loiret ».
+ ② Zones blanches : vue.socleGeometry ne couvrait que la chaîne de
+ descente COURANTE ; les zones ajoutées par bascule laissaient leurs
+ interstices de simplification visibles (trous blancs entre leurs
+ arrondissements et le reste de la vue, criants au niveau 4).
+ CORRECTIF : la géométrie de la zone ajoutée rejoint les socles hérités
+ (soclesHerites, reconduits de bascule en bascule — ils étaient perdus
+ au passage), peinte dessous : elle ne recouvre rien (les zones sont
+ dessinées après) et comble ses propres interstices.
+ ③ Dézoom : l'ancienne règle v7.7 éteignait le filet (borderWidth 0) dès
+ que zoom ≤ zoomEntree/3,5 (fusion visuelle en « tache »). Le filet
+ garde désormais TOUJOURS TRAIT_NIVEAUX (0,6 px) et la couleur du
+ contour ; la teinte uniforme de la tache et l'étiquette du niveau
+ supérieur sont conservées.
+ VALIDATION : harnais navigation 153 OK / 0 KO (section 37 nouvelle :
+ infobulle parent réel, socle hérité, retrait de bascule ; test dézoom
+ v7.5 mis à jour : border 0,6/blanc), apparence 11/11 ×2, fuzz 1440/1440,
+ audit frontières OK. Harnais : capture appels.carteData (setOption
+ série type « map ») pour tester les infobulles.
 
 ## v7.31 — AJOUT AU NIVEAU DE DÉTAIL DES ZONES ENREGISTRÉES ( bug « il faut cliquer 2 fois » en France, 2026-11-22zd )
  SIGNALEMENT UTILISATEUR : en France, avec une sélection de niveau 4

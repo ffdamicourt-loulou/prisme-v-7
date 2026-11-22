@@ -116,7 +116,15 @@
   // Liste affichée dans la vue courante : [{ id, nom, continent }]
   function listeVue() {
     if (vue.type === 'monde') return DATA.pays;
-    return vue.features.map(function (f) { return { id: f.id, nom: f.nom, continent: f.__ct || vue.continent }; });
+    // v7.32 : `parent` — la VRAIE appartenance de la zone (__parent, ancre
+    // d'identité v7.30) quand elle est connue : l'infobulle des zones
+    // AJOUTÉES par bascule affichait le parent de la VUE (ex. les
+    // arrondissements de Paris « appartenant au Loiret » dans une vue
+    // ouverte depuis le Loiret) au lieu de leur parent réel.
+    return vue.features.map(function (f) {
+      return { id: f.id, nom: f.nom, continent: f.__ct || vue.continent,
+        parent: (f.__parent != null ? f.__parent : vue.parent) };
+    });
   }
 
   // Étiquettes des pays extérieurs (arrière-plan d'une descente) : affichées
