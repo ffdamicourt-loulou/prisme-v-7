@@ -233,11 +233,18 @@
         try { demande = A.demanderSous(e.name); } catch (err) { }
         // v7.2 : donner un RETOUR VISUEL quand aucune donnée plus fine
         // n'existe (fin de la chaîne des subdivisions disponibles).
+        // v7.33 : PLAFOND NIVEAU 4 — depuis une vue de niveau app 2
+        // (départements / comtés), le message dit que le niveau
+        // utilisateur 4 n'est plus proposé (les données existent peut-
+        // être, mais l'app s'arrête au niveau 3 utilisateur).
         var info = document.getElementById('prisme2-info');
         if (!demande) {
           if (info) {
-            info.textContent = (e.name ? '« ' + e.name + ' »' : 'Cette zone')
-              + ' : aucune subdivision plus fine disponible dans les données.';
+            var Vinf = A.vue ? A.vue() : null;
+            info.textContent = (Vinf && Vinf.type !== 'monde' && (Vinf.niveau || 1) >= 2)
+              ? 'Les niveaux 4 (arrondissements, districts…) ne sont plus proposés — l\u2019application s\u2019arrête au niveau 3.'
+              : (e.name ? '« ' + e.name + ' »' : 'Cette zone')
+                + ' : aucune subdivision plus fine disponible dans les données.';
             info.style.display = 'block';
           }
         } else if (info) info.style.display = 'none';

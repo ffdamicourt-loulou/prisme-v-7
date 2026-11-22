@@ -574,7 +574,13 @@
       var info = (typeof document !== 'undefined') ? document.getElementById('prisme2-info') : null;
       if (!demande) {
         if (info) {
-          info.textContent = '« ' + nom + ' » : aucune subdivision plus fine disponible dans les données.';
+          // v7.33 : PLAFOND NIVEAU 4 — depuis une vue de niveau app 2
+          // (départements / comtés), le message dit que le niveau
+          // utilisateur 4 n'est plus proposé.
+          var Vinf = (typeof S.vue === 'function') ? S.vue() : null;
+          info.textContent = (Vinf && Vinf.type !== 'monde' && (Vinf.niveau || 1) >= 2)
+            ? 'Les niveaux 4 (arrondissements, districts…) ne sont plus proposés — l\u2019application s\u2019arrête au niveau 3.'
+            : '« ' + nom + ' » : aucune subdivision plus fine disponible dans les données.';
           info.style.display = 'block';
         }
       } else if (info) info.style.display = 'none';

@@ -221,14 +221,15 @@ test('FR : clic région → niv2', vfr2.type === 'admin' && vfr2.niveau === 2);
 const nbScriptsAvant = appels.scripts.length;
 clic('Ain');
 const vfr3 = P.vue();
-test('FR : clic département Ain → niv3 arrondissements (' + vfr3.niveau + ', ' + vfr3.features.length + ' zones)',
-  vfr3.type === 'admin' && vfr3.niveau === 3 && vfr3.features.length >= 2);
-// pas de re-téléchargement du package sur un clic sans suite (fin de chaîne)
-clic('Belley');
+test('v7.33 : clic département Ain → PLAFOND : la vue RESTE au niveau 2 (niveau 4 jamais affiché)',
+  vfr3.type === 'admin' && vfr3.niveau === 2 && (vfr3.features || []).length >= 2);
+// pas de re-téléchargement du package sur un clic bloqué par le plafond
+clic('Jura');
 const apres = P.vue();
 const info = doc._els['prisme2-info'];
-test('clic sur un arrondissement (fin de chaîne) : aucune re-télécharge, message affiché',
-  apres === vfr3 && appels.scripts.length === nbScriptsAvant && info && info.style.display !== 'none');
+test('v7.33 : message « niveaux 4 plus proposés » affiché, aucune re-télécharge',
+  apres === vfr3 && appels.scripts.length === nbScriptsAvant && info && info.style.display !== 'none'
+  && String(info.textContent || '').indexOf('niveaux 4') !== -1);
 // changement de niveau 2 SANS remonter au monde : depuis la vue niv2
 // (départements d'Auvergne-Rhône-Alpes), les autres régions sont des sœurs
 for (let i = 0; i < 2 && P.vue().type !== 'monde' && P.vue().niveau !== 2; i++) P.retour();
@@ -321,10 +322,11 @@ if (vUS.niveau === 2) { clic('x-DE'); }
 test('depuis US niv2 (comtés), clic x-DE → DE SÉLECTIONNÉE (niveau 1), l\'US ne bloque plus',
   P.etat.selection === 'DE' && P.vue().type === 'monde');
 
-// 13. v7.5 — dézoom ×3,5 en niveau 3 : seules les frontières éteintes, teinte uniforme
+// 13. v7.5 — dézoom ×3,5 en niveau 2 (plafond v7.33) : teinte uniforme, filet conservé
 for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
 clic('FR'); clic('FR'); charge('FR');
-for (let n = 0; n < 6 && P.vue().niveau < 3; n++) { clicZone('Auvergne-Rhône-Alpes'); clic('Ain'); }
+clicZone('Auvergne-Rhône-Alpes'); // départements (niveau 2, plafond v7.33)
+clic('Ain'); // v7.33 : plafond — reste au niveau 2
 const vAvant = P.vue();
 if (vAvant.niveau >= 2 && P.zoomMolette) {
   for (let k = 0; k < 7; k++) P.zoomMolette(600, null, null); // dézoom ×1.3 x7 ≈ ×6.3
@@ -702,20 +704,22 @@ clic('Occitanie');
 test('v7.23 : clic Occitanie (UN clic) → vue départements (niveau 2)',
   P.vue().type === 'admin' && P.vue().niveau === 2 && P.vue().parent === 'Occitanie');
 clic('Hérault');
-test('v7.23 : clic Hérault (UN clic, aucune info-bulle) → arrondissements niveau 3 (Béziers, Lodève, Montpellier)',
-  P.vue().type === 'admin' && P.vue().niveau === 3 && SEL.descenteAttente() === false
-  && (P.vue().features || []).filter(f => f && ['Béziers','Lodève','Montpellier'].indexOf(f.id) !== -1).length === 3);
+test('v7.33 : clic Hérault → PLAFOND : la vue reste aux DÉPARTEMENTS (niveau 2, niveau 4 non proposé)',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && SEL.descenteAttente() === false
+  && (P.vue().features || []).filter(f => f && f.id === 'Hérault').length === 1);
 const regs25 = (appels.regions || []).slice(-40).filter(r => r && r.name);
 const par25 = {}; (appels.regions || []).forEach(r => { if (r && r.name) par25[r.name] = r; });
-test('v7.23 : les 3 arrondissements de l Hérault sont TOUS peints (aucun trou blanc)',
+test('v7.23 : les DÉPARTEMENTS d Occitanie sont TOUS peints (aucun trou blanc)',
   (P.vue().features || []).every(f => f && par25[f.id] && par25[f.id].itemStyle
     && par25[f.id].itemStyle.areaColor && par25[f.id].itemStyle.areaColor !== '#eaf2f8'));
 for (let i = 0; i < 6 && P.vue().niveau > 1; i++) P.retour();
 clic('Bretagne');
+test('v7.23 : Bretagne (UN clic) → vue départements (niveau 2)',
+  P.vue().type === 'admin' && P.vue().niveau === 2 && P.vue().parent === 'Bretagne');
 clic('Morbihan');
-test('v7.23 : Bretagne → Morbihan en 2 clics simples → arrondissements niveau 3 présents et peints',
+test('v7.33 : clic Morbihan → PLAFOND : la vue reste aux départements bretons, toutes peintes',
   (() => { const p25b = {}; (appels.regions || []).forEach(r => { if (r && r.name) p25b[r.name] = r; });
-    return P.vue().type === 'admin' && P.vue().niveau === 3 && P.vue().parent === 'Morbihan'
+    return P.vue().type === 'admin' && P.vue().niveau === 2 && P.vue().parent === 'Bretagne'
     && (P.vue().features || []).length >= 3
     && (P.vue().features || []).every(f => f && p25b[f.id] && p25b[f.id].itemStyle
       && p25b[f.id].itemStyle.areaColor && p25b[f.id].itemStyle.areaColor !== '#eaf2f8'); })());
@@ -763,9 +767,9 @@ test('v7.25 : Ouganda — clic district → sous-comtés GADM (raccord spatial, 
 for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
 
 
-// 28. v7.26 — NIVEAU 4 COMPLÉTÉ : les compléments GADM (packages/n4-<ID>-k.js,
-// manifest « n4 », chargés AVANT le package) remplissent les zones de niveau 3
-// dépourvues d'enfants.
+// 28. v7.26/v7.33 — NIVEAU 4 : les compléments GADM restaient dans les
+// données, mais v7.33 POSE UN PLAFOND UNIVERSEL : aucun pays ne propose
+// ni n'affiche plus ses niveaux 4 — la descente s'arrête au niveau app 2.
 function vN4(id, paysNom) {
   for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
   clic(id); clic(id); charge(id);
@@ -773,24 +777,25 @@ function vN4(id, paysNom) {
   if (v1.type !== 'admin' || v1.niveau !== 1) { test('v7.26 : ' + paysNom + ' — vue niv1', false); return; }
   const zpays = P.vue().parNom;
   const nomsZones = Object.keys(zpays);
-  let descendu = null, enfN4 = 0;
+  let descendu = null, enfN2 = 0, plaf = null;
   for (const nz of nomsZones) {
-    // descendre via clic puis vérifier les enfants de la zone de niveau 3
     clic(nz);
     if (P.vue().niveau === 2) {
       const v3 = P.vue();
-      const nm3 = Object.keys(v3.parNom || {});
-      if (nm3.length) {
-        clic(nm3[0]);
-        if (P.vue().type === 'admin' && P.vue().niveau >= 3 && (P.vue().features || []).length) { descendu = nz; enfN4 = (P.vue().features || []).length; }
-        for (let i = 0; i < 3 && P.vue().type !== 'monde' && P.vue().parNom !== zpays; i++) P.retour();
-      }
+      descendu = nz; enfN2 = (v3.features || []).length;
+      // v7.33 : tenter de descendre ENCORE (un niveau 4 jamais affiché)
+      const nm2 = Object.keys(v3.parNom || {});
+      if (nm2.length) {
+        clic(nm2[0]);
+        plaf = P.vue() === v3 || (P.vue().type === 'admin' && P.vue().niveau === 2);
+      } else plaf = true; // fin de chaîne naturelle : conforme au plafond
+      break;
     } else break;
-    for (let i = 0; i < 3 && P.vue().type !== 'monde' && P.vue().parNom !== zpays; i++) P.retour();
-    if (descendu) break;
   }
-  test('v7.26 : ' + paysNom + ' — descente au niveau 4 (complément GADM) via « ' + descendu + ' »',
-    !!descendu && enfN4 > 0);
+  test('v7.33 : ' + paysNom + ' — descente jusqu au niveau 2 OK (« ' + descendu + ' », '
+    + enfN2 + ' zones), la vue NE DESCEND JAMAIS au niveau 4 (plafond universel)',
+    !!descendu && enfN2 > 0 && plaf === true);
+  for (let i = 0; i < 6 && P.vue().type !== 'monde'; i++) P.retour();
 }
 vN4('SN', 'Sénégal');
 vN4('PE', 'Pérou');
@@ -1000,38 +1005,35 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
   while (P.vue().type !== 'monde') P.retour();
   charge('FR');
   clic('FR'); clic('FR');                     // régions
-  clic('Occitanie');                          // départements (niveau 2)
-  clic('Hérault');                            // arrondissements (niveau 3)
-  test('v7.31 : cadre — vue arrondissements de l Hérault (3 zones, niveau 3)',
-    (() => { const v = P.vue(); return v.type === 'admin' && v.niveau === 3
-      && v.parent === 'Hérault' && (v.features || []).length === 3; })());
+  clic('Occitanie');                          // départements (niveau 2, plafond v7.33)
+  test('v7.31/v7.33 : cadre — vue DÉPARTEMENTS d Occitanie (niveau 2)',
+    (() => { const v = P.vue(); return v.type === 'admin' && v.niveau === 2
+      && v.parent === 'Occitanie' && (v.features || []).length >= 6; })());
   const v36 = P.vue();
-  const gard36 = (v36.soeurs || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
-  test('v7.31 : la sœur Gard existe au contexte avec étiquette __niv',
-    !!gard36 && gard36.__niv === 2);
-  gard36.__niv = 99;                          // ÉTIQUETTE PÉRIMÉE (simulation)
+  const gard36 = (v36.features || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
+  test('v7.31 : le Gard est une ZONE DE LA VUE (département, niveau courant)',
+    !!gard36 && (gard36.__a3 === 'FRA'));
   info.textContent = '';
-  clic('c-Gard');
-  test('v7.31 : __niv périmé → le clic simple AJOUTE quand même les arrondissements (profondeur ADMIN), sans message trompeur',
+  clic('Gard');
+  test('v7.33 : clic sur le département Gard → PLAFOND : aucun changement, message « niveaux 4 »',
     (() => { const v = P.vue();
-      return v.niveau === 3 && (v.features || []).length === 6
-        && (info.textContent || '').indexOf('aucune subdivision') === -1; })());
-  const gardMasque = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
-  test('v7.31 : la sœur ajoutée est masquée (ses zones sont affichées)',
-    !!gardMasque && gardMasque.__masquee === true);
-  // sœur PLUS HAUTE : la RÉGION Bretagne au milieu des arrondissements
-  const nAv36 = (P.vue().features || []).length;
+      return v === v36 && (info.textContent || '').indexOf('niveaux 4') !== -1; })());
+  // sœur PLUS HAUTE : la RÉGION Bretagne au milieu des départements
   const bzh36 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne'; })[0];
   test('v7.31 : la RÉGION Bretagne est bien une sœur de niveau supérieur (gap de profondeur)',
     !!bzh36 && bzh36.__niv === 1);
+  const nAv36 = (P.vue().features || []).length;
   info.textContent = '';
   clic('c-Bretagne');
-  test('v7.31 : sœur PLUS HAUTE → ses ARRONDISSEMENTS rejoignent la vue au niveau courant (ajout en chaîne « au niveau de détail déjà enregistré »)',
+  test('v7.31/v7.33 : sœur PLUS HAUTE → ses DÉPARTEMENTS rejoignent la vue au niveau courant (niveau 2, plafond respecté)',
     (() => { const v = P.vue();
-      return v.niveau === 3 && (v.features || []).length > nAv36 + 10
-        && (info.textContent || '').indexOf('aucune subdivision') === -1; })());
+      return v.niveau === 2 && (v.features || []).length > nAv36 + 2
+        && (info.textContent || '').indexOf('niveaux 4') === -1; })());
+  const bzhMasque = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne'; })[0];
+  test('v7.31 : la sœur ajoutée est masquée (ses zones sont affichées)',
+    !!bzhMasque && bzhMasque.__masquee === true);
   clic('c-Bretagne');
-  test('v7.31 : bascule de retrait de l ajout en chaîne (re-clic retire les arrondissements bretons)',
+  test('v7.31 : bascule de retrait de l ajout en chaîne (re-clic retire les départements bretons)',
     (P.vue().features || []).length === nAv36); // retour au compte d'avant le gap
   // typo __masque : le masque est LEVÉ au recalage d'une nouvelle descente
   while (P.vue().type !== 'monde') P.retour();
@@ -1041,57 +1043,89 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
   const gard37 = (P.vue().features || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
   test('v7.31 : Gard redevient une zone de la VUE (le masque de bascule ne filtre que les sœurs)',
     !!gard37);
-  clic('Aude');
-  const gardAv38 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Gard' && !f.__masquee; })[0];
-  test('v7.31 : au contexte d une nouvelle descente, Gard est affichable (masque levé par le recalage — typo __masque réparée)',
-    !!gardAv38);
+  const bzhAv38 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne' && !f.__masquee; })[0];
+  test('v7.31 : au contexte d une nouvelle descente, la Bretagne est affichable (masque levé par le recalage — typo __masque réparée)',
+    !!bzhAv38);
   for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
 }
 
-// 37. v7.32 — PARENT RÉEL DANS L'INFOBULLE + SOCLE DES ZONES AJOUTÉES
+// 37. v7.32/v7.33 — PARENT RÉEL DANS L'INFOBULLE + SOCLE DES ZONES AJOUTÉES
+// (niveau 2, plafond v7.33) : vue Centre-Val de Loire puis bascule sœur
+// Bretagne — avant v7.32, les DÉPARTEMENTS bretons s'affichaient « Centre-
+// Val de Loire » (parent de la VUE) dans l'infobulle.
 {
-  // Vue Loiret (niveau 3, arrondissements) puis bascule sœur Cher :
-  // avant v7.32, les arrondissements de CHER s'affichaient « Loiret »
-  // (parent de la VUE) dans l'infobulle — le bug « arrondissements de
-  // Paris affichés comme appartenant au Loiret ».
   for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
   clic('FR'); clic('FR'); charge('FR');
-  clicZone('Centre-Val de Loire'); clic('Loiret');
+  clic('Centre-Val de Loire'); // vue DÉPARTEMENTS du CVL (niveau 2)
   const v37 = P.vue();
-  if (v37.niveau === 3 && (v37.features || []).length >= 3) {
-    test('v7.32 : vue Loiret au niveau 3 (arrondissements) atteinte',
-      v37.parent === 'Loiret');
-    // les arrondissements DU Loiret affichent leur vrai parent (« Loiret »)
+  if (v37.niveau === 2 && (v37.features || []).length >= 3) {
+    test('v7.32 : vue Centre-Val de Loire au niveau 2 (départements) atteinte',
+      v37.parent === 'Centre-Val de Loire');
     const av37 = (appels.carteData || []).filter(d => d && d.parent != null
       && !d.contexte && String(d.name || '').indexOf('c-') !== 0);
-    test('v7.32 : infobulles des arrondissements du Loiret → parent « Loiret »',
+    test('v7.32 : infobulles des départements du CVL → parent « Centre-Val de Loire »',
       av37.length === (v37.features || []).length
-      && av37.every(d => d.parent === 'Loiret'));
-    clic('c-Cher'); // bascule : AJOUTE les arrondissements du Cher
+      && av37.every(d => d.parent === 'Centre-Val de Loire'));
+    clic('c-Bretagne'); // bascule : AJOUTE les 4 départements bretons
     const v37b = P.vue();
-    test('v7.32 : les arrondissements du Cher rejoignent la vue Loiret',
+    test('v7.32 : les départements bretons rejoignent la vue CVL',
       (v37b.features || []).length > (v37.features || []).length);
-    // parent RÉEL : les arrondissements du Cher doivent dire « Cher »,
-    // PAS « Loiret » (avant v7.32 : parent de la vue pour TOUTES les zones).
-    const arrCher = (appels.carteData || []).filter(d => d && d.parent === 'Cher');
-    const arrLot = (appels.carteData || []).filter(d => d && d.parent === 'Loiret');
-    test('v7.32 : infobulle d un arrondissement du Cher → parent « Cher » (PAS « Loiret »)',
-      arrCher.length > 0 && arrLot.length === (v37.features || []).length);
-    // une sœur département non consommée garde son parent réel (la région)
-    const cdIndre = (appels.carteData || []).filter(d => d && d.name === 'c-Indre')[0];
-    test('v7.32 : infobulle de la sœur « Indre » → parent « Centre-Val de Loire »',
-      !!cdIndre && cdIndre.parent === 'Centre-Val de Loire');
-    // SOCLE de la zone ajoutée : la géométrie du Cher comble les
+    // parent RÉEL : les départements bretons doivent dire « Bretagne »,
+    // PAS « Centre-Val de Loire » (avant v7.32 : parent de la vue partout).
+    const arrBzh = (appels.carteData || []).filter(d => d && d.parent === 'Bretagne');
+    const arrCVL = (appels.carteData || []).filter(d => d && d.parent === 'Centre-Val de Loire');
+    test('v7.32 : infobulle d un département breton → parent « Bretagne » (PAS « Centre-Val de Loire »)',
+      arrBzh.length === 4 && arrCVL.length === (v37.features || []).length);
+    // SOCLE de la zone ajoutée : la géométrie de la Bretagne comble les
     // interstices de simplification (plus de « zones blanches »).
     const socles37 = (v37b.soclesHerites || []);
-    test('v7.32 : socle hérité de la zone ajoutée (Cher) enregistré',
+    test('v7.32 : socle hérité de la zone ajoutée (Bretagne) enregistré',
       socles37.length > 0 && socles37.some(s => s && s.geometry));
     // retrait de la bascule : retour au compte initial
-    clic('c-Cher');
-    test('v7.32 : retrait de la bascule Cher (retour au compte initial)',
+    clic('c-Bretagne');
+    test('v7.32 : retrait de la bascule Bretagne (retour au compte initial)',
       (P.vue().features || []).length === (v37.features || []).length);
-  } else test('v7.32 : vue Loiret (niveau 3) atteinte', false);
+  } else test('v7.32 : vue Centre-Val de Loire (niveau 2) atteinte', false);
   for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+}
+
+// 38. v7.33 — ÉTIQUETTES : TAILLE UNIFORME DES NIVEAUX + ABRÉVIATION
+// « 3 lettres + point » pour les zones trop petites.
+{
+  for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+  clic('FR'); clic('FR'); charge('FR'); // vue régions (niveau 1)
+  const etqR = () => (appels.etiquettes || []).filter(t => t && t.label && t.etqId
+    && t.etqId.indexOf('c-') !== 0 && t.etqId.indexOf('x-') !== 0
+    && t.etqId.indexOf('fusion-') !== 0 && t.etqId.indexOf('socle') !== 0);
+  const e1 = etqR();
+  const F1set = new Set(e1.map(t => t.label.fontSize));
+  test('v7.33 : niveau 2 utilisateur (régions) — UNE SEULE taille de police ('
+    + Array.from(F1set).join(',') + ')',
+    e1.length > 0 && F1set.size === 1);
+  clic('Auvergne-Rhône-Alpes'); // vue départements (niveau 2)
+  const e2 = etqR();
+  const F2set = new Set(e2.map(t => t.label.fontSize));
+  test('v7.33 : niveau 3 utilisateur (départements) — UNE SEULE taille de police ('
+    + Array.from(F2set).join(',') + ')',
+    e2.length > 0 && F2set.size === 1);
+  // zones trop petites → ABRÉVIATION « 3 lettres + point », jamais un nom
+  // entier écrasé (toutes les étiquettes de la vue se terminent par un
+  // point OU affichent un nom entier, à la MÊME taille).
+  const sansEspaces = (s) => String(s).replace(/[\u200A\u202f\u2009 ]/g, '');
+  const abregees = e2.filter(t => /^[A-Za-zÀ-ÿ]{2,6}\.$/.test(sansEspaces(t.label.formatter)));
+  test('v7.33 : petites zones → abréviation (3 lettres + point) à la même taille ('
+    + abregees.length + ' abrégées sur ' + e2.length + ')',
+    e2.every(t => t.label.fontSize === Array.from(F2set)[0]));
+  // la vue IDF (petits départements) abrège largement : « Ess. », « Par. »…
+  while (P.vue().type !== 'monde') P.retour();
+  clic('FR'); charge('FR'); clic('FR'); clic('Île-de-France');
+  const e3 = etqR();
+  const F3set = new Set(e3.map(t => t.label.fontSize));
+  const petits = e3.filter(t => /^[A-Za-zÀ-ÿ]{2,6}\.$/.test(sansEspaces(t.label.formatter)));
+  test('v7.33 : Île-de-France — taille unique (' + Array.from(F3set).join(',')
+    + '), petites zones abrégées (« 3 lettres + point », ' + petits.length + '/' + e3.length + ')',
+    F3set.size === 1 && petits.length > 0);
+  while (P.vue().type !== 'monde') P.retour();
 }
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

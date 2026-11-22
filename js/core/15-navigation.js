@@ -92,6 +92,17 @@
   }
   // Entrer dans la subdivision nomSub (niveau 2, ex. régions françaises)
   function descendreSous(nomSub) {
+    // v7.33 : PLAFOND NIVEAU 3 UTILISATEUR — on ne propose ni n'affiche
+    // plus les niveaux 4 (arrondissements FR, subdivisions des comtés US,
+    // districts, communes GADM…) POUR TOUS LES PAYS. La descente s'arrête
+    // au niveau app 2 (départements / comtés / cantons = niveau
+    // utilisateur 3) : un clic sur une zone de la vue de niveau 2 ne
+    // descend plus (les bascules de sœurs AU niveau courant restent
+    // possibles — elles n'ouvrent jamais un niveau plus profond). Portée
+    // par un plafond UNIQUE ici : toutes les entrées (clic, demande
+    // multi-zones, ouverture d'un autre pays au même niveau, panneau)
+    // passent par descendreSous.
+    if (vue.type !== 'monde' && (vue.niveau || 1) >= 2) return false;
     // v0.37 : dans une vue combinée, la zone appartient à un pays précis
     var idPays = (vue.parPays && vue.parPays[nomSub]) || vue.paysId;
     var a3 = DATA.idversA3 ? DATA.idversA3[idPays] : null;
@@ -507,6 +518,11 @@
   // (règle validée : un clic sur une sélection de niveau N propose le
   // niveau N+1 pour l'ensemble des zones sélectionnées de niveau N).
   function listeDemande(nomSub) {
+    // v7.33 : PLAFOND NIVEAU 4 — depuis une vue de niveau app 2, aucune
+    // sous-zones n'est plus PROPOSÉE (la fenêtre « Charger les N
+    // subdivisions » ne s'ouvre plus) : le niveau utilisateur 4 n'est
+    // ni affiché ni proposé pour tous les pays.
+    if (vue.type !== 'monde' && (vue.niveau || 1) >= 2) return [];
     // v7.30 : les entrées peuvent être des CLEFS QUALIFIÉES « 2:a3¤parent¤nom »
     // (zones Maj+sélectionnées) : on les résout contre la vue courante pour
     // retrouver la zone affichable visée — un homonyme d'un autre niveau ne
@@ -685,7 +701,9 @@
     // et cadré à 80 % de la hauteur du viewport, SANS descendre dans ses
     // régions ; le niveau 2 = régions (app n1), le niveau 3 = départements
     // (app n2) : on ouvre jusqu'au niveau APP = niveau − 1.
-    var nivU = niveau || 1;
+    // v7.33 : le niveau UTILISATEUR 4 n'existe plus (plafond) : toute
+    // demande d'ouverture plus profonde est ramenée au niveau 3.
+    var nivU = (niveau || 1) > 3 ? 3 : (niveau || 1);
     if (nivU >= 2 && ouvrirAuNiveau(idPays, nivU - 1, pt)) { restaurer(); return; }
     // v7.13 : SÉLECTION MULTIPLE au niveau 1 — l'ENSEMBLE des pays
     // sélectionnés est centré horizontalement, à 80 % de la hauteur du

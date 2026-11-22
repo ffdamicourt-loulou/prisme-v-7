@@ -347,29 +347,42 @@
           // à la taille uniforme du niveau, au CENTRE géométrique.
           texte = defaut; F = Fcommun != null ? Fcommun : Fdefaut;
         } else if (Fcommun != null) {
-          // v0.97 : +20 % — la CIBLE de taille des noms de régions et de
-          // sous-régions est F commun × 1,2 (au moins les bonus de niveaux
-          // v0.94/95 : n3 +3, n2 +1, zoom +3). REPLI GRADUEL de la cible
-          // jusqu à F commun : le nom ENTIER reste prioritaire, seule une
-          // zone trop étroite descend d un cran, jamais de sigle forcé.
+          // v7.33 : TAILLE UNIFORME DE TOUS LES NIVEAUX ADMIN — les noms
+          // des zones de niveau utilisateur 3 (départements, comtés,
+          // cantons = app n2) ont la MÊME TAILLE que ceux du niveau
+          // utilisateur 2 (régions, états = app n1) au cadrage d'entrée :
+          // la cible est LE PLAFOND du niveau (identique à cadrage égal),
+          // PLUS le bonus de zoom commun. Une zone trop petite pour son
+          // nom ENTIER à cette taille affiche son ABRÉVIATION (3 lettres
+          // + point, sigles désambiguïsés) À LA MÊME TAILLE — plus de nom
+          // entier rapetissé au fil des zones étroites (l ancien repli
+          // graduel faisait « Territoire de Belfort » plus petit que
+          // « Ain » dans la même vue au lieu de « Ter. »).
           var plafondZ = plafond || plafondZones(t);
-          var bonusBase = nivVue >= 3 ? 3 : (nivVue >= 2 ? 1 : 0);
-          var cibleZ = Math.min(Math.max(Math.round(Fcommun * 1.44), Fcommun + bonusBase) + bonusRond, plafondZ + bonusRond); // v0.100 : +20 % encore
           var rz = null;
-          if (cibleZ > Fcommun) {
-            for (var bz = cibleZ; bz > Fcommun && !rz; bz -= 1) {
-              rz = essaieNomZ(Math.min(bz, plafondZ + bonusRond));
+          if (nivVue >= 1) {
+            var Funi = plafondZ + bonusRond;
+            rz = essaieNomZ(Funi);
+            if (rz) { texte = rz.texte; F = rz.F; lignes = rz.lignes; cp = rz.cp; }
+            else { texte = defaut; F = Funi; } // abréviation à la taille du niveau
+          } else {
+            var bonusBase = nivVue >= 3 ? 3 : (nivVue >= 2 ? 1 : 0);
+            var cibleZ = Math.min(Math.max(Math.round(Fcommun * 1.44), Fcommun + bonusBase) + bonusRond, plafondZ + bonusRond); // v0.100 : +20 % encore
+            if (cibleZ > Fcommun) {
+              for (var bz = cibleZ; bz > Fcommun && !rz; bz -= 1) {
+                rz = essaieNomZ(Math.min(bz, plafondZ + bonusRond));
+              }
             }
+            if (!rz && cibleZ !== Fcommun) rz = essaieNomZ(Fcommun);
+            // v0.210 : DÉZOOM SANS SÉLECTION — le nom entier tombe parfois
+            // sous le seuil à la taille d'entrée mais PAS à la taille dézoomée :
+            // réessayer le nom entier à Fdz (plancher 6) AVANT le sigle.
+            if (!rz && coeffDezoom < 1) {
+              var Fdz = Math.max(6, Math.round(Fcommun * coeffDezoom));
+              if (Fdz < Fcommun) rz = essaieNomZ(Fdz);
+            }
+            if (rz) { texte = rz.texte; F = rz.F; lignes = rz.lignes; cp = rz.cp; }
           }
-          if (!rz && cibleZ !== Fcommun) rz = essaieNomZ(Fcommun);
-          // v0.210 : DÉZOOM SANS SÉLECTION — le nom entier tombe parfois
-          // sous le seuil à la taille d'entrée mais PAS à la taille dézoomée :
-          // réessayer le nom entier à Fdz (plancher 6) AVANT le sigle.
-          if (!rz && coeffDezoom < 1) {
-            var Fdz = Math.max(6, Math.round(Fcommun * coeffDezoom));
-            if (Fdz < Fcommun) rz = essaieNomZ(Fdz);
-          }
-          if (rz) { texte = rz.texte; F = rz.F; lignes = rz.lignes; cp = rz.cp; }
         }
         if (F == null) { texte = defaut; F = Fcommun != null ? Fcommun : Fdefaut; } // dernier recours : sigle au centre, à F commun
       }

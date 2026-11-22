@@ -36,7 +36,39 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22ze -->
+<!-- rebuild-pages 2026-11-22zf -->
+
+## v7.33 — NIVEAUX 4 SUPPRIMÉS (plafond universel) + TAILLES D'ÉTIQUETTES UNIFORMES ( 2026-11-22zf )
+ DEMANDE UTILISATEUR : ① « on ne propose ni n'affiche plus les niveaux 4,
+ et ce pour tous les pays à partir de maintenant » ; ② « les noms des
+ zones de niveau 3 ont la même taille de font que celles de niveau 2 ;
+ si nécessaire (zone trop petite) on affiche une version abrégée
+ (3 lettres suivies d'un point) ».
+ ① PLAFOND UNIVERSEL NIVEAU 4 : la descente s'arrête désormais au niveau
+ utilisateur 3 (départements FR / comtés US / cantons CH = niveau app 2).
+ Le plafond vit à un SEUL endroit (descendreSous) : toutes les entrées
+ (clic simple, fenêtre « Charger les N subdivisions », ouverture d'un
+ autre pays au même niveau, panneau) sont bloquées pareil. Les données
+ profondes (compléments GADM n3/n4) restent dans les packages mais ne
+ sont plus desservies ; les bascules de sœurs AU niveau courant restent
+ possibles (elles n'ouvrent jamais plus profond). Depuis une vue de
+ niveau 2, un clic sur une zone affiche « Les niveaux 4 (arrondissements,
+ districts…) ne sont plus proposés — l'application s'arrête au niveau 3 »
+ dans les deux greffons (pays + sélection). reinitialiserVers clampe
+ toute demande d'ouverture au niveau utilisateur 3.
+ ② ÉTIQUETTES UNIFORMES (08-etiquettes-zones) : la cible de taille des
+ noms de zones est LE PLAFOND DU NIVEAU (identique pour toutes les vues
+ admin à cadrage d'entrée : plafondZones + bonus de zoom), PLUS de repli
+ graduel par zone : une zone trop petite pour son nom entier à cette
+ taille affiche son ABRÉVIATION (3 lettres + point, sigles
+ désambiguïsés « Val. »/« Val. » distingués à 6 lettres si collision)
+ À LA MÊME TAILLE. Fin du « Territoire de Belfort » plus petit que
+ « Ain » dans la même vue — la vue IDF abrège ses 8 départements
+ (« Ess. », « Par. »…) tous à la même taille.
+ VALIDATION : harnais navigation 157 OK / 0 KO (sections 8/13/25/28/36/37
+ adaptées au plafond + section 38 nouvelle : taille unique par niveau,
+ abréviations), apparence 11/11 ×2, fuzz 1440/1440, audit frontières OK
+ (anomalies D inchangées, historiques).
 
 ## v7.32 — PARENTS RÉELS DANS L'INFOBULLE, SOCLE DES ZONES AJOUTÉES, FILET UNIFORME AU DÉZOOM ( 2026-11-22ze )
  SIGNALEMENT UTILISATEUR : ① « les arrondissements de Paris sont
