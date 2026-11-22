@@ -18,7 +18,11 @@
     // v0.97 : +20 % — les noms de régions et de sous-régions ont un plafond
     // un cinquième plus haut (la place disponible et le F commun restent
     // maîtres : une zone trop étroite garde un nom entier plus petit).
-    return Math.round(t.etiquette * 1.44 * Math.min(3, Math.max(1, croissance))); // v0.100 : +20 % encore
+    // v7.35 : PLAFOND ABSOLU 18 px — la taille MAXIMALE d'un nom est la
+    // taille du nom du pays « Allemagne » au zoom 9,4 (18 px), quel que
+    // soit le niveau (2 ou 3) et le zoom ; sous 18 la place disponible
+    // et le F commun restent maîtres (contexte et niveau de zoom).
+    return Math.min(18, Math.round(t.etiquette * 1.44 * Math.min(3, Math.max(1, croissance)))); // v0.100 : +20 % encore
   }
   // v0.92 : NOM ENTIER SUR DEUX LIGNES — coupe équilibrée à l'espace ou au
   // trait d'union (« Pas-de- / Calais », « Charente- / Maritime »). Renvoie
@@ -392,6 +396,11 @@
       if (vue.type !== 'monde' && coeffDezoom < 1) {
         F = Math.max(6, Math.round(F * coeffDezoom));
       }
+      // v7.35 : PLAFOND ABSOLU 18 px (taille du nom « Allemagne » au zoom
+      // 9,4) — aucun nom (zones, niveaux 2 et 3, bonus de zoom compris)
+      // ne dépasse cette taille ; en dessous, contexte et zoom restent
+      // maîtres (place disponible, F commun, bonus de zoom).
+      if (F > 18) F = 18;
       var demi = lignes === 2 ? demiBoiteLignes(String(texte).split('\n'), F) : demiBoitePx(texte, F);
       ETQ_DETAIL.push({ id: id, cp: cp, geo: geometry, texte: texte, F: F,
                        lignes: lignes,

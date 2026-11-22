@@ -36,7 +36,31 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zg -->
+<!-- rebuild-pages 2026-11-22zh -->
+
+## v7.35 — ZONE MK « AERODROM » CORRIGÉE + PLAFOND 18 px DES NOMS ( 2026-11-22zh )
+
+**Aerodrom (Macédoine du Nord)** : la zone dessinée par le package MK était
+une LAMELLE diagonale de 6 sommets traversant Čair, Gazi Baba et
+Studeničani — un fragment de simplification invalide, et le polygone de
+Gazi Baba recouvrait à 99 % le territoire réel d'Aerodrom. Les DEUX
+géométries sont reconstruites depuis la source d'origine des 84 opštini
+(EuroGeographics/geoBoundaries, simplification Douglas-Peucker 0,003°,
+3 décimales) ; `__cp/__alt/__sec/etq/clé etqL` recalculés
+(`outils/fix-zones-mk.cjs`, réutilisable zone par zone). Recouvrement
+résiduel ≈ 1 % (bruit de simplification du dataset, toléré comme ailleurs).
+
+**Plafond des tailles** : la taille maximale d'un nom est la taille du nom
+du pays « Allemagne » au zoom 9,4 (18 px) — plafond ABSOLU (08-etiquettes-
+zones.js) appliqué aux zones des niveaux 2 et 3, bonus de zoom compris ;
+sous ce plafond, le contexte (place disponible, F commun du niveau) et le
+niveau de zoom restent maîtres. IDF passe de 23 px à 18 px uniformes ; les
+tests v7.33 d'uniformité restent vrais.
+
+**Validation** : harnais navigation 168 OK / 0 KO (section 40 : IDF 18 px
+même zoomé, pays ≤ 18 px, Aerodrom compacte ~29 km², centroïdes dans leur
+zone, Aerodrom hors de Gazi Baba), apparence 11/11, fuzz 1440/1440, audit
+frontières INCHANGÉ (17308 anomalies historiques).
 
 ## v7.34 — FRONTIÈRE UNIQUE DES ZONES VOISINES, NIVEAU 3 EUROPÉEN ( 2026-11-22zg )
 

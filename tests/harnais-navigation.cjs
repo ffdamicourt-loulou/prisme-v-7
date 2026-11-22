@@ -1189,5 +1189,60 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
     while (P.vue().type !== 'monde') P.retour();
   } else test('v7.34 (vue départements atteinte)', false);
 }
+// 40. v7.35 — PLAFOND 18 px DES TAILLES + GÉOMÉTRIES MK (Aerodrom/Gazi Baba)
+{
+  // 40a. PLAVERSION : aucune étiquette ne dépasse 18 px (taille du nom
+  // « Allemagne » au zoom 9,4), ni zones ni pays, même à fort zoom.
+  {
+    while (P.vue().type !== 'monde') P.retour();
+    const maxDe = () => Math.max.apply(null, [0].concat((appels.etiquettes || [])
+      .filter(t => t && t.label).map(t => t.label.fontSize || 0)));
+    clic('FR'); clic('FR'); charge('FR');
+    clic('Île-de-France');
+    test('v7.35 : vue IDF — taille max ≤ 18 px (' + maxDe() + ')', maxDe() <= 18);
+    for (let k = 0; k < 6; k++) P.zoomMolette(-40, null, null); // zoom aves
+    test('v7.35 : IDF zoomé ×1,5 — taille max ≤ 18 px (' + maxDe() + ')', maxDe() <= 18);
+    while (P.vue().type !== 'monde') P.retour();
+    test('v7.35 : vue monde — taille max des PAYS ≤ 18 px (' + maxDe() + ')', maxDe() <= 18);
+  }
+  // 40b. MACÉDOINE DU NORD : Aerodrom n'est plus la lamelle diagonale qui
+  // chevauchait Čair/Gazi Baba/Studeničani (source : EuroGeographics via
+  // geoBoundaries — la même que les 84 opštini du package).
+  {
+    while (P.vue().type !== 'monde') P.retour();
+    clic('MK'); clic('MK'); charge('MK');
+    const vMK = P.vue();
+    if (vMK.features && vMK.features.length) {
+      const aire = (g) => {
+        const rs = g.type === 'Polygon' ? [g.coordinates[0]] : (g.type === 'MultiPolygon' ? g.coordinates.map(p => p[0]) : []);
+        let a = 0;
+        rs.forEach(r => { for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; });
+        return Math.abs(a / 2);
+      };
+      const dedans = (pt, g) => {
+        const rs = g.type === 'Polygon' ? [g.coordinates[0]] : (g.type === 'MultiPolygon' ? g.coordinates.map(p => p[0]) : []);
+        for (const r of rs) {
+          let c = false;
+          for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+            const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+            if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) c = !c;
+          }
+          if (c) return true;
+        }
+        return false;
+      };
+      const aero = vMK.features.filter(f => f.nom === 'Aerodrom')[0];
+      test('v7.35 : MK — Aerodrom présente et compacte (aire ~29 km², pas la lamelle)',
+        !!aero && aire(aero.geometry) > 0.0015 && aire(aero.geometry) < 0.004);
+      const gb = vMK.features.filter(f => f.nom === 'Gazi Baba')[0];
+      test('v7.35 : MK — le centroïde d Aerodrom n est PAS dans Gazi Baba',
+        !!aero && !!gb && !dedans(aero.geometry.__cp || [21.5, 41.97], gb.geometry));
+      test('v7.35 : MK — centroïdes dans leur propre zone (Aerodrom, Gazi Baba)',
+        !!aero && dedans(aero.geometry.__cp, aero.geometry)
+        && !!gb && dedans(gb.geometry.__cp, gb.geometry));
+    } else test('v7.35 : MK chargé (84 zones)', false);
+    while (P.vue().type !== 'monde') P.retour();
+  }
+}
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);
