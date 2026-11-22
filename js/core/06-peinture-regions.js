@@ -51,6 +51,13 @@
     // (série lines, segments dédupliqués). Les subdivisions (niveaux 1/2/3)
     // gardent leur trait.
     var epTrait = TRAIT_NIVEAUX; // v6 : filet UNIFORME aussi au repos (côtes visibles) et au survol/sélection
+    // v7.34 : FRONTIÈRE UNIQUE — aux niveaux 3 utilisateur des pays
+    // européens (départements, comtés, districts = app n2), les zones
+    // n'ont PLUS de bordure propre : la frontière interne (voisin↔voisin,
+    // notamment quand deux sources simplifient leur arête partagée
+    // séparément → « doubles frontières ») est tracée UNE SEULE FOIS par
+    // la couche « frontieres-zones » (même système que les PAYS, v0.22).
+    var fzEurope = frontiereUniqueZone();
     // v0.28 : échelles px/degré courantes (le monde couvre 360° de lon et
     // ~350° projetés en lat à layoutSize×zoom px) pour le test « le nom tient
     // dans sa zone ? ».
@@ -194,7 +201,10 @@
           // (epTrait) et la couleur du contour. La teinte uniforme et
           // l'étiquette du niveau supérieur (tache) sont conservées.
           borderColor: THEME.contour,
-          borderWidth: epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
+          // v7.34 : frontière unique — la couche « frontieres-zones » porte
+          // le filet dans les vues européennes de niveau app 2 (borderWidth
+          // 0 sur la zone, plus de double trait voisin↔voisin).
+          borderWidth: fzEurope ? 0 : epSel, shadowColor: (THEME.ombre && THEME.ombre.couleur) || 'rgba(0,0,0,0)', shadowOffsetX: (THEME.ombre && THEME.ombre.dx) || 0, shadowOffsetY: (THEME.ombre && THEME.ombre.dy) || 0, shadowBlur: (THEME.ombre && THEME.ombre.flou) || 0 },
         emphasis: { disabled: true,
           itemStyle: { areaColor: survol, color: survol, borderColor: THEME.contour, borderWidth: epSurv },
           label: { show: false },
@@ -212,7 +222,7 @@
         var tf = COULEURS[p.continent] || assombris[p.continent] || '#d9e2ec';
         return {
           name: p.id,
-          itemStyle: { areaColor: tf, color: tf, borderColor: THEME.contour, borderWidth: epTrait },
+          itemStyle: { areaColor: tf, color: tf, borderColor: THEME.contour, borderWidth: fzEurope ? 0 : epTrait },
           emphasis: { disabled: true, itemStyle: { areaColor: tf, color: tf, borderColor: THEME.contour, borderWidth: epTrait }, label: { show: false } },
           label: { show: false },
         };
@@ -279,7 +289,7 @@
         SURVOL_PAR_NOM['c-' + f.id] = survS; // v0.80e : survol chirurgical
         regions.push({
           name: 'c-' + f.id,
-          itemStyle: { areaColor: selS, color: selS, borderColor: THEME.contour, borderWidth: TRAIT_NIVEAUX },
+          itemStyle: { areaColor: selS, color: selS, borderColor: THEME.contour, borderWidth: fzEurope ? 0 : TRAIT_NIVEAUX },
           emphasis: { disabled: true,
             itemStyle: { areaColor: survS, color: survS, borderColor: THEME.contour, borderWidth: TRAIT_NIVEAUX },
             label: { show: visS, formatter: nS, fontSize: fS, color: ctS, fontWeight: STYLES.etiquette.fontWeight },

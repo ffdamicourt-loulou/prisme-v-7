@@ -36,7 +36,40 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zf -->
+<!-- rebuild-pages 2026-11-22zg -->
+
+## v7.34 — FRONTIÈRE UNIQUE DES ZONES VOISINES, NIVEAU 3 EUROPÉEN ( 2026-11-22zg )
+
+**Problème** : aux niveaux 3 des pays européens (départements, comtés,
+districts = niveau app 2), les frontières internes étaient tracées par
+CHAQUE zone : deux voisins issus de sources différentes (packages GADM,
+compléments n3 injectés, bascules de parents) simplifient leur arête
+partagée SÉPARÉMENT, d'où deux traits proches mais non confondus — les
+« doubles frontières qui ne matchent pas l'une avec l'autre ».
+
+**Correctif** : le système de frontière unique des PAYS (v0.22, couche
+« frontieres ») est appliqué aux zones voisines du niveau courant :
+- `donneesFrontieresZones()` (04-frontieres.js) propose chaque arête du
+  contour des zones (propres + sœurs non masquées, polylignes) à une
+  couche unique « frontieres-zones » ; une arête déjà tracée ou QUASI
+  déjà tracée (distance de Hausdorff < EPS ≈ 0,002°) est ignorée — le
+  segment partagé de deux voisins n'est dessiné QU'UNE fois ;
+- indexation et requête aux DEUX extrémités de chaque arête (une longue
+  arête ne range sinon que son premier sommet en cellule : la requête au
+  seul second sommet laissait passer des doublons exacts) ;
+- 06-peinture-regions.js : dans ces vues, les zones n'ont plus de bordure
+  propre (borderWidth 0) — le filet (0,6 px, contour blanc) est porté par
+  la couche unique (10-options.js, série `frontieres-zones`, z 4) ;
+- **périmètre** : vues admin de niveau app ≥ 2 des pays EUROPÉENS
+  (continent 150), conformément à la demande ; hors Europe (comtés US
+  testés) et aux autres niveaux, le trait par zone est inchangé.
+
+**Validation** : harnais navigation 162 OK / 0 KO (section 39 : 13
+départements occitans sans bordure propre, couche non vide 0,6 px blanc,
+23 372 arêtes émises sur ~29 835 de contours — déduplication effective,
+0 doublon exact ; comtés California : bordure propre conservée, couche
+vide), apparence 11/11, fuzz 1440/1440, audit frontières inchangé
+(17308 anomalies historiques).
 
 ## v7.33 — NIVEAUX 4 SUPPRIMÉS (plafond universel) + TAILLES D'ÉTIQUETTES UNIFORMES ( 2026-11-22zf )
  DEMANDE UTILISATEUR : ① « on ne propose ni n'affiche plus les niveaux 4,

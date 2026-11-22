@@ -25,7 +25,7 @@ const fauxEcharts = {
   registerMap: (nom) => { (appels.maps = appels.maps || []).push(nom); },
   init: () => ({
     setOption: (o) => { appels.setOption = (appels.setOption || 0) + 1;
-      if (o && o.series) (o.series || []).forEach(sr => { if (sr && sr.id === 'noms-zones') appels.etiquettes = sr.data || []; if (sr && sr.type === 'map') appels.carteData = sr.data || []; });
+      if (o && o.series) (o.series || []).forEach(sr => { if (sr && sr.id === 'noms-zones') appels.etiquettes = sr.data || []; if (sr && sr.type === 'map') appels.carteData = sr.data || []; if (sr && sr.id === 'frontieres-zones') appels.frontZones = sr; });
       if (o && o.geo) { if (o.geo.zoom != null) appels.geoZoom = { zoom: o.geo.zoom, center: o.geo.center }; if (o.geo.regions) appels.regions = o.geo.regions; } },
     getOption: () => ({}),
     on: (ev, fn) => { (appels.events[ev] = appels.events[ev] || []).push(fn); },
@@ -335,11 +335,14 @@ if (vAvant.niveau >= 2 && P.zoomMolette) {
   // v7.7 : la tache = couleur du pays -10 % (TSL) et porte le NOM de la
   // zone du niveau supérieur (vue.parent), en blanc au centre du socle.
   const etqFusion = (appels.etiquettes || []).filter(t => t && t.etqId === 'fusion-' + vAvant.parent)[0];
-  test('dézoom ×3,5 : tache = teinte Sélection -10 % (TSL, P.selectionnes)', // v7.32 : frontières TOUJOURS épaisses
-    zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0.6
+  test('dézoom ×3,5 : tache = teinte Sélection -10 % (TSL, P.selectionnes)', // v7.34 : frontière UNIQUE (vue européenne niv 2) — filet porté par la couche
+    zones.length > 0 && zones.every(r => r.itemStyle && r.itemStyle.borderWidth === 0
       && r.itemStyle.borderColor === '#ffffff')
     && zones.every(r => r.itemStyle.areaColor === zones[0].itemStyle.areaColor)
-    && zones.every(r => r.itemStyle.areaColor === P.selectionnes[P.parId.FR.continent]));
+    && zones.every(r => r.itemStyle.areaColor === P.selectionnes[P.parId.FR.continent])
+    && appels.frontZones && appels.frontZones.data.length > 0
+    && appels.frontZones.lineStyle.width === 0.6
+    && appels.frontZones.lineStyle.color === '#ffffff');
   test('dézoom ×3,5 : nom du niveau supérieur (« ' + vAvant.parent + ' ») affiché sur la tache (blanc)',
     !!etqFusion && etqFusion.name === vAvant.parent
     && etqFusion.label && etqFusion.label.color === '#ffffff'
@@ -1126,6 +1129,65 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
     + '), petites zones abrégées (« 3 lettres + point », ' + petits.length + '/' + e3.length + ')',
     F3set.size === 1 && petits.length > 0);
   while (P.vue().type !== 'monde') P.retour();
+}
+// 39. v7.34 — FRONTIÈRE UNIQUE DES ZONES VOISINES (niveau 3 utilisateur, Europe)
+// Doubles frontières : deux voisins simplifient séparément leur arête partagée
+// → chaque arête quasi-doublon n'est tracée QU'UNE fois (couche « frontieres-zones »).
+{
+  while (P.vue().type !== 'monde') P.retour();
+  clic('FR'); clic('FR'); charge('FR'); clic('Occitanie'); // départements (niv 2, Europe)
+  const v39 = P.vue();
+  if (v39.niveau === 2) {
+    const zones39 = (appels.regions || []).filter(r => r && r.name
+      && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
+    test('v7.34 : zones européennes niv 2 — PLUS de bordure propre (' + zones39.length + ' zones)',
+      zones39.length > 0 && zones39.every(r => r.itemStyle.borderWidth === 0));
+    const fz39 = appels.frontZones;
+    test('v7.34 : couche « frontieres-zones » non vide, filet 0,6 px blanc',
+      !!fz39 && fz39.data.length > 0 && fz39.lineStyle.width === 0.6
+      && fz39.lineStyle.color === '#ffffff');
+    // DÉDUPLICATION : moins de segments émis que d'arêtes de contours
+    // (chaque arête partagée n'est tracée qu'une fois).
+    const aretesDe = (g) => {
+      if (!g) return 0;
+      const polys = g.type === 'Polygon' ? [g.coordinates] : (g.type === 'MultiPolygon' ? g.coordinates : []);
+      let n = 0;
+      polys.forEach(p => p.forEach(r => { n += Math.max(0, r.length - 1); }));
+      return n;
+    };
+    let nbSeg = 0;
+    (v39.features || []).forEach(f => { nbSeg += aretesDe(f && f.geometry); });
+    const soeurs39 = (v39.soeurs || []).filter(f => f && f.geometry && !f.__masquee);
+    soeurs39.forEach(f => { nbSeg += aretesDe(f.geometry); });
+    let emis = 0;
+    (fz39 && fz39.data || []).forEach(d => { if (d && d.coords) emis += d.coords.length - 1; });
+    test('v7.34 : déduplication (' + emis + ' arêtes émises sur ~' + nbSeg + ' de contours)',
+      emis > 0 && emis < nbSeg);
+    // AUCUNE arête exacte émise deux fois (clé normalisée).
+    const norm = (a, b) => a[0] + ',' + a[1] + '|' + b[0] + ',' + b[1];
+    const cle = (a, b) => (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) ? norm(a, b) : norm(b, a);
+    const vues39 = new Set();
+    let doublons = 0;
+    (fz39 && fz39.data || []).forEach(d => { if (!d || !d.coords) return;
+      for (let i = 0; i + 1 < d.coords.length; i++) {
+        const k = cle(d.coords[i], d.coords[i + 1]);
+        if (vues39.has(k)) doublons++; else vues39.add(k);
+      } });
+    test('v7.34 : aucune arête exacte en double (' + vues39.size + ' uniques, ' + doublons + ' doublons)',
+      doublons === 0);
+    // HORS EUROPE : trait par zone INCHANGÉ (comtés US) — couche vide.
+    while (P.vue().type !== 'monde') P.retour();
+    clic('US'); clic('US'); charge('US'); clic('California'); // comtés (niv 2, Amérique)
+    const vUS39 = P.vue();
+    if (vUS39.niveau === 2) {
+      const zonesUS = (appels.regions || []).filter(r => r && r.name
+        && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
+      test('v7.34 : hors Europe (comtés US) — bordure propre conservée (0,6 px) et couche VIDE',
+        zonesUS.length > 0 && zonesUS.every(r => r.itemStyle.borderWidth === 0.6)
+        && appels.frontZones && appels.frontZones.data.length === 0);
+    }
+    while (P.vue().type !== 'monde') P.retour();
+  } else test('v7.34 (vue départements atteinte)', false);
 }
 console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
 process.exit(ko.length ? 1 : 0);

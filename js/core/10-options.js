@@ -62,6 +62,22 @@
           data: donneesFrontieres(),
         },
         {
+          // v7.34 : FRONTIÈRE UNIQUE DES ZONES VOISINES — aux niveaux 3
+          // utilisateur des pays européens (app n2), les zones n'ont plus
+          // de bordure propre : leurs contours (arêtes partagées
+          // DÉDUPLIQUÉES — une arête de voisins n'est tracée qu'UNE fois,
+          // même si deux sources la simplifient divergemment, plus de
+          // « doubles frontières qui ne matchent pas ») sont portés par
+          // CETTE couche, même système que la couche « frontieres » des
+          // pays (v0.22). Ailleurs : data vide, trait par zone inchangé.
+          id: 'frontieres-zones', type: 'lines', coordinateSystem: 'geo', geoIndex: 0,
+          animation: false,
+          polyline: true, silent: true, z: 4,
+          lineStyle: { color: THEME.contour, width: TRAIT_NIVEAUX, opacity: 1 },
+          tooltip: { show: false },
+          data: donneesFrontieresZones(),
+        },
+        {
           id: 'carte', type: 'map', map: vue.type === 'monde' ? 'prisme2' : vue.nomMap, geoIndex: 0,
           selectedMode: false, // v0.41 : l'app peint la sélection — ECharts ne mémorise plus rien
           data: donneesCarte(),

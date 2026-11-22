@@ -114,6 +114,106 @@
     }
     return cacheFrontieresVue.lignes;
   }
+  // ── v7.34 : FRONTIÈRE UNIQUE DES ZONES VOISINES (niveau utilisateur 3) ──
+  // SIGNALEMENT : aux niveaux 3 des pays européens (départements, comtés,
+  // districts… = niveau app 2), les frontières INTERNES étaient tracées par
+  // CHAQUE zone (borderWidth de son propre contour) : deux voisins issus
+  // de sources différentes (packages GADM, compléments n3 injectés,
+  // bascules de parents) simplifient leur arête partagée SÉPARÉMENT —
+  // deux traits proches mais NON CONFONDUS (« doubles frontières qui ne
+  // matchent pas l'une avec l'autre »).
+  // SYSTÈME UNIQUE — le MÊME que celui des PAYS (v0.22, couche
+  // « frontieres ») appliqué aux zones voisines du niveau courant :
+  // • chaque arête du contour des zones (propres + sœurs affichées) est
+  //   proposée à la couche lignes en POLYLIGNES ; une arête déjà tracée
+  //   (ou QUASI déjà tracée : distance de Hausdorff < EPS ≈ 2·10⁻³°)
+  //   est IGNORÉE — le segment partagé de deux voisins n'est dessiné
+  //   QU'UNE SEULE fois, au premier passage ;
+  // • les zones n'ont PLUS de bordure propre dans ces vues
+  //   (06-peinture : borderWidth 0), le filet est porté par la couche
+  //   « frontieres-zones » UNIQUE (couleur contour, TRAIT_NIVEAUX) ;
+  // • PÉRIMÈTRE : vues admin de niveau app ≥ 2 des pays EUROPÉENS
+  //   (continent 150) — la demande utilisateur ; hors Europe et aux
+  //   autres niveaux, le trait par zone est inchangé.
+  // EPS : tolérance de reconnaissance « quasi doublon » ; assez fine pour
+  // ne fusionner QUE les arêtes partagées, assez large pour recoller les
+  // simplifications divergentes de deux sources. Les arêtes sont indexées
+  // et recherchées aux DEUX extrémités (une longue arête range sinon son
+  // premier sommet dans une cellule éloignée du second : la requête au
+  // seul second sommet ne la retrouvait pas et le doublon exact était
+  // émis deux fois).
+  var cacheFrontieresZones = null;
+  function segProche(a1, b1, a2, b2, eps) {
+    return distancePtSegment(a1, a2, b2) < eps && distancePtSegment(b1, a2, b2) < eps
+      && distancePtSegment(a2, a1, b1) < eps && distancePtSegment(b2, a1, b1) < eps;
+  }
+  function frontiereUniqueZone() {
+    if (vue.type !== 'admin' || (vue.niveau || 1) < 2) return false;
+    var conts = [vue.continent];
+    (vue.paysIds || []).forEach(function (pid) {
+      if (parId[pid]) conts.push(parId[pid].continent);
+    });
+    return conts.some(function (c) { return c === 150 || c === '150'; });
+  }
+  function donneesFrontieresZones() {
+    if (!frontiereUniqueZone()) return [];
+    var cle = (vue.nomMap || '') + '#' + (vue.features || []).length + '|'
+      + (vue.soeurs || []).map(function (f) { return f && f.__masquee ? 1 : 0; }).join('');
+    if (cacheFrontieresZones && cacheFrontieresZones.cle === cle) return cacheFrontieresZones.res;
+    var EPS = 0.002, CELL = 0.02;
+    var grille = {};
+    // indexation/recherche aux DEUX extrémités (cf. note v7.34 ci-dessus)
+    function cellule(p) { return Math.floor(p[0] / CELL) + '/' + Math.floor(p[1] / CELL); }
+    function auVoisinage(p, fn) {
+      var cx = Math.floor(p[0] / CELL), cy = Math.floor(p[1] / CELL);
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) {
+        var arr = grille[(cx + dx) + '/' + (cy + dy)];
+        if (!arr) continue;
+        for (var i = 0; i < arr.length; i++) fn(arr[i]);
+      }
+    }
+    function dejaTrace(a, b) {
+      var trouve = false;
+      function verif(seg) { if (!trouve && segProche(a, b, seg[0], seg[1], EPS)) trouve = true; }
+      auVoisinage(a, verif);
+      if (!trouve) auVoisinage(b, verif);
+      return trouve;
+    }
+    function tracer(a, b) {
+      var ka = cellule(a), kb = cellule(b);
+      if (grille[ka]) grille[ka].push([a, b]); else grille[ka] = [[a, b]];
+      if (kb !== ka) { if (grille[kb]) grille[kb].push([a, b]); else grille[kb] = [[a, b]]; }
+    }
+    var res = [];
+    function ajouterGeom(g) {
+      if (!g) return;
+      var polys = g.type === 'Polygon' ? [g.coordinates]
+        : (g.type === 'MultiPolygon' ? g.coordinates : []);
+      polys.forEach(function (poly) {
+        poly.forEach(function (ring) {
+          var cour = null;
+          for (var i = 0; i + 1 < ring.length; i++) {
+            var a = ring[i], b = ring[i + 1];
+            if (dejaTrace(a, b)) { // arête du VOISIN déjà tracée UNE fois
+              if (cour && cour.length >= 2) res.push({ coords: cour });
+              cour = null;
+              continue;
+            }
+            if (!cour) cour = [a];
+            cour.push(b);
+            tracer(a, b);
+          }
+          if (cour && cour.length >= 2) res.push({ coords: cour });
+        });
+      });
+    }
+    (vue.features || []).forEach(function (f) { ajouterGeom(f && f.geometry); });
+    (vue.soeurs || []).forEach(function (f) {
+      if (f && f.geometry && !f.__masquee) ajouterGeom(f.geometry);
+    });
+    cacheFrontieresZones = { cle: cle, res: res };
+    return res;
+  }
   // v0.74 : teintes COURANTES (base + survol) de la zone hôte d'une enclave,
   // quelle que soit sa nature : zone propre de la vue, sœur « c- », pays
   // extérieur « x- » ou pays du monde. L'enclave reprend cette teinte -20 %.
