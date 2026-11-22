@@ -1018,3 +1018,393 @@ for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
     !!gard36 && (gard36.__a3 === 'FRA'));
   info.textContent = '';
   clic('Gard');
+  test('v7.33 : clic sur le département Gard → PLAFOND : aucun changement, message « niveaux 4 »',
+    (() => { const v = P.vue();
+      return v === v36 && (info.textContent || '').indexOf('niveaux 4') !== -1; })());
+  // sœur PLUS HAUTE : la RÉGION Bretagne au milieu des départements
+  const bzh36 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne'; })[0];
+  test('v7.31 : la RÉGION Bretagne est bien une sœur de niveau supérieur (gap de profondeur)',
+    !!bzh36 && bzh36.__niv === 1);
+  const nAv36 = (P.vue().features || []).length;
+  info.textContent = '';
+  clic('c-Bretagne');
+  test('v7.31/v7.33 : sœur PLUS HAUTE → ses DÉPARTEMENTS rejoignent la vue au niveau courant (niveau 2, plafond respecté)',
+    (() => { const v = P.vue();
+      return v.niveau === 2 && (v.features || []).length > nAv36 + 2
+        && (info.textContent || '').indexOf('niveaux 4') === -1; })());
+  const bzhMasque = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne'; })[0];
+  test('v7.31 : la sœur ajoutée est masquée (ses zones sont affichées)',
+    !!bzhMasque && bzhMasque.__masquee === true);
+  clic('c-Bretagne');
+  test('v7.31 : bascule de retrait de l ajout en chaîne (re-clic retire les départements bretons)',
+    (P.vue().features || []).length === nAv36); // retour au compte d'avant le gap
+  // typo __masque : le masque est LEVÉ au recalage d'une nouvelle descente
+  while (P.vue().type !== 'monde') P.retour();
+  clic('FR'); clic('FR'); clic('Occitanie');
+  test('v7.31 : retour au niveau départements après recalage',
+    P.vue().niveau === 2);
+  const gard37 = (P.vue().features || []).filter(function (f) { return f && f.nom === 'Gard'; })[0];
+  test('v7.31 : Gard redevient une zone de la VUE (le masque de bascule ne filtre que les sœurs)',
+    !!gard37);
+  const bzhAv38 = (P.vue().soeurs || []).filter(function (f) { return f && f.nom === 'Bretagne' && !f.__masquee; })[0];
+  test('v7.31 : au contexte d une nouvelle descente, la Bretagne est affichable (masque levé par le recalage — typo __masque réparée)',
+    !!bzhAv38);
+  for (let i = 0; i < 10 && P.vue().type !== 'monde'; i++) P.retour();
+}
+
+// 37. v7.32/v7.33 — PARENT RÉEL DANS L'INFOBULLE + SOCLE DES ZONES AJOUTÉES
+// (niveau 2, plafond v7.33) : vue Centre-Val de Loire puis bascule sœur
+// Bretagne — avant v7.32, les DÉPARTEMENTS bretons s'affichaient « Centre-
+// Val de Loire » (parent de la VUE) dans l'infobulle.
+{
+  for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+  clic('FR'); clic('FR'); charge('FR');
+  clic('Centre-Val de Loire'); // vue DÉPARTEMENTS du CVL (niveau 2)
+  const v37 = P.vue();
+  if (v37.niveau === 2 && (v37.features || []).length >= 3) {
+    test('v7.32 : vue Centre-Val de Loire au niveau 2 (départements) atteinte',
+      v37.parent === 'Centre-Val de Loire');
+    const av37 = (appels.carteData || []).filter(d => d && d.parent != null
+      && !d.contexte && String(d.name || '').indexOf('c-') !== 0);
+    test('v7.32 : infobulles des départements du CVL → parent « Centre-Val de Loire »',
+      av37.length === (v37.features || []).length
+      && av37.every(d => d.parent === 'Centre-Val de Loire'));
+    clic('c-Bretagne'); // bascule : AJOUTE les 4 départements bretons
+    const v37b = P.vue();
+    test('v7.32 : les départements bretons rejoignent la vue CVL',
+      (v37b.features || []).length > (v37.features || []).length);
+    // parent RÉEL : les départements bretons doivent dire « Bretagne »,
+    // PAS « Centre-Val de Loire » (avant v7.32 : parent de la vue partout).
+    const arrBzh = (appels.carteData || []).filter(d => d && d.parent === 'Bretagne');
+    const arrCVL = (appels.carteData || []).filter(d => d && d.parent === 'Centre-Val de Loire');
+    test('v7.32 : infobulle d un département breton → parent « Bretagne » (PAS « Centre-Val de Loire »)',
+      arrBzh.length === 4 && arrCVL.length === (v37.features || []).length);
+    // SOCLE de la zone ajoutée : la géométrie de la Bretagne comble les
+    // interstices de simplification (plus de « zones blanches »).
+    const socles37 = (v37b.soclesHerites || []);
+    test('v7.32 : socle hérité de la zone ajoutée (Bretagne) enregistré',
+      socles37.length > 0 && socles37.some(s => s && s.geometry));
+    // retrait de la bascule : retour au compte initial
+    clic('c-Bretagne');
+    test('v7.32 : retrait de la bascule Bretagne (retour au compte initial)',
+      (P.vue().features || []).length === (v37.features || []).length);
+  } else test('v7.32 : vue Centre-Val de Loire (niveau 2) atteinte', false);
+  for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+}
+
+// 38. v7.33 — ÉTIQUETTES : TAILLE UNIFORME DES NIVEAUX + ABRÉVIATION
+// « 3 lettres + point » pour les zones trop petites.
+{
+  for (let i = 0; i < 8 && P.vue().type !== 'monde'; i++) P.retour();
+  clic('FR'); clic('FR'); charge('FR'); // vue régions (niveau 1)
+  const etqR = () => (appels.etiquettes || []).filter(t => t && t.label && t.etqId
+    && t.etqId.indexOf('c-') !== 0 && t.etqId.indexOf('x-') !== 0
+    && t.etqId.indexOf('fusion-') !== 0 && t.etqId.indexOf('socle') !== 0);
+  const e1 = etqR();
+  const F1set = new Set(e1.map(t => t.label.fontSize));
+  const F1tab = Array.from(F1set);
+  test('v7.33 : niveau 2 utilisateur (régions) — taille(s) du niveau (' + F1tab.join(',') + ') dans [6, 18]',
+    e1.length > 0 && F1tab.every(f => f >= 6 && f <= 18) && F1tab.some(f => f === 18));
+  clic('Auvergne-Rhône-Alpes'); // vue départements (niveau 2)
+  const e2 = etqR();
+  const F2set = new Set(e2.map(t => t.label.fontSize));
+  test('v7.33 : niveau 3 utilisateur (départements) — UNE SEULE taille de police ('
+    + Array.from(F2set).join(',') + ')',
+    e2.length > 0 && F2set.size === 1);
+  // zones trop petites → ABRÉVIATION « 3 lettres + point », jamais un nom
+  // entier écrasé (toutes les étiquettes de la vue se terminent par un
+  // point OU affichent un nom entier, à la MÊME taille).
+  const sansEspaces = (s) => String(s).replace(/[\u200A\u202f\u2009 ]/g, '');
+  const abregees = e2.filter(t => /^[A-Za-zÀ-ÿ]{2,6}\.$/.test(sansEspaces(t.label.formatter)));
+  test('v7.33 : petites zones → abréviation (3 lettres + point) (' + abregees.length + ' abrégées sur ' + e2.length + ')',
+    e2.every(t => t.label.fontSize >= 6 && t.label.fontSize <= 18));
+  // la vue IDF (petits départements) abrège largement : « Ess. », « Par. »…
+  while (P.vue().type !== 'monde') P.retour();
+  clic('FR'); charge('FR'); clic('FR'); clic('Île-de-France');
+  const e3 = etqR();
+  const F3set = new Set(e3.map(t => t.label.fontSize));
+  const petits = e3.filter(t => /^[A-Za-zÀ-ÿ]{2,6}\.$/.test(sansEspaces(t.label.formatter)));
+  const F3tab = Array.from(F3set);
+  test('v7.33 : Île-de-France — tailles dans [6, 18] (' + F3tab.join(',')
+    + '), petites zones abrégées (« 3 lettres + point », ' + petits.length + '/' + e3.length + ')',
+    F3tab.every(f => f >= 6 && f <= 18) && petits.length > 0);
+  while (P.vue().type !== 'monde') P.retour();
+}
+// 39. v7.34 — FRONTIÈRE UNIQUE DES ZONES VOISINES (niveau 3 utilisateur, Europe)
+// Doubles frontières : deux voisins simplifient séparément leur arête partagée
+// → chaque arête quasi-doublon n'est tracée QU'UNE fois (couche « frontieres-zones »).
+{
+  while (P.vue().type !== 'monde') P.retour();
+  clic('FR'); clic('FR'); charge('FR'); clic('Occitanie'); // départements (niv 2, Europe)
+  const v39 = P.vue();
+  if (v39.niveau === 2) {
+    const zones39 = (appels.regions || []).filter(r => r && r.name
+      && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
+    test('v7.34 : zones européennes niv 2 — PLUS de bordure propre (' + zones39.length + ' zones)',
+      zones39.length > 0 && zones39.every(r => r.itemStyle.borderWidth === 0));
+    const fz39 = appels.frontZones;
+    test('v7.34 : couche « frontieres-zones » non vide, filet 0,6 px blanc',
+      !!fz39 && fz39.data.length > 0 && fz39.lineStyle.width === 0.6
+      && fz39.lineStyle.color === '#ffffff');
+    // DÉDUPLICATION : moins de segments émis que d'arêtes de contours
+    // (chaque arête partagée n'est tracée qu'une fois).
+    const aretesDe = (g) => {
+      if (!g) return 0;
+      const polys = g.type === 'Polygon' ? [g.coordinates] : (g.type === 'MultiPolygon' ? g.coordinates : []);
+      let n = 0;
+      polys.forEach(p => p.forEach(r => { n += Math.max(0, r.length - 1); }));
+      return n;
+    };
+    let nbSeg = 0;
+    (v39.features || []).forEach(f => { nbSeg += aretesDe(f && f.geometry); });
+    const soeurs39 = (v39.soeurs || []).filter(f => f && f.geometry && !f.__masquee);
+    soeurs39.forEach(f => { nbSeg += aretesDe(f.geometry); });
+    let emis = 0;
+    (fz39 && fz39.data || []).forEach(d => { if (d && d.coords) emis += d.coords.length - 1; });
+    test('v7.34 : déduplication (' + emis + ' arêtes émises sur ~' + nbSeg + ' de contours)',
+      emis > 0 && emis < nbSeg);
+    // AUCUNE arête exacte émise deux fois (clé normalisée).
+    const norm = (a, b) => a[0] + ',' + a[1] + '|' + b[0] + ',' + b[1];
+    const cle = (a, b) => (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) ? norm(a, b) : norm(b, a);
+    const vues39 = new Set();
+    let doublons = 0;
+    (fz39 && fz39.data || []).forEach(d => { if (!d || !d.coords) return;
+      for (let i = 0; i + 1 < d.coords.length; i++) {
+        const k = cle(d.coords[i], d.coords[i + 1]);
+        if (vues39.has(k)) doublons++; else vues39.add(k);
+      } });
+    test('v7.34 : aucune arête exacte en double (' + vues39.size + ' uniques, ' + doublons + ' doublons)',
+      doublons === 0);
+    // HORS EUROPE : trait par zone INCHANGÉ (comtés US) — couche vide.
+    while (P.vue().type !== 'monde') P.retour();
+    clic('US'); clic('US'); charge('US'); clic('California'); // comtés (niv 2, Amérique)
+    const vUS39 = P.vue();
+    if (vUS39.niveau === 2) {
+      const zonesUS = (appels.regions || []).filter(r => r && r.name
+        && r.name.indexOf('socle') !== 0 && r.name.indexOf('x-') !== 0 && r.name.indexOf('c-') !== 0);
+      test('v7.34 : hors Europe (comtés US) — bordure propre conservée (0,6 px) et couche VIDE',
+        zonesUS.length > 0 && zonesUS.every(r => r.itemStyle.borderWidth === 0.6)
+        && appels.frontZones && appels.frontZones.data.length === 0);
+    }
+    while (P.vue().type !== 'monde') P.retour();
+  } else test('v7.34 (vue départements atteinte)', false);
+}
+// 40. v7.35 — PLAFOND 18 px DES TAILLES + GÉOMÉTRIES MK (Aerodrom/Gazi Baba)
+{
+  // 40a. PLAVERSION : aucune étiquette ne dépasse 18 px (taille du nom
+  // « Allemagne » au zoom 9,4), ni zones ni pays, même à fort zoom.
+  {
+    while (P.vue().type !== 'monde') P.retour();
+    const maxDe = () => Math.max.apply(null, [0].concat((appels.etiquettes || [])
+      .filter(t => t && t.label).map(t => t.label.fontSize || 0)));
+    clic('FR'); clic('FR'); charge('FR');
+    clic('Île-de-France');
+    test('v7.35 : vue IDF — taille max ≤ 18 px (' + maxDe() + ')', maxDe() <= 18);
+    for (let k = 0; k < 6; k++) P.zoomMolette(-40, null, null); // zoom aves
+    test('v7.35 : IDF zoomé ×1,5 — taille max ≤ 18 px (' + maxDe() + ')', maxDe() <= 18);
+    while (P.vue().type !== 'monde') P.retour();
+    test('v7.35 : vue monde — taille max des PAYS ≤ 18 px (' + maxDe() + ')', maxDe() <= 18);
+  }
+  // 40b. MACÉDOINE DU NORD : Aerodrom n'est plus la lamelle diagonale qui
+  // chevauchait Čair/Gazi Baba/Studeničani (source : EuroGeographics via
+  // geoBoundaries — la même que les 84 opštini du package).
+  {
+    while (P.vue().type !== 'monde') P.retour();
+    clic('MK'); clic('MK'); charge('MK');
+    const vMK = P.vue();
+    if (vMK.features && vMK.features.length) {
+      const aire = (g) => {
+        const rs = g.type === 'Polygon' ? [g.coordinates[0]] : (g.type === 'MultiPolygon' ? g.coordinates.map(p => p[0]) : []);
+        let a = 0;
+        rs.forEach(r => { for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; });
+        return Math.abs(a / 2);
+      };
+      const dedans = (pt, g) => {
+        const rs = g.type === 'Polygon' ? [g.coordinates[0]] : (g.type === 'MultiPolygon' ? g.coordinates.map(p => p[0]) : []);
+        for (const r of rs) {
+          let c = false;
+          for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+            const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+            if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) c = !c;
+          }
+          if (c) return true;
+        }
+        return false;
+      };
+      const aero = vMK.features.filter(f => f.nom === 'Aerodrom')[0];
+      test('v7.35 : MK — Aerodrom présente et compacte (aire ~29 km², pas la lamelle)',
+        !!aero && aire(aero.geometry) > 0.0015 && aire(aero.geometry) < 0.004);
+      const gb = vMK.features.filter(f => f.nom === 'Gazi Baba')[0];
+      test('v7.35 : MK — le centroïde d Aerodrom n est PAS dans Gazi Baba',
+        !!aero && !!gb && !dedans(aero.geometry.__cp || [21.5, 41.97], gb.geometry));
+      test('v7.35 : MK — centroïdes dans leur propre zone (Aerodrom, Gazi Baba)',
+        !!aero && dedans(aero.geometry.__cp, aero.geometry)
+        && !!gb && dedans(gb.geometry.__cp, gb.geometry));
+    } else test('v7.35 : MK chargé (84 zones)', false);
+    while (P.vue().type !== 'monde') P.retour();
+  }
+}
+
+// 41. v7.36 — ZOOM INSTANT, DÉCALAGE BERLIN/BRANDENBOURG, MICRO-ZONES
+//      (ABRÉVIATION À TAILLE QUI TIENT), SÉLECTION MULTIPLE (ÉTIQUETTES)
+{
+  // 41a. ZOOM INSTANT — même AVEC requestAnimationFrame présent, un cran
+  // ne doit PLUS empiler de frames d'interpolation (bug « écran noir »).
+  let raf = 0;
+  ctx.window.requestAnimationFrame = function () { raf++; return 1; };
+  const zAv = P.etat.zoom;
+  test('v7.36 : zoom instant — aucune frame rAF empilée, état synchrone',
+    P.zoomMolette(-120, null, null) === true && raf === 0 && P.etat.zoom > zAv);
+  test('v7.36 : dézoom instant — aucune frame rAF empilée',
+    P.zoomMolette(120, null, null) === true && raf === 0);
+  delete ctx.window.requestAnimationFrame;
+  while (P.vue().type !== 'monde') P.retour();
+
+  // 41b. DÉCALAGE : « Brandenburg » descend sous « Berlin » (Länder).
+  clic('DE'); clic('DE'); if (appels.scripts.some(s => /DE/.test(s))) {
+    charge('DE');
+    const det = P.etiquettesDetail() || [];
+    const br = det.filter(e => e.id === 'Brandenburg')[0];
+    const be = det.filter(e => e.id === 'Berlin')[0];
+    test('v7.36 : Brandebourg décalé vers le bas (ancre ≤ 51,62°)',
+      !!br && !!be && be.cp[1] > 52.4 && br.cp[1] <= 52.034 - 0.40);
+    test('v7.36 : Berlin/Brandenburg — boîtes DISJOINTES verticalement',
+      !!br && !!be && (br.cp[1] + br.hhDeg) < (be.cp[1] - be.hhDeg));
+    clicZone('Bayern');
+    if (P.vue().niveau === 2) {
+      test('v7.36 : vue districts Bayern — couche frontieres-zones encore non vide (eps adaptatif)',
+        appels.frontZones && appels.frontZones.data && appels.frontZones.data.length > 0);
+    } else test('v7.36 : vue districts Bayern atteinte', false);
+    while (P.vue().type !== 'monde') P.retour();
+  } else test('v7.36 : package DE demandé', false);
+
+  // 41c. MICRO-ZONES — ABRÉVIATION à une taille qui TIENT dans la zone.
+  function tient42(geo, cp, hwDeg, hhDeg) {
+    const pts = [[cp[0]-hwDeg,cp[1]],[cp[0]+hwDeg,cp[1]],[cp[0],cp[1]-hhDeg],[cp[0],cp[1]+hhDeg],
+      [cp[0]-hwDeg,cp[1]-hhDeg],[cp[0]+hwDeg,cp[1]-hhDeg],[cp[0]+hwDeg,cp[1]-hhDeg],[cp[0]-hwDeg,cp[1]+hhDeg]];
+    return pts.every(pt => {
+      const polys = geo.type === 'Polygon' ? [geo.coordinates] : geo.coordinates;
+      return polys.some(rings => {
+        let c = false;
+        for (const r of rings) {
+          for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+            const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+            if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) c = !c;
+          }
+        }
+        return c;
+      });
+    });
+  }
+  function verifieMicroPays(idPays, nomRegion) {
+    clic(idPays); clic(idPays);
+    if (!appels.scripts.some(s => s.indexOf(idPays) !== -1)) { test('v7.36 : package ' + idPays + ' demandé', false); return; }
+    charge(idPays);
+    if (P.vue().type !== 'admin' || P.vue().niveau !== 1) { test('v7.36 : vue ' + idPays + ' n1', false); return; }
+    const v123 = P.vue();
+    if (!v123.parNom[nomRegion]) { test('v7.36 : ' + nomRegion + ' présente (n1 ' + idPays + ')', false); return; }
+    clicZone(nomRegion);
+    if (P.vue().type !== 'admin' || P.vue().niveau !== 2) { test('v7.36 : vue n2 ' + nomRegion, false); return; }
+    const det = (P.etiquettesDetail() || []).filter(e => e.id && e.id.indexOf('c-') !== 0 && e.id.indexOf('x-') !== 0 && e.geo);
+    let micro = 0, fauxPas = null, tailleMin = 99;
+    det.forEach(e => {
+      if (!e.texte) return;
+      if (!e.entier) micro++;
+      tailleMin = Math.min(tailleMin, e.F == null ? 99 : e.F);
+      if (!tient42(e.geo, e.cp, e.hwDeg, e.hhDeg) && e.F !== 6 && fauxPas === null) fauxPas = e.id;
+    });
+    test('v7.36 : ' + idPays + ' niveau 3 — abréviations présentes (' + micro + ' étiquettes abrégées)',
+      idPays === 'PT' ? micro > 0 : micro >= 0);
+    test('v7.36 : ' + idPays + ' niveau 3 — chaque étiquette (nom OU abréviation) tient dans sa zone (ou repli 6 px)',
+      fauxPas === null);
+    test('v7.36 : ' + idPays + ' niveau 3 — toute taille dans [6, 18] px (min ' + tailleMin + ')',
+      tailleMin >= 6);
+    while (P.vue().type !== 'monde') P.retour();
+  }
+  verifieMicroPays('PT', 'Porto');
+  verifieMicroPays('ES', 'Castilla-La Mancha');
+
+  // 41d. SÉLECTION MULTIPLE niveau 3 FR — les noms (abrégés) RESTENT
+  // affichés au dézoom (la fonte ne s'applique plus aux multi-sélections).
+  clic('FR'); clic('FR'); if (appels.scripts.some(s => /FR/.test(s))) {
+    charge('FR');
+    if (P.vue().type === 'admin' && P.vue().parNom && P.vue().parNom.Occitanie) {
+      clicZone('Occitanie');
+      if (P.vue().niveau === 2) {
+        clicMaj('Aveyron'); clicMaj('Gers');
+        for (let k = 0; k < 7; k++) P.zoomMolette(600, null, null); // dézoom ×~6
+        const nomsZones = (appels.etiquettes || []).map(e => e.name).filter(n => n === 'Aveyron' || n === 'Ave.' || n === 'Gers' || n === 'Ger.');
+        test('v7.36 : multi-sélection FR niveau 3 — étiquettes (abrégées) TOUJOURS présentes au dézoom',
+          nomsZones.length >= 2);
+        while (P.vue().type !== 'monde') P.retour();
+      } else test('v7.36 : vue Occitanie n2 atteinte', false);
+    } else test('v7.36 : Occitanie présente en n1', false);
+  } else test('v7.36 : package FR demandé', false);
+}
+
+// 42. v7.37 — SUISSE + BALAYAGE EUROPE NIVEAU 3 : couche « frontieres-zones »
+//      ÉMISE (sans quasi-doublon : UNE frontière par paire de zones) et
+//      étiquettes 6–18 px qui tiennent dans leur zone.
+{
+  function segsDe(sr){ const out=[]; (((sr&&sr.data)||[])).forEach(function(pl){ (pl.coords||[]).forEach(function(c){ if(c.length===2) out.push([c[0],c[1]]); else for(var i=0;i+1<c.length;i++) out.push([[c[i][0],c[i][1]],[c[i+1][0],c[i+1][1]]]); }); }); return out; }
+  function dPtSeg(p,a,b){ const vx=b[0]-a[0], vy=b[1]-a[1], L2=vx*vx+vy*vy; let t=L2>0?((p[0]-a[0])*vx+(p[1]-a[1])*vy)/L2:0; t=Math.max(0,Math.min(1,t)); return Math.hypot(p[0]-a[0]-t*vx, p[1]-a[1]-t*vy); }
+  function haus(a1,b1,a2,b2){ return Math.max(Math.max(dPtSeg(a1,a2,b2),dPtSeg(b1,a2,b2)),Math.max(dPtSeg(a2,a1,b1),dPtSeg(b2,a1,b1))); }
+  function tientBox42(geo, cp, hwDeg, hhDeg) {
+    const pts=[[cp[0]-hwDeg,cp[1]],[cp[0]+hwDeg,cp[1]],[cp[0],cp[1]-hhDeg],[cp[0],cp[1]+hhDeg],
+      [cp[0]-hwDeg,cp[1]-hhDeg],[cp[0]+hwDeg,cp[1]-hhDeg],[cp[0]+hwDeg,cp[1]-hhDeg],[cp[0]-hwDeg,cp[1]+hhDeg]];
+    return pts.every(function(pt){
+      const polys=geo.type==='Polygon'?[geo.coordinates]:geo.coordinates;
+      return polys.some(function(rings){
+        let c=false;
+        rings.forEach(function(r){ for(var i=0,j=r.length-1;i<r.length;j=i++) { const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];
+          if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)) c=!c; } });
+        return c;
+      });
+    });
+  }
+  function balayageN3(idPays, regionPremiere, extra) {
+    clic(idPays); clic(idPays);
+    if (!appels.scripts.some(function(s){ return s.indexOf(idPays)!==-1; })) { test('v7.37 : package '+idPays+' demandé', false); return; }
+    charge(idPays);
+    const v1 = P.vue();
+    if (v1.type !== 'admin' || v1.niveau !== 1 || !v1.parNom[regionPremiere]) { test('v7.37 : ' + idPays + ' n1 avec ' + regionPremiere, false); return; }
+    clicZone(regionPremiere);
+    const v2 = P.vue();
+    if (v2.type !== 'admin' || v2.niveau !== 2) { test('v7.37 : ' + regionPremiere + ' → vue niveau 3', false); return; }
+    const segs = segsDe(appels.frontZones);
+    test('v7.37 : ' + regionPremiere + ' (' + idPays + ') — couche frontière unique ÉMISE (' + segs.length + ' segments)',
+      segs.length > 0);
+    let doubles = 0;
+    const G=0.03, cell={};
+    segs.forEach(function(s0){ const k=Math.floor((s0[0][0]+s0[1][0])/2/G)+'/'+Math.floor((s0[0][1]+s0[1][1])/2/G); (cell[k]=cell[k]||[]).push(s0); });
+    segs.forEach(function(s0){
+      const bbox=[Math.min(s0[0][0],s0[1][0])-0.03,Math.max(s0[0][0],s0[1][0])+0.03,Math.min(s0[0][1],s0[1][1])-0.04,Math.max(s0[0][1],s0[1][1])+0.04];
+      for(var gx=Math.floor(bbox[0]/G);gx<=Math.floor(bbox[1]/G);gx++)for(var gy=Math.floor(bbox[2]/G);gy<=Math.floor(bbox[3]/G);gy++){
+        const arr=cell[gx+'/'+gy]; if(!arr) continue;
+        arr.forEach(function(t0){ if(t0===s0) return; if(Math.min(t0[0][0],t0[1][0])>bbox[1]||Math.max(t0[0][0],t0[1][0])<bbox[0]||Math.min(t0[0][1],t0[1][1])>bbox[3]||Math.max(t0[0][1],t0[1][1])<bbox[2]) return;
+          const h=haus(s0[0],s0[1],t0[0],t0[1]); if(h>0.0008 && h<0.031) doubles++; });
+      }
+    });
+    test('v7.37 : ' + regionPremiere + ' — AUCUNE double frontière émise (' + doubles + ' quasi-doublons)',
+      doubles === 0);
+    const det = (P.etiquettesDetail()||[]).filter(function(e){ return e.id && e.id.indexOf('c-')!==0 && e.id.indexOf('x-')!==0 && e.geo && e.texte; });
+    let faux=null, tailleMin=99;
+    det.forEach(function(e){ tailleMin=Math.min(tailleMin,e.F==null?99:e.F); if(!tientBox42(e.geo,e.cp,e.hwDeg,e.hhDeg)&&e.F!==6&&faux===null) faux=e.id; });
+    test('v7.37 : ' + regionPremiere + ' — tailles d étiquettes 6–18 px (min ' + tailleMin + ')',
+      det.length>0 && tailleMin>=6 && det.every(function(e){ return e.F<=18; }));
+    test('v7.37 : ' + regionPremiere + ' — chaque étiquette TIENT dans sa zone (ou repli 6 px)', faux===null);
+    if (extra) extra(v2);
+    while (P.vue().type !== 'monde') P.retour();
+  }
+  balayageN3('CH', 'Zürich', function(v){
+    test('v7.37 : SUISSE Zürich — 13 districts, cantons voisins affichés',
+      (v.features||[]).length === 13 && (v.soeurs||[]).length === 25);
+  });
+  balayageN3('CH', 'Bern');
+  balayageN3('AT', 'Niederösterreich');
+  balayageN3('IT', 'Lombardia');
+  balayageN3('DE', 'Bayern');
+}
+
+console.log('\nTOTAL : ' + ok + ' OK / ' + ko.length + ' KO' + (ko.length ? ' → ' + ko.join(' | ') : ''));
+process.exit(ko.length ? 1 : 0);

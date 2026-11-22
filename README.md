@@ -36,7 +36,31 @@
 - Concat core reconstruit = noyau v7 (181 825 octets, 4 lignes vides de coupe perdues, syntaxe byte-identique au plan fonctionnel).
 - Harnais : clair 11/11, noir 11/11.
 
-<!-- rebuild-pages 2026-11-22zi -->
+<!-- rebuild-pages 2026-11-22zj -->
+
+## v7.37 — FRONTIÈRES NIVEAU 3 RESTAURÉES : RETRAIT DE « progressive: 0 » + TESTS SUISSE/BA... ( 2026-11-22zj )
+
+**Régression v7.36 identifiée et corrigée.** L'ajout `progressive: 0, progressiveThreshold: 1e9`
+posé en v7.36 sur les séries `lines` « frontieres » et « frontieres-zones » casse le pipeline de
+rendu d'ECharts : les couches lines ne passaient plus par leur rendu habituel et le filet des
+frontières niveau 3 disparaissait au rendu (signalement : « énormes problèmes de frontières au
+niveau 3 en Suisse… de manière générale dans tous les pays », constaté juste après le déploiement
+v7.36). Les mini-tests SSR avec le vrai ECharts 5.5.0 ont montré qu'AUCUNE configuration
+`progressive` testée ne rend la série lines en SVG : l'option est RETIRÉE des deux séries
+(js/core/10-options.js) et on revient au pipeline historique (valeur par défaut d'ECharts).
+
+- Frontières niveau 3 (et 2) de nouveau dessinées partout, Suisse incluse.
+- La déduplication « UNE frontière par paire de zones adjacentes » (couche v7.34, eps
+  adaptatif v7.36) est inchangée et re-mesurée ce tour : ZÉRO quasi-doublon sur
+  CH Zürich (2 087 segments) et Bern (3 305), AT Niederösterreich (1 716),
+  IT Lombardia (2 607), DE Bayern (3 196), FR Occitanie (24 251) et PT/ES.
+- Étiquettes niveau 3 : tailles 6–18 px (plafond 18 px conservé), chaque nom
+  complet ou abrégé TIENT dans sa zone (repli 6 px pour les micro-zones).
+- Allègement du survol conservé (porté par 11-survol-repaint, sans progressive).
+- Harnais : le fichier poussé en v7.36 était tronqué (63,9 Ko au lieu de ~87) ;
+  il est RECONSTRUIT complet depuis la version v7.35 (e16ea54) + patchs v7.36/v7.37,
+  avec la nouvelle section 42 « balayage niveau 3 » (CH Zürich/Bern, AT, IT, DE :
+  couche émise, zéro double, étiquettes 6–18 qui tiennent). 201 OK / 0 KO.
 
 ## v7.36 — ZOOM INSTANT, SURVOL ALLÉGÉ, MICRO-ZONES LISIBLES, DÉCALAGE BERLIN/BRANDENBOURG ( 2026-11-22zi )
 

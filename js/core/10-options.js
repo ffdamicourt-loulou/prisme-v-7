@@ -56,10 +56,17 @@
           // toute façon la projection du geo pendant le zoom/pan animé).
           id: 'frontieres', type: 'lines', coordinateSystem: 'geo', geoIndex: 0,
           animation: false,
-          // v7.36 : PAS DE RENDU PROGRESSIF — le rendu par troncs d'ECharts
-          // relançait son balayage à CHAQUE repaint (survol, zoom) : les
-          // frontières se redessinaient visiblement (Europe, Angleterre).
-          progressive: 0, progressiveThreshold: 1e9,
+          // v7.37 : RETRAIT de « progressive: 0 » (v7.36) — le rendu par
+          // troncs d'ECharts (pipeline « progressif » des séries lines)
+          // est TRÈS sensible à cette option : aucune couche lines n'était
+          // rendue en mode SSR avec elle, et le signalement « énormes
+          // problèmes de frontières au niveau 3 (Suisse, puis toute
+          // l'Europe) » suit le déploiement v7.36 : on REVIENT au pipeline
+          // historique (option absente = valeur par défaut d'ECharts),
+          // les frontières relancent leur balayage au survol/majEtiquettes
+          // mais elles SONT dessinées partout. L'allègement du survol reste
+          // porté par 11-survol-repaint (v7.36 : plus de renvoi d'étiquettes
+          // en vues admin).
           polyline: true, silent: true, z: 4,
           lineStyle: { color: THEME.contour, width: TRAIT_NIVEAUX, opacity: 1 },
           tooltip: { show: false },
@@ -76,7 +83,6 @@
           // pays (v0.22). Ailleurs : data vide, trait par zone inchangé.
           id: 'frontieres-zones', type: 'lines', coordinateSystem: 'geo', geoIndex: 0,
           animation: false,
-          progressive: 0, progressiveThreshold: 1e9, // v7.36 : cf. couche « frontieres »
           polyline: true, silent: true, z: 4,
           lineStyle: { color: THEME.contour, width: TRAIT_NIVEAUX, opacity: 1 },
           tooltip: { show: false },
