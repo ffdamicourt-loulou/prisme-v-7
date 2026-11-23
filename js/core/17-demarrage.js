@@ -1,7 +1,7 @@
   function demarrer(conteneur) {
     conteneurCarte = conteneur;
     echarts.registerMap('prisme2', fc);
-    carte = echarts.init(conteneur, null, { renderer: 'svg' });
+    carte = echarts.init(conteneur, null, { renderer: 'canvas' });
     var optDemarrage = optionsBase();
     carte.setOption(optDemarrage);
     try { cacherRegions((optDemarrage.geo && optDemarrage.geo.regions) || []); } catch (eCache) { }
