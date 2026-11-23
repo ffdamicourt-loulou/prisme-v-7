@@ -1,0 +1,29 @@
+{
+  "_comment": "Config OSM par pays : geofabrik (URL du .pbf), lv = niveaux OSM [n2, n3] (n1 = contour pays, admin_level 2), cont = code continent Prisme. Défaut hors liste : lv [4,6].",
+  "_defaut": {"geofabrik": null, "lv": [4, 6]},
+  "pays": {
+    "LU": {"nom": "Luxembourg", "a3": "LUX", "geofabrik": "https://download.geofabrik.de/europe/luxembourg/luxembourg-latest.osm.pbf", "lv": [6, 8], "cont": "150"},
+    "CH": {"nom": "Suisse", "a3": "CHE", "geofabrik": "https://download.geofabrik.de/europe/switzerland-latest.osm.pbf", "lv": [4, 8], "cont": "150"},
+    "BE": {"nom": "Belgique", "a3": "BEL", "geofabrik": "https://download.geofabrik.de/europe/belgium-latest.osm.pbf", "lv": [6, 8], "cont": "150"},
+    "AT": {"nom": "Autriche", "a3": "AUT", "geofabrik": "https://download.geofabrik.de/europe/austria-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "NL": {"nom": "Pays-Bas", "a3": "NLD", "geofabrik": "https://download.geofabrik.de/europe/netherlands-latest.osm.pbf", "lv": [4, 8], "cont": "150"},
+    "CZ": {"nom": "Tchéquie", "a3": "CZE", "geofabrik": "https://download.geofabrik.de/europe/czechia-latest.osm.pbf", "lv": [6, 7], "cont": "150"},
+    "SK": {"nom": "Slovaquie", "a3": "SVK", "geofabrik": "https://download.geofabrik.de/europe/slovakia-latest.osm.pbf", "lv": [6, 8], "cont": "150"},
+    "SI": {"nom": "Slovénie", "a3": "SVN", "geofabrik": "https://download.geofabrik.de/europe/slovenia-latest.osm.pbf", "lv": [5, 8], "cont": "150"},
+    "DK": {"nom": "Danemark", "a3": "DNK", "geofabrik": "https://download.geofabrik.de/europe/denmark-latest.osm.pbf", "lv": [4, 7], "cont": "150"},
+    "PT": {"nom": "Portugal", "a3": "PRT", "geofabrik": "https://download.geofabrik.de/europe/portugal-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "PL": {"nom": "Pologne", "a3": "POL", "geofabrik": "https://download.geofabrik.de/europe/poland-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "FR": {"nom": "France", "a3": "FRA", "geofabrik": "https://download.geofabrik.de/europe/france-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "DE": {"nom": "Allemagne", "a3": "DEU", "geofabrik": "https://download.geofabrik.de/europe/germany-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "IT": {"nom": "Italie", "a3": "ITA", "geofabrik": "https://download.geofabrik.de/europe/italy-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "ES": {"nom": "Espagne", "a3": "ESP", "geofabrik": "https://download.geofabrik.de/europe/spain-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "GB": {"nom": "Royaume-Uni", "a3": "GBR", "geofabrik": "https://download.geofabrik.de/europe/great-britain-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "IE": {"nom": "Irlande", "a3": "IRL", "geofabrik": "https://download.geofabrik.de/europe/ireland-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "HR": {"nom": "Croatie", "a3": "HRV", "geofabrik": "https://download.geofabrik.de/europe/croatia-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "HU": {"nom": "Hongrie", "a3": "HUN", "geofabrik": "https://download.geofabrik.de/europe/hungary-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "GR": {"nom": "Grèce", "a3": "GRC", "geofabrik": "https://download.geofabrik.de/europe/greece-latest.osm.pbf", "lv": [4, 5], "cont": "150"},
+    "FI": {"nom": "Finlande", "a3": "FIN", "geofabrik": "https://download.geofabrik.de/europe/finland-latest.osm.pbf", "lv": [4, 6], "cont": "150"},
+    "SE": {"nom": "Suède", "a3": "SWE", "geofabrik": "https://download.geofabrik.de/europe/sweden-latest.osm.pbf", "lv": [4, 7], "cont": "150"},
+    "NO": {"nom": "Norvège", "a3": "NOR", "geofabrik": "https://download.geofabrik.de/europe/norway-latest.osm.pbf", "lv": [4, 7], "cont": "150"}
+  }
+}
