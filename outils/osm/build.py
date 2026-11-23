@@ -326,19 +326,43 @@ def chain(mems, ways, nds, log):
     return anneaux
 
 
+MAXSHARD = 2500000
+
+
+def dedans(ring, ref_rings, seuil=2):
+    """vrai si l'anneau semble a l'interieur des anneaux de reference"""
+    hits = 0
+    step = max(1, len(ring) // 7)
+    for k in range(0, len(ring), step):
+        p = ring[k]
+        if any(point_dans(p, rg) for rg in ref_rings):
+            hits += 1
+    return hits >= seuil
+
+
 def cmd_final(XX):
     rels = jload(XX, 'rels.json', [])
     ways = jload(XX, 'ways.json', {})
     nds = jload(XX, 'nodes.json', {})
     lvls = niveaux(XX)
-    log = {}
+    cconf = conf(XX)
+    log = {'incompletes': 0, 'hors_pays': 0}
     zones = {lv: [] for lv in lvls}
+    candidats = {lv: [] for lv in lvls}
     for r in rels:
         lv = r['lvl']
-        if lv not in zones: continue
+        if lv not in zones:
+            continue
+        av = log.get('ways_manquantes', 0)
+        av2 = log.get('nodes_manquants', 0)
+        ao = log.get('ouverts', 0)
         anneaux = chain(r['mem'], ways, nds, log)
-        if not anneaux: continue
-        # classement outer/inner : par rôle sinon par air (le plus grand =外在)
+        complet = (log.get('ways_manquantes', 0) == av and
+                   log.get('nodes_manquants', 0) == av2 and
+                   log.get('ouverts', 0) == ao and bool(anneaux))
+        if not complet:
+            log['incompletes'] += 1
+            continue
         byrole = {}
         for ring, rrole in anneaux:
             outer = any(rr in ('outer', '') for rr in rrole)
@@ -347,49 +371,88 @@ def cmd_final(XX):
             byrole.setdefault('outer' if outer else 'inner', []).append(ring)
         outs = sorted(byrole.get('outer', []), key=lambda rg: -abs(aire(rg)))
         inns = byrole.get('inner', [])
-        polys = []
         if not outs:
-            # aucun rôle : le plus grand anneau est externe
             tt = sorted([rg for rg, _ in anneaux], key=lambda rg: -abs(aire(rg)))
-            outs = tt[:1]; inns = tt[1:]
+            outs = tt[:1]
+            inns = tt[1:]
+        polys = []
         for out in outs:
             holes = [h for h in inns if point_dans(h[0], out)]
             polys.append([out] + holes)
-        # anneeaux internes non rangés -> polygones simples uniques
         for h in inns:
             if not any(point_dans(h[0], o) for o in outs):
                 polys.append([h])
-        zones[lv].append({'id': r['id'], 'nom': r['nom'], 'g': polys})
-    # écriture packages
-    c = conf(XX)
-    os.makedirs(OUT, exist_ok=True)
-    for k, lv in enumerate(lvls):
-        nn = 'n%d' % (k + 1)
-        zs = zones[lv]
-        corps = "window.__OSMREG=window.__OSMREG||{};window.__OSMREG['" + XX + "']=window.__OSMREG['" + XX + "']||{};window.__OSMREG['" + XX + "']." + nn + "="
-        Z = [{'id': z['id'], 'nom': z['nom'],
-              'g': [[enc_anneau(rg) for rg in poly] for poly in z['g']]
-              } for z in zs]
-        lignes = ',\n'.join(json.dumps(z, ensure_ascii=False, separators=(',', ':')) for z in Z)
-        corps += '[\n' + lignes + '\n];'
-        p = os.path.join(OUT, '%s-%s.js' % (XX, nn))
+        if not polys:
+            continue
+        candidats[lv].append({'id': r['id'], 'nom': r['nom'], 'g': polys})
+    # pays lui-meme : zone n1 complete la plus grande (ou nom = conf)
+    if not candidats.get(2):
+        raise SystemExit('aucun contour pays pour ' + XX)
+    nomc = cconf.get('nom')
+    self_zone = None
+    for z in candidats[2]:
+        if nomc and z['nom'] == nomc:
+            self_zone = z
+    if self_zone is None:
+        self_zone = max(candidats[2], key=lambda z: sum(abs(aire(poly[0])) for poly in z['g']))
+    zones[2] = [self_zone]
+    ref_rings = [poly[0] for poly in self_zone['g']]
+    for lv in lvls:
         if lv == 2:
-            corps += "\nwindow.__OSMREG['" + XX + "'].c='" + str(conf(XX).get('cont', '')) + "';"
-        open(p, 'w').write(corps)
-        print(p, len(corps), 'octets,', len(zs), 'zones')
-    # package villes (filtre bbox payss)
+            continue
+        for z in candidats[lv]:
+            out0 = max(z['g'], key=lambda poly: abs(aire(poly[0])))[0]
+            if dedans(out0, ref_rings):
+                zones[lv].append(z)
+            else:
+                log['hors_pays'] += 1
+    # ecriture packages (shards <= MAXSHARD, une zone par ligne)
+    os.makedirs(OUT, exist_ok=True)
+    for gr, lv in enumerate(lvls):
+        nn = 'n%d' % (gr + 1)
+        zs = zones[lv]
+        shard = 0
+        buf = []
+        taille = 0
+        entete0 = ("window.__OSMREG=window.__OSMREG||{};window.__OSMREG['" + XX +
+                   "']=window.__OSMREG['" + XX + "']||{};window.__OSMREG['" + XX + "']." + nn + "=")
+        while shard * 1 or True:
+            lignes = []
+            for z in zs:
+                l = json.dumps({'id': z['id'], 'nom': z['nom'],
+                                'g': [[enc_anneau(rg) for rg in poly] for poly in z['g']]},
+                               ensure_ascii=False, separators=(',', ':'))
+                if taille + len(l) > MAXSHARD and lignes:
+                    break
+                lignes.append(l)
+                taille += len(l)
+            corps = entete0 if shard == 0 else (
+                "window.__OSMREG=window.__OSMREG||{};window.__OSMREG['" + XX + "']=window.__OSMREG['" + XX +
+                "']||{};window.__OSMREG['" + XX + "']." + nn + "=(window.__OSMREG['" + XX + "']." + nn + "||[]).concat(")
+            corps += '[\n' + ',\n'.join(lignes) + ('\n];' if shard == 0 else '\n);')
+            if lv == 2 and shard == 0:
+                corps += "\nwindow.__OSMREG['" + XX + "'].c='" + str(cconf.get('cont', '')) + "';"
+            nom = ('%s-%s.js' % (XX, nn)) if shard == 0 else ('%s-%s-%d.js' % (XX, nn, shard + 1))
+            p = os.path.join(OUT, nom)
+            open(p, 'w').write(corps)
+            print(p, len(corps), 'octets,', len(lignes), 'zones')
+            shard += 1
+            if not lignes or len(lignes) >= len(zs):
+                break
+            zs = zs[len(lignes):]
+            taille = 0
+    # villes : points dans le contour pays
     vs = jload(XX, 'villes.json', [])
-    n1 = zones.get(2, [])
-    if n1:
-        xs = [p[0] for z in n1 for poly in z['g'] for rg in poly for p in rg]
-        ys = [p[1] for z in n1 for poly in z['g'] for rg in poly for p in rg]
-        bbox = (min(xs), min(ys), max(xs), max(ys))
-        vs = [v for v in vs if bbox[0] <= v[2] * 1e4 <= bbox[2] and bbox[1] <= v[3] * 1e4 <= bbox[3]]
-    vc = "window.__OSMREG=window.__OSMREG||{};window.__OSMREG['" + XX + "']=window.__OSMREG['" + XX + "']||{};window.__OSMREG['" + XX + "'].villes="
-    vc += json.dumps([{'n': v[0], 'p': v[1], 'x': int(round(v[2] * 1e4)), 'y': int(round(v[3] * 1e4))} for v in vs],
-                     ensure_ascii=False, separators=(',', ':')) + ";"
+    garder = []
+    for v in vs:
+        p = (int(round(v[2] * 1e4)), int(round(v[3] * 1e4)))
+        if any(point_dans(p, rg) for rg in ref_rings):
+            garder.append({'n': v[0], 'p': v[1], 'x': p[0], 'y': p[1]})
+    vc = ("window.__OSMREG=window.__OSMREG||{};window.__OSMREG['" + XX + "']=window.__OSMREG['" + XX +
+          "']||{};window.__OSMREG['" + XX + "'].villes=")
+    vc += json.dumps(garder, ensure_ascii=False, separators=(',', ':')) + ";"
     open(os.path.join(OUT, XX + '-villes.js'), 'w').write(vc)
-    print(XX, 'villes:', len(vs))
+    print(XX, 'villes:', len(garder))
     print('log:', log)
 
 
