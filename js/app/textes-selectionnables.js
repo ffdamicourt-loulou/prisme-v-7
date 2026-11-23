@@ -17,7 +17,7 @@
     try { pos = getComputedStyle(conteneur).position; } catch (e) { }
     if (pos !== 'relative' && pos !== 'absolute') conteneur.style.position = 'relative';
     var st = document.createElement('style');
-    st.textContent = '.prisme2-textes{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;}'
+    st.textContent = '.prisme2-textes{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9;overflow:hidden;}'
       + '.prisme2-textes span{position:absolute;transform:translate(-50%,-50%);color:transparent;'
       + 'user-select:text;-webkit-user-select:text;cursor:text;pointer-events:auto;'
       + 'font-family:sans-serif;font-weight:300;line-height:1.15;white-space:pre;text-align:center;}'
