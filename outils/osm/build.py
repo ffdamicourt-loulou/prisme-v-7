@@ -135,7 +135,10 @@ def cmd_rels(XX, n=1 << 30):
             for r in b.relations(g):
                 tg = r['tags']
                 lv = tg.get('admin_level')
-                if tg.get('boundary') == 'administrative' and lv in lvls and tg.get('type') in ('boundary', 'multipolygon'):
+                ok = (lv in lvls and tg.get('type') in ('boundary', 'multipolygon') and
+                      (tg.get('boundary') == 'administrative' or
+                       (tg.get('boundary') in ('statistical', 'census') and lv != '2')))
+                if ok:
                     nom = tg.get('name:fr') or tg.get('name') or ''
                     mems = [[m[1], m[2]] for m in r['members'] if m[0] == 'way']
                     rels.append({'id': r['id'], 'lvl': int(lv), 'nom': nom, 'mem': mems})
